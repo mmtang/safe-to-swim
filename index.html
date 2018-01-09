@@ -39,9 +39,13 @@
                         <li class="dropdown">
                             <a class="dropdown-toggle" id="downloadDrop" href="#" role="button" data-toggle="dropdown"><i class="fa fa-list white"></i>&nbsp;&nbsp;Layers <b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                                <li><strong>Reference</strong></li>
-                                <li><input class="form-check-input" type="checkbox" unchecked>&nbsp;&nbsp;Region Board Boundaries</li>
-                                <li><input id="counties-box" class="form-check-input" type="checkbox" unchecked>&nbsp;&nbsp;County Boundaries</li>
+                                    <li class="header">Reference</li>
+                                    <li><input id="rb-boundaries-box" class="form-check-input" type="checkbox">&nbsp;&nbsp;Region Board Boundaries</li>
+                                    <li><input id="counties-box" class="form-check-input" type="checkbox">&nbsp;&nbsp;County Boundaries</li>
+                                    <li class="header">Developer</li>
+                                    <li><input id="all-sites-box" class="form-check-input" type="checkbox">&nbsp;&nbsp;All Sites</li>
+                                    <li><input id="selected-sites-box" class="form-check-input" type="checkbox">&nbsp;&nbsp;Selected Sites</li>
+                                
                             </ul>
                         </li>
                 </ul>
@@ -103,27 +107,11 @@
             <i class="fa fa-question-circle pull-right fa-lg"></i>
         </div>
 
-        <div id="pluswrap">
-                <div class="plus">
-                        <div class="loader">Loading...</div>
-                </div>
+        <div id="cover-wrap">
+            <div class="cover">
+                <div class="loader"></div>
+            </div>
         </div>
-    
-        <div class="modal fade" id="attributionModal" tabindex="-1" role="dialog">
-            <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                <button class="close" type="button" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title">
-                    Bootleaf Template: <a href='http://bryanmcbride.com'>bryanmcbride.com</a>
-                </h4>
-                </div>
-                <div class="modal-body">
-                <div id="attribution"></div>
-                </div>
-            </div><!-- /.modal-content -->
-            </div><!-- /.modal-dialog -->
-        </div><!-- /.modal -->
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>

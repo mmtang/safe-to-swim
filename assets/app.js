@@ -12,7 +12,7 @@ $(document).one("ajaxStop", function () {
 });
 */
 
-$("#pluswrap").hide();  // Hide loader animation
+$("#cover-wrap").hide();  // Hide loader animation
 
 $("#about-btn").click(function() {
     $("#aboutModal").modal("show");
@@ -70,12 +70,10 @@ var ecoli_STV = 320,
     enterococcus_GM = 30;
 
 var Esri_WorldTopoMap = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-attribution: 'Tiles &copy; Esri'
-}).addTo(map);
+    attribution: 'Tiles &copy; Esri'}).addTo(map);
 
 var Esri_WorldImagery = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-attribution: 'Tiles &copy; Esri'
-});
+    attribution: 'Tiles &copy; Esri'});
 
 var baseLayers = {
     "Topo": Esri_WorldTopoMap,
@@ -108,6 +106,15 @@ var defaultMarker = {
     fillOpacity: 0.8
 };
 
+var testMarker = {
+    radius: 5,
+    fillColor: "#f68b1e",
+    color: "#fff",
+    weight: 1,
+    opacity: 1,
+    fillOpacity: 0.8
+};
+
 var siteLayer = L.geoJSON(null, {
     pointToLayer: function (feature, latlng) {
         return L.circleMarker(latlng, defaultMarker);
@@ -123,10 +130,45 @@ var siteLayer = L.geoJSON(null, {
     } 
 }).addTo(map); 
 
-// Load site data
-omnivore.csv('input/UniqueStations.csv', null, siteLayer).addTo(map);
+var selectedSitesLayer = L.geoJSON(null, {
+    pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, testMarker);
+    }, 
+    onEachFeature: function (feature, layer) {
+        if (feature.properties) {
+            layer.on({
+                click: function (e) {
+                    $("#feature-title").html(feature.properties.StationName + "<p>Station Code: " + feature.properties.StationCode + "</p>");
+                }
+            })
+        }
+    } 
+}); 
 
-siteLayer.on('click', function(e) {
+// Load site data
+omnivore.csv('input/UniqueStations.csv', null, siteLayer);
+omnivore.csv('input/test-stations-53201.csv', null, selectedSitesLayer); 
+
+$("#all-sites-box").click( function(){
+    toggleLayer(siteLayer);
+ });
+
+$("#selected-sites-box").click( function(){
+    toggleLayer(selectedSitesLayer);
+});
+
+function toggleLayer(layer) { 
+    if (map.hasLayer(layer)) {
+        map.removeLayer(layer);
+    } else {
+        map.addLayer(layer);
+    }
+}
+
+document.getElementById("all-sites-box").checked="true";
+document.getElementById("selected-sites-box").checked="";
+
+function changeMapView(e) {
     clearGraph(); 
     hideSidebarControl();
     var currentZoom = map.getZoom();
@@ -136,6 +178,18 @@ siteLayer.on('click', function(e) {
         targetZoom = 12;
     }
     map.setView(e.latlng, targetZoom, { animation: true });  
+}
+
+siteLayer.on('click', function(e) {
+    changeMapView(e);
+    $("#sidebar").show(250, function() {
+        map.invalidateSize(); 
+        onMarkerClick(e);
+    });
+});
+
+selectedSitesLayer.on('click', function(e) {
+    changeMapView(e);
     $("#sidebar").show(250, function() {
         map.invalidateSize(); 
         onMarkerClick(e);
@@ -148,6 +202,7 @@ function onMarkerClick(e) {
 
     // Reset layer style
     siteLayer.setStyle(defaultMarker);
+    selectedSitesLayer.setStyle(testMarker);
     console.log(e, siteClicked);
 
     highlightMarker(e);
@@ -161,7 +216,7 @@ function onMarkerClick(e) {
     var content = '<div id="popupMenu"><div id="analyteMenu"></div><div id="filterMenu"></div></div>' + '<div id="siteGraph"><svg width="862" height="390"></div>';
     $("#feature-info").html(content);
     $("#featureModal").modal("show");
-    $("#pluswrap").show();
+    $("#cover-wrap").show();
 
     function createURL(limit) {
         var baseURL = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=7fe7df64-16b5-4866-b34f-1870a94ee607';
@@ -173,7 +228,7 @@ function onMarkerClick(e) {
 
 
     /*************************************/
-    /*** Synchronus Recursive API Call ***/
+    /******** Synchronus API Call ********/
     /*************************************/
 
     getRecords(createViz);
@@ -208,7 +263,7 @@ function onMarkerClick(e) {
     // Get data and draw graph
     function createViz(data) {
 
-            $("#pluswrap").hide();      // Hide loader animation
+            $("#cover-wrap").hide();      // Hide loader animation
 
             var Data = processData(data);
 
@@ -258,7 +313,7 @@ function onMarkerClick(e) {
 
                     // Create filter menu
                     var filterSpace = document.getElementById("filterMenu");
-                    var filterContent = '<div id="filterMenu"><div class="form-check"><label><input id="filterData" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filterGeomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gMean-dot" aria-hidden="true"></i></label></div></div>';
+                    var filterContent = '<div id="filterMenu"><div class="form-check"><label><input id="filterData" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filterGeomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
                     filterSpace.innerHTML += filterContent;
 
                     drawGraph(defaultAnalyte);
@@ -855,6 +910,7 @@ function onMarkerClick(e) {
     } // createViz()
 
 } // onMarkerClick()
+
 
 function clearGraph() {
     d3.selectAll(".axis grid").remove();

@@ -5,15 +5,6 @@ var map = L.map('map',{
     zoomControl: false
 }); 
 
-/* For main loading animation
-$(document).one("ajaxStop", function () {
-    $("#loading").hide();
-    sizeLayerControl();
-});
-*/
-
-$("#cover-wrap").hide();  // Hide loader animation
-
 $("#about-btn").click(function() {
     $("#aboutModal").modal("show");
     $(".navbar-collapse.in").collapse("hide");
@@ -115,25 +106,70 @@ var testMarker = {
     fillOpacity: 0.8
 };
 
+var siteInitialURL = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=e1e977d9-7a2a-401d-aa75-8e7e2ddb4e83&limit=100';
+
+/*************************************
+********* API CALL FOR SITES  ********
+*************************************/
+
+var selectedSitesLayer = L.geoJson([], {
+        pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, defaultMarker);
+        }
+    }).addTo(map);
+
+getSites(processSites);
+
+function getSites(callback, offset, data) {
+    if (typeof offset === 'undefined') { offset = 0; }
+    if (typeof data === 'undefined') { data = []; }
+
+    $.ajax({
+        type: "GET",
+        url: siteInitialURL,
+        data: {offset: offset},
+        dataType: "jsonp",
+        jsonpCallback: 'processSites',
+        success: function(res) {
+            var dataPage = res.result.records;
+            console.log("total site records:", res.result.total); 
+            data = data.concat(dataPage);
+            if (dataPage.length < 100) {
+                console.log("called site data", data);
+                callback(data);
+            } else {
+                getSites(callback, offset + 100, data);
+            }
+        }
+    });
+}
+        
+/*************************************
+**************************************
+*************************************/
+
+function processSites(data) {
+    featureCollection = [];
+    for (var i = 0; i < data.length; i++) {
+        var site = {};
+        site.type = "Feature";
+        site.geometry = {"type": "Point", "coordinates": [data[i].TargetLongitude, data[i].TargetLatitude]};
+        // site.coordinates = [data[i].TargetLongitude, data[i].TargetLatitude];
+        site.properties = { "StationName": data[i].StationName, "StationCode": data[i].StationCode };
+        featureCollection.push(site);
+    }
+    selectedSitesLayer.addData(featureCollection);
+    $("#cover-wrap").hide();  // Hide loader animation
+}
+
+/*************************************
+**************************************
+*************************************/
+
 var siteLayer = L.geoJSON(null, {
     pointToLayer: function (feature, latlng) {
         return L.circleMarker(latlng, defaultMarker);
     },
-    onEachFeature: function (feature, layer) {
-            if (feature.properties) {
-                layer.on({
-                    click: function (e) {
-                        $("#feature-title").html(feature.properties.StationName + "<p>Station Code: " + feature.properties.StationCode + "</p>");
-                    }
-                })
-            }
-    } 
-}).addTo(map); 
-
-var selectedSitesLayer = L.geoJSON(null, {
-    pointToLayer: function (feature, latlng) {
-        return L.circleMarker(latlng, testMarker);
-    }, 
     onEachFeature: function (feature, layer) {
         if (feature.properties) {
             layer.on({
@@ -145,15 +181,14 @@ var selectedSitesLayer = L.geoJSON(null, {
     } 
 }); 
 
-// Load site data
+// Load from local file
 omnivore.csv('input/UniqueStations.csv', null, siteLayer);
-omnivore.csv('input/test-stations-53201.csv', null, selectedSitesLayer); 
 
-$("#all-sites-box").click( function(){
+$("#all-sites-box").click( function() {
     toggleLayer(siteLayer);
  });
 
-$("#selected-sites-box").click( function(){
+$("#selected-sites-box").click( function() {
     toggleLayer(selectedSitesLayer);
 });
 
@@ -165,8 +200,30 @@ function toggleLayer(layer) {
     }
 }
 
-document.getElementById("all-sites-box").checked="true";
-document.getElementById("selected-sites-box").checked="";
+/* Disable clicks on siteLayer
+siteLayer.on('click', function(e) {
+    changeMapView(e);
+    $("#sidebar").show(250, function() {
+        map.invalidateSize(); 
+        onMarkerClick(e);
+    });
+});
+*/
+
+selectedSitesLayer.on('click', function(e) {
+    console.log(e);
+    $("#feature-title").html(e.layer.feature.properties.StationName + "<p>Station Code: " + e.layer.feature.properties.StationCode + "</p>");
+    changeMapView(e);
+    $("#sidebar").show(200, function() {
+        setTimeout(function() {
+            map.invalidateSize()
+        }, 200); 
+        onMarkerClick(e);
+    });
+});
+
+document.getElementById("all-sites-box").checked="";
+document.getElementById("selected-sites-box").checked="true";
 
 function changeMapView(e) {
     clearGraph(); 
@@ -180,29 +237,13 @@ function changeMapView(e) {
     map.setView(e.latlng, targetZoom, { animation: true });  
 }
 
-siteLayer.on('click', function(e) {
-    changeMapView(e);
-    $("#sidebar").show(250, function() {
-        map.invalidateSize(); 
-        onMarkerClick(e);
-    });
-});
-
-selectedSitesLayer.on('click', function(e) {
-    changeMapView(e);
-    $("#sidebar").show(250, function() {
-        map.invalidateSize(); 
-        onMarkerClick(e);
-    });
-});
-
 function onMarkerClick(e) {
 
     var siteClicked = e.layer.feature.properties.StationCode;
 
     // Reset layer style
     siteLayer.setStyle(defaultMarker);
-    selectedSitesLayer.setStyle(testMarker);
+    selectedSitesLayer.setStyle(defaultMarker);
     console.log(e, siteClicked);
 
     highlightMarker(e);
@@ -227,9 +268,9 @@ function onMarkerClick(e) {
     console.log("initialURL:", initialURL);
 
 
-    /*************************************/
-    /******** Synchronus API Call ********/
-    /*************************************/
+    /*************************************
+    ******* API CALL FOR SITE DATA *******
+    *************************************/
 
     getRecords(createViz);
 
@@ -257,13 +298,13 @@ function onMarkerClick(e) {
         });
     }
     
-    /*************************************/
-    /*************************************/
+    /*************************************
+    **************************************
+    *************************************/
 
-    // Get data and draw graph
     function createViz(data) {
 
-            $("#cover-wrap").hide();      // Hide loader animation
+            $("#cover-wrap").hide(); // Hide loader animation
 
             var Data = processData(data);
 
@@ -317,7 +358,6 @@ function onMarkerClick(e) {
                     filterSpace.innerHTML += filterContent;
 
                     drawGraph(defaultAnalyte);
-
                 } else {
                     alert("No data for this site.");
                 }
@@ -351,7 +391,7 @@ function onMarkerClick(e) {
                         earliestDate = newData[dataArrayLength - 1].sampleDate;
 
                     var oneDay = (24 * 60 * 60 * 1000);
-                    var geomeanDays = 42;   // Offset days: 6 weeks * 7 days
+                    var geomeanDays = 42;   // Offset days: 6 weeks
                     
                     function getGeomeans(data, startDate, endDate, days) {
                         var geomeansArray = [];
@@ -440,11 +480,12 @@ function onMarkerClick(e) {
                     
                     } // getGeomeanObject()
 
+                    
                     // Compile array of geomean objects
                     geomeanObjects = getGeomeans(newData, lastSampleDate, earliestDate, geomeanDays);
                     endPoint = geomeanObjects[geomeanObjects.length - 1];
 
-                    // Create endpoint geomean object and add to array
+                    // Create endpoint geomean object
                     geomeanObjects.push({beginDate: null, endDate: earliestDate, geomean: endPoint.geomean});
                     console.log("geomeanObjects", geomeanObjects);
 
@@ -875,7 +916,7 @@ function onMarkerClick(e) {
                     function compareThresholds(y) {
                         var maxThreshold;
                         // Only compare STV because STV > GM
-                        // To do: completely redo this
+                        // To-do: completely redo this
                         if (formAnalyte === ecoli) {
                             if (y < ecoli_STV) {
                                 maxThreshold = ecoli_STV;

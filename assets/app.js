@@ -150,7 +150,7 @@ function processSites(data) {
         featureCollection.push(site);
     }
     selectedSitesLayer.addData(featureCollection);
-    $("#cover-wrap").hide();  // Hide loader animation
+    $("#cover-wrap").hide();  // hide loader animation
 }
 
 /*************************************
@@ -172,7 +172,7 @@ var siteLayer = L.geoJSON(null, {
     } 
 }).addTo(map); 
 
-// Load from local file
+// load from local file
 omnivore.csv('input/UniqueStations.csv', null, siteLayer);
 
 $("#all-sites-box").click( function() {
@@ -191,7 +191,7 @@ function toggleLayer(layer) {
     }
 }
 
-/* Disable clicks on siteLayer
+/* disable clicks on siteLayer
 siteLayer.on('click', function(e) {
     changeMapView(e);
     $("#sidebar").show(250, function() {
@@ -203,12 +203,15 @@ siteLayer.on('click', function(e) {
 
 selectedSitesLayer.on('click', function(e) {
     console.log(e);
+    clearGraph();
     $("#feature-title").html(e.layer.feature.properties.StationName + "<p>Station Code: " + e.layer.feature.properties.StationCode + "</p>");
-    changeMapView(e);
     $("#sidebar").show(200, function() {
         setTimeout(function() {
             map.invalidateSize()
         }, 200); 
+        setTimeout(function() {
+            changeMapView(e);
+        }, 350);
         onMarkerClick(e);
     });
 });
@@ -217,11 +220,10 @@ document.getElementById("all-sites-box").checked="true";
 document.getElementById("selected-sites-box").checked="";
 
 function changeMapView(e) {
-    clearGraph(); 
     hideSidebarControl();
     var currentZoom = map.getZoom();
     if (currentZoom > 12) { 
-        var targetZoom = currentZoom;  // Preserve current zoom 
+        var targetZoom = currentZoom;  // preserve current zoom 
     } else {
         targetZoom = 12;
     }
@@ -232,7 +234,7 @@ function onMarkerClick(e) {
 
     var siteClicked = e.layer.feature.properties.StationCode;
 
-    // Reset layer style
+    // reset layer style
     siteLayer.setStyle(defaultMarker);
     selectedSitesLayer.setStyle(defaultMarker);
     console.log(e, siteClicked);
@@ -300,10 +302,10 @@ function onMarkerClick(e) {
 
             function processData(d) {
                 var data = d;
-                // For JSONP API. Parse dates formatted as "2017-09-31 00:00:00"
+                // for JSONP API. Parse dates formatted as "2017-09-31 00:00:00"
                 var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
-                // For JSON local file. Parse dates formattted as "09/14/2012 0:00"
-                //  var parseDate = d3.timeParse("%m/%d/%Y %H:%M:%S")
+                // for JSON local file. Parse dates formattted as "09/14/2012 0:00"
+                // var parseDate = d3.timeParse("%m/%d/%Y %H:%M:%S")
 
                 var indicatorSet = new Set(); 
 
@@ -316,7 +318,7 @@ function onMarkerClick(e) {
                     d.mdl = +d.MDL;
                 });
 
-                // Compatible with IE
+                // compatible with IE
                 var indicators = [];
                 indicatorSet.forEach(function(v) {
                     indicators.push(v);
@@ -327,9 +329,9 @@ function onMarkerClick(e) {
 
                 d3.select("#analyteSelect").remove();
 
-                // Create sidebar menus
+                // create sidebar menus
                 if (indicators.length > 0) {
-                    // Create analyte menu
+                    // create analyte menu
                     var analyteSelect = document.createElement("select");
                     analyteSelect.id = "analyteSelect";
                     analyteSelect.className = "form-control input-sm";
@@ -340,7 +342,7 @@ function onMarkerClick(e) {
                     }
                     var selectDiv = document.getElementById("analyteMenu");
                     selectDiv.appendChild(analyteSelect);
-                    // Create filter menu
+                    // create filter menu
                     var filterSpace = document.getElementById("filterMenu");
                     var filterContent = '<div id="filterMenu"><div class="form-check"><label><input id="filterData" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filterGeomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
                     filterSpace.innerHTML += filterContent;
@@ -350,7 +352,7 @@ function onMarkerClick(e) {
                     alert("No data for this site.");
                 }
 
-                // Listen for analyte change
+                // listen for analyte change
                 d3.selectAll("select").on("change", function() {
                         drawGraph(this.value);
                 });
@@ -367,18 +369,18 @@ function onMarkerClick(e) {
                         if ((data.StationCode === siteClicked) && (data.analyte === formAnalyte)) { return d; }
                     });
 
-                    // Need to redo checks
+                    // need to redo checks
                     if (newData.length < 1 ) { window.alert("No data for this indicator."); }
 
                     newData = newData.sort(function(a, b) { return b.sampleDate - a.sampleDate });  // Sort descending
 
-                    // Get reference dates
+                    // get reference dates
                     var lastSampleDate = newData[0].sampleDate,
                         dataArrayLength = newData.length,
                         earliestDate = newData[dataArrayLength - 1].sampleDate;
 
                     var oneDay = (24 * 60 * 60 * 1000);
-                    var geomeanDays = 42;   // Offset days: 6 weeks
+                    var geomeanDays = 42;   // offset days: 6 weeks
                     
                     function getGeomeans(data, startDate, endDate, days) {
                         var geomeansArray = [];
@@ -388,29 +390,27 @@ function onMarkerClick(e) {
                         while(refDate >= stopDate) {
                             var newDate = convertUNIX(refDate);
                             geomeansArray.push(getGeomeanObject(data, newDate, days));
-                            refDate -= oneDay * 7;  // Offset is one week
+                            refDate -= oneDay * 7;  // offset is one week
                         }
                         return geomeansArray;
                     }
                     
-                    // Calculates the geometric mean for a single 6-week date range
+                    // calculates the geometric mean for a single 6-week date range
                     function getGeomeanObject(data, startDate, offsetDays) {
 
                             function getCutoffDate(date, offsetDays) {
-                                var offsetValue = oneDay * offsetDays;  
-                                var offsetDate = date.getTime() - offsetValue;
+                                var offsetDate = date.getTime() - (oneDay * offsetDays);
                                 return convertUNIX(offsetDate);
                             }
 
                             function getSampleArray(data, startDate, cutoffDate) {
                                 if (data.length === 0) {
-                                    console.log("No data for geomean range.");
+                                    console.log("no data for geomean range");
                                     return null;
                                 }
-                                var newData = data;
                                 var dateArray = [];
-                                for (var i = 0; i < newData.length; i++) {
-                                    var d = newData[i];
+                                for (var i = 0; i < data.length; i++) {
+                                    var d = data[i];
                                     if ((convertDate(d.sampleDate) <= convertDate(startDate)) && (convertDate(d.sampleDate) >= convertDate(cutoffDate))) {
                                         if (keepData(d)) {
                                             dateArray.push(d); 
@@ -420,14 +420,14 @@ function onMarkerClick(e) {
                                 return dateArray;
                             }
 
-                            // Checks whether result is a valid ND (Res Qual Code = "ND" and Result is positive)
+                            // checks whether result is a valid ND (res qual code = "ND" and result is positive)
                             function keepData(d) {
                                 if ((d.DataQuality === 0) || (d.DataQuality === 4) || (d.DataQuality === 5)) {
                                     return false;
                                 } else if ((d.resultqualcode === "ND") && (d.result > 0)) {
-                                        return false; 
+                                    return false; 
                                 } else if ((d.resultqualcode === "P") && !(d.result)) {
-                                        return false;
+                                    return false;
                                 } else {
                                     return true;
                                 }
@@ -435,19 +435,18 @@ function onMarkerClick(e) {
 
                             function calculateGeomean(data) {
                                 if (data.length <= 0) {
-                                    console.log("Geomean: Array is empty.");
+                                    console.log("geomean array is empty");
                                     return null;
                                 } else {
                                     var product = 1;
                                     data.forEach(function(d) {
                                         if ((d.resultqualcode === "ND") && (d.mdl > 0)) {
-                                            product *= d.mdl * 0.5;     // Substitute NDs with half of MDL
+                                            product *= d.mdl * 0.5;     // substitute NDs with half of MDL
                                         } else {
-                                            product *= d.result;    // Use result for detects
+                                            product *= d.result;    // use result for detects
                                         }
                                     });
-                                    var gMean = Math.pow(product, (1 / data.length));   // nth root
-                                    return gMean;
+                                    return Math.pow(product, (1 / data.length));  // nth root
                                 }
                             }
 
@@ -456,9 +455,9 @@ function onMarkerClick(e) {
 
                             // Assemble geomean object for single 6-week range
                             if (geomeanData.length < 1) { 
-                                var geomeanObject = {beginDate: cutoffDate, endDate: startDate, geomean: null}; // No data
+                                var geomeanObject = {beginDate: cutoffDate, endDate: startDate, geomean: null}; // no data
                             } else if (geomeanData.length < 5) {
-                                var geomeanObject = {beginDate: cutoffDate, endDate: startDate, geomean: "NES"}; // Not enough samples
+                                var geomeanObject = {beginDate: cutoffDate, endDate: startDate, geomean: "NES"}; // not enough samples
                             } else {
                                 var geomean = decimalRound(calculateGeomean(geomeanData), 2);
                                 var geomeanObject = {beginDate: cutoffDate, endDate: startDate, geomean: geomean};
@@ -538,18 +537,17 @@ function onMarkerClick(e) {
                                 .attr("height", height);
 
                     
-                    var currentExtent = d3.extent(newData, function(d) { return d.sampleDate; });   // Find extent for x-axis
-                    var xBufferExtent = bufferExtent(currentExtent, 35);    // Buffer x-axis extent so points at end are not cut off
-                    var yMax = d3.max(newData, function(d) { return d.result });    // Find max Y data point 
-                    var displayY = compareThresholds(yMax);     // Compare threshold values to find max Y for display
+                    var currentExtent = d3.extent(newData, function(d) { return d.sampleDate; });  // find extent for x-axis
+                    var xBufferExtent = bufferExtent(currentExtent, 35);  // buffer x-axis extent so points at end are not cut off
+                    var yMax = d3.max(newData, function(d) { return d.result });  // find max Y data point 
+                    var displayY = compareThresholds(yMax);  // compare threshold values to find max Y for display
 
                     xScale.domain(xBufferExtent);
-                    yScale.domain([0, Math.ceil(roundHundred(displayY + (displayY / 3)))]); // Add buffer to top
+                    yScale.domain([0, Math.ceil(roundHundred(displayY + (displayY / 3)))]);  // add buffer to top
                     xScale2.domain(xScale.domain());
                     yScale2.domain(yScale.domain());
 
-                    // Preferred number of ticks 
-                    var ticksN = 8;
+                    var ticksN = 8;  // preferred number of ticks 
 
                     var yAxis = d3.axisLeft(yScale)
                         .tickSize(0)
@@ -603,7 +601,7 @@ function onMarkerClick(e) {
                         .attr("class", "graphLabel");
 
 
-                    var gColor = "#ED6874";     // Color for geomean elements
+                    var gColor = "#ED6874";  // color for geomean elements
                     var gCircleOpacity = 1;
                     var circleOpacity = 0.7;
                     var tooltipOpacity = 1;
@@ -692,7 +690,7 @@ function onMarkerClick(e) {
                             break;
                     }
 
-                    // Move line labels if overlapping
+                    // move line labels if overlapping
                     if ((formAnalyte === enterococcus) || (formAnalyte === ecoli)) {
 
                         var gThresholdLabel = document.getElementById("gmLineLabel"),
@@ -723,7 +721,7 @@ function onMarkerClick(e) {
                         return isOverlap;
                     }
 
-                    // Add data to main chart
+                    // add data to main chart
                     var dots = focus.append("g");
                         dots.attr("clip-path", "url(#clip)");
                         dots.selectAll("circle")
@@ -736,7 +734,7 @@ function onMarkerClick(e) {
                             .attr("cy", function(d) { return yScale(d.result); })
                             .style("opacity", circleOpacity)
                             .on("mouseover", function(d) {
-                                var tooltipDate = d3.timeFormat("%b %e, %Y");  // Format date value for tooltip
+                                var tooltipDate = d3.timeFormat("%b %e, %Y");  // format date value for tooltip
                                 div.transition()
                                     .duration(100)
                                     .style("opacity", tooltipOpacity);
@@ -756,13 +754,13 @@ function onMarkerClick(e) {
                                     .style("opacity", circleOpacity);
                             });
 
-                    // Add geomean to main chart
+                    // add geomean to main chart
                     var gDots = focus.append("g");
                         gDots.attr("clip-path", "url(#clip)");
                         gDots.selectAll("circle")
                             .data(geomeanObjects)
                             .enter().append("circle")
-                            .filter(function(d) { return (d.geomean !== null) && (d.geomean != "NES") })  // Strict not version for null
+                            .filter(function(d) { return (d.geomean !== null) && (d.geomean != "NES") })  // strict not version for null
                             .attr('class', 'gCircles')
                             .attr("r", 4)
                             .attr("fill", gColor)
@@ -770,7 +768,7 @@ function onMarkerClick(e) {
                             .attr("cy", function(d) { return yScale(d.geomean); })
                             .style("opacity", gCircleOpacity)
                             .on("mouseover", function(d) {
-                                var tooltipDate = d3.timeFormat("%b %e, %Y");  // Format date value for tooltip
+                                var tooltipDate = d3.timeFormat("%b %e, %Y");  // format date value for tooltip
                                 div.transition()
                                     .duration(50)
                                     .style("opacity", tooltipOpacity);
@@ -811,19 +809,19 @@ function onMarkerClick(e) {
                         .call(brush)
                         .call(brush.move, xScale.range());
 
-                    // Filter listeners
+                    // filter listeners
                     d3.select("#filterData").on("change", toggleData);
                     d3.select("#filterGeomean").on("change", toggleGeomean);
 
                     function toggleData() {
                         if(d3.select(this).property("checked")){
                             d3.selectAll(".circles").attr("visibility", "visible");
-                            // Include below for toggling off threshold lines 
+                            // include below for toggling off threshold lines 
                             // d3.selectAll(".stvLine").attr("visibility", "visible"); 
                             // d3.selectAll(".stvGraphLabel").attr("visibility", "visible");
                         } else {
                             d3.selectAll(".circles").attr("visibility", "hidden");
-                            // Include below for toggling off threshold lines 
+                            // include below for toggling off threshold lines 
                             // d3.selectAll(".stvLine").attr("visibility", "hidden");
                             // d3.selectAll(".stvGraphLabel").attr("visibility", "hidden");
                         }			
@@ -832,12 +830,12 @@ function onMarkerClick(e) {
                     function toggleGeomean() {
                         if(d3.select(this).property("checked")){
                             d3.selectAll(".gCircles").attr("visibility", "visible");
-                            // Include below for toggling off threshold lines 
+                            // include below for toggling off threshold lines 
                             // d3.selectAll(".gLine").attr("visibility", "visible");
                             // d3.selectAll(".gmGraphLabel").attr("visibility", "visible");
                         } else {
                             d3.selectAll(".gCircles").attr("visibility", "hidden");
-                            // Include below for toggling off threshold lines 
+                            // include below for toggling off threshold lines 
                             // d3.selectAll(".gLine").attr("visibility", "hidden");
                             // d3.selectAll(".gmGraphLabel").attr("visibility", "hidden");
                         }			
@@ -847,7 +845,7 @@ function onMarkerClick(e) {
                         var s = d3.event.selection || xScale2.range();
                         var brushWidth = s[1] - s[0];
 
-                        // Manage on-screen d3 elements when brush is dragged outside extent
+                        // manage on-screen graph elements when brush is dragged outside extent
                         if ((brushWidth === 0) || (s[0] >= width)) { 
                             focus.selectAll(".circles")
                                 .style("opacity", 0);
@@ -880,11 +878,11 @@ function onMarkerClick(e) {
                     }
 
                     function bufferExtent(extent, days) {
-                        // Pad min
+                        // pad min
                         var extentMin = convertDate(extent[0]);
                         var newExtentMin = extentMin - (oneDay * days); 
                         newExtentMin = convertUNIX(newExtentMin);
-                        // Pad max
+                        // pad max
                         var extentMax = convertDate(extent[1]);
                         var newExtentMax = extentMax + (oneDay * days);
                         newExtentMax = convertUNIX(newExtentMax);
@@ -894,8 +892,8 @@ function onMarkerClick(e) {
 
                     function compareThresholds(y) {
                         var maxThreshold;
-                        // Only compare STV because STV > GM
-                        // To-do: completely redo this
+                        // only compare STV because STV > GM
+                        // to-do: completely redo this
                         if (formAnalyte === ecoli) {
                             if (y < ecoli_STV) {
                                 maxThreshold = ecoli_STV;
@@ -960,12 +958,12 @@ function roundHundred(value) {
     return (value / 100) * 100
 }
 
-// Convert to UNIX time
+// convert to UNIX time
 function convertDate(date) {
     return date.getTime();
 }
 
-// Convert to Javascript date
+// convert to Javascript date
 function convertUNIX(seconds) {
     return new Date(seconds);
 }

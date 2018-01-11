@@ -2,7 +2,8 @@ var map = L.map('map',{
     center: [37.4050, -119.4179], 
     zoom: 6, 
     preferCanvas: true,
-    zoomControl: false
+    zoomControl: false,
+    doubleClickZoom: false
 }); 
 
 $("#about-btn").click(function() {
@@ -97,15 +98,6 @@ var defaultMarker = {
     fillOpacity: 0.8
 };
 
-var testMarker = {
-    radius: 5,
-    fillColor: "#f68b1e",
-    color: "#fff",
-    weight: 1,
-    opacity: 1,
-    fillOpacity: 0.8
-};
-
 var siteInitialURL = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=e1e977d9-7a2a-401d-aa75-8e7e2ddb4e83&limit=100';
 
 /*************************************
@@ -116,7 +108,7 @@ var selectedSitesLayer = L.geoJson([], {
         pointToLayer: function (feature, latlng) {
             return L.circleMarker(latlng, defaultMarker);
         }
-    }).addTo(map);
+    });
 
 getSites(processSites);
 
@@ -154,7 +146,6 @@ function processSites(data) {
         var site = {};
         site.type = "Feature";
         site.geometry = {"type": "Point", "coordinates": [data[i].TargetLongitude, data[i].TargetLatitude]};
-        // site.coordinates = [data[i].TargetLongitude, data[i].TargetLatitude];
         site.properties = { "StationName": data[i].StationName, "StationCode": data[i].StationCode };
         featureCollection.push(site);
     }
@@ -174,12 +165,12 @@ var siteLayer = L.geoJSON(null, {
         if (feature.properties) {
             layer.on({
                 click: function (e) {
-                    $("#feature-title").html(feature.properties.StationName + "<p>Station Code: " + feature.properties.StationCode + "</p>");
+                    // $("#feature-title").html(feature.properties.StationName + "<p>Station Code: " + feature.properties.StationCode + "</p>");
                 }
             })
         }
     } 
-}); 
+}).addTo(map); 
 
 // Load from local file
 omnivore.csv('input/UniqueStations.csv', null, siteLayer);
@@ -222,15 +213,15 @@ selectedSitesLayer.on('click', function(e) {
     });
 });
 
-document.getElementById("all-sites-box").checked="";
-document.getElementById("selected-sites-box").checked="true";
+document.getElementById("all-sites-box").checked="true";
+document.getElementById("selected-sites-box").checked="";
 
 function changeMapView(e) {
     clearGraph(); 
     hideSidebarControl();
     var currentZoom = map.getZoom();
     if (currentZoom > 12) { 
-        var targetZoom = currentZoom;   // Preserve current zoom 
+        var targetZoom = currentZoom;  // Preserve current zoom 
     } else {
         targetZoom = 12;
     }
@@ -289,7 +280,7 @@ function onMarkerClick(e) {
                 console.log("total records:", res.result.total); 
                 data = data.concat(dataPage);
                 if (dataPage.length < 100) {
-                    console.log("called data", data);
+                    console.log("called graph data", data);
                     callback(data);
                 } else {
                     getRecords(callback, offset + 100, data);
@@ -304,12 +295,10 @@ function onMarkerClick(e) {
 
     function createViz(data) {
 
-            $("#cover-wrap").hide(); // Hide loader animation
-
+            $("#cover-wrap").hide(); 
             var Data = processData(data);
 
             function processData(d) {
-
                 var data = d;
                 // For JSONP API. Parse dates formatted as "2017-09-31 00:00:00"
                 var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
@@ -351,7 +340,6 @@ function onMarkerClick(e) {
                     }
                     var selectDiv = document.getElementById("analyteMenu");
                     selectDiv.appendChild(analyteSelect);
-
                     // Create filter menu
                     var filterSpace = document.getElementById("filterMenu");
                     var filterContent = '<div id="filterMenu"><div class="form-check"><label><input id="filterData" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filterGeomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
@@ -368,7 +356,6 @@ function onMarkerClick(e) {
                 });
 
                 function drawGraph(formAnalyte) {
-
                     clearGraph(); 
                     resetCheckboxes();
         
@@ -496,7 +483,6 @@ function onMarkerClick(e) {
                         height = 390 - margin.top - margin.bottom,
                         height2 = 370 - margin2.top - margin2.bottom;
                     
-                    // Set ranges
                     var xScale = d3.scaleTime().range([0, width]),
                         xScale2 = d3.scaleTime().range([0, width]),
                         yScale = d3.scaleLinear().range([height, 0]),
@@ -565,7 +551,6 @@ function onMarkerClick(e) {
                     // Preferred number of ticks 
                     var ticksN = 8;
 
-                    // Define axes
                     var yAxis = d3.axisLeft(yScale)
                         .tickSize(0)
                         .tickPadding(10);
@@ -577,7 +562,6 @@ function onMarkerClick(e) {
                         .ticks(ticksN)
                         .tickSizeOuter(0);
 
-                    // Define gridlines
                     var xgAxis = d3.axisBottom(xScale)
                         .ticks(ticksN)
                         .tickSize(-height);
@@ -600,18 +584,15 @@ function onMarkerClick(e) {
                         .attr("class", "axis grid")
                         .call(ygAxis);
 
-                    // Add x-axis to main chart
                     focus.append("g")
                         .attr("class", "xAxis")
                         .attr("transform", "translate(0," + height + ")")
                         .call(xAxis);
                         
-                    // Add y-axis to main chart
                     focus.append("g")
                         .attr("class", "yAxis")
                         .call(yAxis);
         
-                    // Add y-axis label to main chart  
                     focus.append("text")
                         .attr("transform", "rotate(-90)")
                         .attr("y", 0 - 70)
@@ -621,13 +602,14 @@ function onMarkerClick(e) {
                         .text("cfu / 100 ml")
                         .attr("class", "graphLabel");
 
+
                     var gColor = "#ED6874";     // Color for geomean elements
                     var gCircleOpacity = 1;
                     var circleOpacity = 0.7;
                     var tooltipOpacity = 1;
                     var lineOpacity = 1;
 
-                    // Add STV threshold lines // To-do: create class
+
                     switch (formAnalyte) {
                         case ecoli:
                             var geomeanThreshold = focus.append('line')
@@ -669,7 +651,6 @@ function onMarkerClick(e) {
                             break;
                     }
 
-                    // Add geomean threshold lines // To-do: create class
                     switch (formAnalyte) {
                         case ecoli:
                             var stvThreshold = focus.append('line')
@@ -742,7 +723,7 @@ function onMarkerClick(e) {
                         return isOverlap;
                     }
 
-                    // Add sample data to main chart area // To-do: create class
+                    // Add data to main chart
                     var dots = focus.append("g");
                         dots.attr("clip-path", "url(#clip)");
                         dots.selectAll("circle")
@@ -755,8 +736,7 @@ function onMarkerClick(e) {
                             .attr("cy", function(d) { return yScale(d.result); })
                             .style("opacity", circleOpacity)
                             .on("mouseover", function(d) {
-                                // Format date value for tooltip
-                                var tooltipDate = d3.timeFormat("%b %e, %Y");
+                                var tooltipDate = d3.timeFormat("%b %e, %Y");  // Format date value for tooltip
                                 div.transition()
                                     .duration(100)
                                     .style("opacity", tooltipOpacity);
@@ -776,7 +756,7 @@ function onMarkerClick(e) {
                                     .style("opacity", circleOpacity);
                             });
 
-                    // Add geomean points to main chart // To-do: create class
+                    // Add geomean to main chart
                     var gDots = focus.append("g");
                         gDots.attr("clip-path", "url(#clip)");
                         gDots.selectAll("circle")
@@ -790,8 +770,7 @@ function onMarkerClick(e) {
                             .attr("cy", function(d) { return yScale(d.geomean); })
                             .style("opacity", gCircleOpacity)
                             .on("mouseover", function(d) {
-                                // Format date value for tooltip
-                                var tooltipDate = d3.timeFormat("%b %e, %Y");
+                                var tooltipDate = d3.timeFormat("%b %e, %Y");  // Format date value for tooltip
                                 div.transition()
                                     .duration(50)
                                     .style("opacity", tooltipOpacity);

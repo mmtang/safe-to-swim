@@ -302,6 +302,10 @@ body {
     color: rgb(51, 91, 150);
 }
 
+.circles {
+    shape-rendering: auto;
+}
+
 .gm-dot {
     color: #ED6874;
 }
@@ -316,10 +320,6 @@ body {
     fill-opacity: .125;
     shape-rendering: crispEdges;
     clip-path: url(#clip);
-}
-
-.circles {
-    shape-rendering: auto;
 }
 
 .dotContext {

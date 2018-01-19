@@ -98,47 +98,59 @@ var defaultMarker = {
     fillOpacity: 0.8
 };
 
-var siteInitialURL = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=e1e977d9-7a2a-401d-aa75-8e7e2ddb4e83&limit=100';
+var selectedSitesLayer = L.geoJson([], {
+    pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, defaultMarker);
+    }
+}).addTo(map);
+
+var recordLimit = 100;
+
+var sitesURL = createURL('e1e977d9-7a2a-401d-aa75-8e7e2ddb4e83');
+
+function createURL(resource, site) {
+    var newURL = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
+    if (typeof site === 'undefined') {
+        return newURL;
+    } else {
+        return newURL + '&filters[StationCode]=' + site;
+    }
+}
 
 /*************************************
 ********* API CALL FOR SITES  ********
 *************************************/
 
-var selectedSitesLayer = L.geoJson([], {
-        pointToLayer: function (feature, latlng) {
-            return L.circleMarker(latlng, defaultMarker);
-        }
-    });
+getData(processSites, 'processSites', sitesURL);
 
-getSites(processSites);
-
-function getSites(callback, offset, data) {
+function getData(callback, callbackText, url, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
 
-    $.ajax({
-        type: "GET",
-        url: siteInitialURL,
+    var request = $.ajax({
+        url: url,
         data: {offset: offset},
         dataType: "jsonp",
-        jsonpCallback: 'processSites',
-        success: function(res) {
-            var dataPage = res.result.records;
-            console.log("total site records:", res.result.total); 
-            data = data.concat(dataPage);
-            if (dataPage.length < 100) {
-                console.log("called site data", data);
-                callback(data);
-            } else {
-                getSites(callback, offset + 100, data);
-            }
+        jsonpCallback: callbackText,
+    });
+
+    request.done(function(res) {
+        var dataPage = res.result.records;
+        console.log("total site records:", res.result.total); 
+        data = data.concat(dataPage);
+        if (dataPage.length < recordLimit) {
+            console.log("called site data", data);
+            callback(data);
+        } else {
+            getData(callback, callbackText, url, offset + recordLimit, data);
         }
     });
+
+    request.fail(function(res) {
+        console.log(res);
+    });
+
 }
-        
-/*************************************
-**************************************
-*************************************/
 
 function processSites(data) {
     featureCollection = [];
@@ -150,9 +162,9 @@ function processSites(data) {
         featureCollection.push(site);
     }
     selectedSitesLayer.addData(featureCollection);
-    $("#cover-wrap").hide();  // hide loader animation
+    $("#cover-wrap").hide();  
 }
-
+        
 /*************************************
 **************************************
 *************************************/
@@ -170,7 +182,7 @@ var siteLayer = L.geoJSON(null, {
             })
         }
     } 
-}).addTo(map); 
+}); 
 
 // load from local file
 omnivore.csv('input/UniqueStations.csv', null, siteLayer);
@@ -216,8 +228,8 @@ selectedSitesLayer.on('click', function(e) {
     });
 });
 
-document.getElementById("all-sites-box").checked="true";
-document.getElementById("selected-sites-box").checked="";
+document.getElementById("all-sites-box").checked="";
+document.getElementById("selected-sites-box").checked="true";
 
 function changeMapView(e) {
     hideSidebarControl();
@@ -252,44 +264,15 @@ function onMarkerClick(e) {
     $("#featureModal").modal("show");
     $("#cover-wrap").show();
 
-    function createURL(limit) {
-        var baseURL = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=7fe7df64-16b5-4866-b34f-1870a94ee607';
-        return baseURL + '&limit=' + limit + '&filters[StationCode]=' + siteClicked; ;
-    }
-
-    var initialURL = createURL(100);
-    console.log("initialURL:", initialURL);
+    var siteDataURL = createURL('64ccaca5-456c-4a72-98d3-f721d6cb806b', siteClicked);
+    console.log("siteDataURL:", siteDataURL);
 
 
     /*************************************
     ******* API CALL FOR SITE DATA *******
     *************************************/
 
-    getRecords(createViz);
-
-    function getRecords(callback, offset, data) {
-        if (typeof offset === 'undefined') { offset = 0; }
-        if (typeof data === 'undefined') { data = []; }
-
-        $.ajax({
-            type: "GET",
-            url: initialURL,
-            data: {offset: offset},
-            dataType: "jsonp",
-            jsonpCallback: 'createViz',
-            success: function(res) {
-                var dataPage = res.result.records;
-                console.log("total records:", res.result.total); 
-                data = data.concat(dataPage);
-                if (dataPage.length < 100) {
-                    console.log("called graph data", data);
-                    callback(data);
-                } else {
-                    getRecords(callback, offset + 100, data);
-                }
-            }
-        });
-    }
+    getData(createViz, 'createViz', siteDataURL);
     
     /*************************************
     **************************************
@@ -300,13 +283,8 @@ function onMarkerClick(e) {
             $("#cover-wrap").hide(); 
             var Data = processData(data);
 
-            function processData(d) {
-                var data = d;
-                // for JSONP API. Parse dates formatted as "2017-09-31 00:00:00"
+            function processData(data) {
                 var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
-                // for JSON local file. Parse dates formattted as "09/14/2012 0:00"
-                // var parseDate = d3.timeParse("%m/%d/%Y %H:%M:%S")
-
                 var indicatorSet = new Set(); 
 
                 data.forEach(function(d) {
@@ -366,7 +344,7 @@ function onMarkerClick(e) {
                         .style("opacity", 0);
 
                     var newData = data.filter(function(data) { 
-                        if ((data.StationCode === siteClicked) && (data.analyte === formAnalyte)) { return d; }
+                        if ((data.StationCode === siteClicked) && (data.analyte === formAnalyte)) { return data; }
                     });
 
                     // need to redo checks

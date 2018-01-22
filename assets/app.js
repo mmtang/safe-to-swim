@@ -454,8 +454,8 @@ function onMarkerClick(e) {
                     console.log("geomeanObjects", geomeanObjects);
 
 
-                    var margin = {top: 10, right: 20, bottom: 90, left: 70},
-                        margin2 = {top: 340, right: 20, bottom: 10, left: 70},
+                    var margin = {top: 10, right: 20, bottom: 90, left: 50},
+                        margin2 = {top: 340, right: 20, bottom: 10, left: 50},
                         width = 862 - margin.left - margin.right,
                         height = 390 - margin.top - margin.bottom,
                         height2 = 370 - margin2.top - margin2.bottom;
@@ -551,11 +551,15 @@ function onMarkerClick(e) {
                             var s = d3.event.selection;
                         });
                     
+                    // y-axis grid
+                    /*
                     focus.append("g")
                         .attr("class", "axis grid")
                         .attr("transform", "translate(0," + height + ")")
                         .call(xgAxis);
+                    */
 
+                    // x-axis grid
                     focus.append("g")
                         .attr("class", "axis grid")
                         .call(ygAxis);
@@ -569,6 +573,7 @@ function onMarkerClick(e) {
                         .attr("class", "yAxis")
                         .call(yAxis);
         
+                    /*
                     focus.append("text")
                         .attr("transform", "rotate(-90)")
                         .attr("y", 0 - 70)
@@ -577,6 +582,7 @@ function onMarkerClick(e) {
                         .style("text-anchor", "middle")
                         .text("cfu / 100 ml")
                         .attr("class", "graphLabel");
+                    */
 
 
                     var gColor = "#ED6874";  // color for geomean elements
@@ -598,7 +604,7 @@ function onMarkerClick(e) {
                                 .attr('x2', width)
                                 .attr('y2', yScale(ecoli_STV));
                             focus.append("text")
-                                .attr("transform", "translate(" + (width - 105) + "," + (yScale(ecoli_STV) - 10) + ")")
+                                .attr("transform", "translate(" + (width - 100) + "," + (yScale(ecoli_STV) - 10) + ")")
                                 .attr("dy", ".35em")
                                 .attr("class","stvLineLabel")
                                 .attr("id", "stvLineLabel")
@@ -617,7 +623,7 @@ function onMarkerClick(e) {
                                 .attr('x2', width)
                                 .attr('y2', yScale(enterococcus_STV));
                             focus.append("text")
-                                .attr("transform", "translate(" + (width - 105) + "," + (yScale(enterococcus_STV) - 10) + ")")
+                                .attr("transform", "translate(" + (width - 100) + "," + (yScale(enterococcus_STV) - 10) + ")")
                                 .attr("dy", ".35em")
                                 .attr("class","stvLineLabel")
                                 .attr("id", "stvLineLabel")
@@ -639,7 +645,7 @@ function onMarkerClick(e) {
                                 .attr('x2', width)
                                 .attr('y2', yScale(ecoli_GM));
                             focus.append("text")
-                                .attr("transform", "translate(" + (width - 105) + "," + (yScale(ecoli_GM) - 10) + ")")
+                                .attr("transform", "translate(" + (width - 91) + "," + (yScale(ecoli_GM) - 10) + ")")
                                 .attr("dy", ".35em")
                                 .attr("class","gmLineLabel")
                                 .attr("id", "gmLineLabel")
@@ -658,7 +664,7 @@ function onMarkerClick(e) {
                                 .attr('x2', width)
                                 .attr('y2', yScale(enterococcus_GM));
                             focus.append("text")
-                                .attr("transform", "translate(" + (width - 98) + "," + (yScale(enterococcus_GM) - 10) + ")")
+                                .attr("transform", "translate(" + (width - 91) + "," + (yScale(enterococcus_GM) - 10) + ")")
                                 .attr("dy", ".35em")
                                 .attr("class","gmLineLabel")
                                 .attr("id", "gmLineLabel")
@@ -767,7 +773,7 @@ function onMarkerClick(e) {
 
 
                     context.append("g")
-                        .attr("class", "axis axis--x")
+                        .attr("class", "xAxis2")
                         .attr("transform", "translate(0," + height2 + ")")
                         .call(xAxis2);
                     
@@ -852,7 +858,7 @@ function onMarkerClick(e) {
                                 .attr("cx", function(d) { return xScale(d.endDate); })
                                 .attr("cy", function(d) { return yScale(d.geomean); });
                         focus.select(".xAxis").call(xAxis);
-                        focus.select(".grid").call(xgAxis);
+                        // focus.select(".grid").call(xgAxis);
                     }
 
                     function bufferExtent(extent, days) {
@@ -909,15 +915,15 @@ function onMarkerClick(e) {
 
 
 function clearGraph() {
-    d3.selectAll(".axis grid").remove();
+    d3.selectAll(".grid line").remove();
     d3.selectAll(".circles").remove();
     d3.selectAll(".gCircles").remove();
     d3.selectAll('.line').remove();
     d3.selectAll(".xAxis").remove();
+    d3.selectAll(".xAxis2").remove();
     d3.selectAll('.yAxis').remove();
     d3.selectAll('.xLabel').remove();
     d3.selectAll('.yLabel').remove();
-    d3.selectAll('.axis').remove();
     d3.selectAll('.dotContext').remove();
     d3.selectAll('.brush').remove();
     d3.selectAll('.gmLineLabel').remove();

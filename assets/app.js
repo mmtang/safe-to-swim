@@ -82,7 +82,7 @@ var sidebarControl = L.Control.extend({
         },
     onAdd: function (map) {
         var container = L.DomUtil.create('div', 'sidebar-control-container');
-        container.innerHTML = '<div id="sidebar-control"><a href="#" id="sidebar-show-btn" onClick="showSidebar()"><button type="button" class="btn btn-xs btn-default pull-left" id="sidebar-show-btn"><i class="fa fa-chevron-left fa-lg"></i></button></a></div>';
+        container.innerHTML = '<div id="sidebar-control"><a href="#" id="sidebar-show-btn" onClick="showSidebar()"><button type="button" class="btn btn-xs btn-default pull-left" id="sidebar-show-btn"><i class="fa fa-chevron-left fa"></i></button></a></div>';
         return container;
     }
 });
@@ -722,7 +722,7 @@ function onMarkerClick(e) {
                                 div.transition()
                                     .duration(100)
                                     .style("opacity", tooltipOpacity);
-                                div.html("<strong>Sample Date: </strong>" + tooltipDate(d.sampleDate) + "<br/ >" + "<strong>Program: </strong>" + d.Program + "<br/ >" + "<strong>Result: </strong>" + d.result + " " + d.Unit)
+                                div.html("Sample Date: " + tooltipDate(d.sampleDate) + "<br/ >" + "Program: " + d.Program + "<br/ >" + "Result: " + d.result + " " + d.Unit)
                                     .style("left", (d3.event.pageX) + "px")
                                     .style("top", (d3.event.pageY) + "px");
                                 d3.select(this)
@@ -756,7 +756,7 @@ function onMarkerClick(e) {
                                 div.transition()
                                     .duration(50)
                                     .style("opacity", tooltipOpacity);
-                                div.html("<strong>Date: </strong>" + tooltipDate(d.endDate) + "<br/ ><strong>Geometric Mean: </strong>" + d.geomean)
+                                div.html("Date: " + tooltipDate(d.endDate) + "<br/ >Geometric Mean: " + d.geomean)
                                     .style("left", (d3.event.pageX) + "px")
                                     .style("top", (d3.event.pageY) + "px");
                                 d3.select(this)

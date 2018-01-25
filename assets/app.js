@@ -169,28 +169,6 @@ function processSites(data) {
 **************************************
 *************************************/
 
-var siteLayer = L.geoJSON(null, {
-    pointToLayer: function (feature, latlng) {
-        return L.circleMarker(latlng, defaultMarker);
-    },
-    onEachFeature: function (feature, layer) {
-        if (feature.properties) {
-            layer.on({
-                click: function (e) {
-                    // $("#feature-title").html(feature.properties.StationName + "<p>Station Code: " + feature.properties.StationCode + "</p>");
-                }
-            })
-        }
-    } 
-}); 
-
-// load from local file
-omnivore.csv('input/UniqueStations.csv', null, siteLayer);
-
-$("#all-sites-box").click( function() {
-    toggleLayer(siteLayer);
- });
-
 $("#selected-sites-box").click( function() {
     toggleLayer(selectedSitesLayer);
 });
@@ -202,16 +180,6 @@ function toggleLayer(layer) {
         map.addLayer(layer);
     }
 }
-
-/* disable clicks on siteLayer
-siteLayer.on('click', function(e) {
-    changeMapView(e);
-    $("#sidebar").show(250, function() {
-        map.invalidateSize(); 
-        onMarkerClick(e);
-    });
-});
-*/
 
 selectedSitesLayer.on('click', function(e) {
     console.log(e);
@@ -228,7 +196,6 @@ selectedSitesLayer.on('click', function(e) {
     });
 });
 
-document.getElementById("all-sites-box").checked="";
 document.getElementById("selected-sites-box").checked="true";
 
 function changeMapView(e) {
@@ -247,7 +214,6 @@ function onMarkerClick(e) {
     var siteClicked = e.layer.feature.properties.StationCode;
 
     // reset layer style
-    siteLayer.setStyle(defaultMarker);
     selectedSitesLayer.setStyle(defaultMarker);
     console.log(e, siteClicked);
 
@@ -584,13 +550,11 @@ function onMarkerClick(e) {
                         .attr("class", "graphLabel");
                     */
 
-
                     var gColor = "#ED6874";  // color for geomean elements
                     var gCircleOpacity = 1;
                     var circleOpacity = 0.7;
                     var tooltipOpacity = 1;
                     var lineOpacity = 1;
-
 
                     switch (formAnalyte) {
                         case ecoli:

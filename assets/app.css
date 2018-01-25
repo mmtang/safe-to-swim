@@ -21,10 +21,10 @@ body {
     font-size: 10px;
     position: relative;
     text-indent: -9999em;
-    border-top: 0.5em solid rgba(255, 255, 255, 0.2);
-    border-right: 0.5em solid rgba(255, 255, 255, 0.2);
-    border-bottom: 0.5em solid rgba(255, 255, 255, 0.2);
-    border-left: 0.5em solid rgba(255, 255, 255, 0.9);
+    border-top: 0.7em solid rgba(255, 255, 255, 0.2);
+    border-right: 0.7em solid rgba(255, 255, 255, 0.2);
+    border-bottom: 0.7em solid rgba(255, 255, 255, 0.2);
+    border-left: 0.7em solid rgba(255, 255, 255, 0.9);
     -webkit-transform: translateZ(0);
     -ms-transform: translateZ(0);
         transform: translateZ(0);
@@ -218,6 +218,11 @@ body {
     color: #FFFFFF;
 }
 
+.navbar-brand img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
 .navbar-collapse.in {
     overflow-y: hidden;
 }
@@ -314,8 +319,8 @@ body {
 
 .dropdown-menu .header  {
     padding: 8px 0 2px 0px;
-    font-size: 1em;
-    font-weight: bold; 
+    font-size: 1.1em;
+    color: #CC662F;
 }
 
 .dropdown-menu {
@@ -325,6 +330,9 @@ body {
     border-top-right-radius: 0;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
+    font-size: 1em;
+    left: -1px;
+    
 }
 
 .data-dot {
@@ -376,6 +384,10 @@ body {
     padding: 0px 15px 15px 15px;
 }
 
+.panel-title {
+    color: #0F4475;
+}
+
 .popupDiv {
     padding: 5px; 
 }
@@ -399,7 +411,7 @@ body {
     background-color: rgba(255, 255, 255, 0.9);
     border: 1px solid rgb(51, 91, 150);
     box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 5px;
-
+    border-radius: 0px;
   }
 
 #sidebar-control {

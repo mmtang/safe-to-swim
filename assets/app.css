@@ -96,13 +96,26 @@ body {
 }
 
 #sidebar-hide-btn {
-    margin-top: -2px;
+    position: relative;
+    width: 24px;
+    height: 50px;
+    left: -54px;
+    top: -7px;
+    background-color: #FFF;
+    border: 1px solid #D4D4D4; 
+    box-shadow: -1px 2px 8px rgba(0,0,0,0.2);
+    border-radius: 0px;
+    outline: 0;
+    z-index: -1;
 }
 
 #sidebar-show-btn {
+    width: 23px;
     height: 50px;
     margin-right: -4px;
-    box-shadow: -1px 1px 5px rgba(0,0,0,0.2);
+    background-color: #FFF;
+    border: 0; 
+    box-shadow: -1px 2px 8px rgba(0,0,0,0.2);
     border-radius: 0px;
 }
 
@@ -131,18 +144,21 @@ body {
 }
 
 .panel-content-header {
-    padding-top: 0px;
+    padding: 3px 15px 15px 15px;
     text-align: center;
     border-bottom: 1px solid #e5e5e5;
 }
 
 #sidebar {
+    position: relative;
+    float: right;
     display: none;
     width: 55%;
     height: 100%;
     max-width: 100%;
-    float: right;
-    border: 1px solid lightgray;
+    box-shadow: 0 6px 12px rgba(0,0,0,.2);
+    border: 0px;
+    z-index: 1000;
 }
 
 #sidebar-arrow {
@@ -168,6 +184,12 @@ body {
     height: 100%;
     position: relative;
     background-color: #fff;
+}
+
+#tile-menu {
+    background-color: rgba(229,229,229,0.3);
+    padding: 5px 10px;
+    border: 1px;
 }
 
 .leaflet-right .leaflet-control {
@@ -325,12 +347,12 @@ body {
 
 .dropdown-menu {
     min-width: 230px;
-    padding: 2px 10px 10px 10px;
+    padding: 2px 11px 14px 10px;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
-    font-size: 1em;
+    font-size: 0.9em;
     left: -1px;
     
 }
@@ -378,10 +400,6 @@ body {
 
 .grid path {
     stroke-width: 0;
-}
-
-.panel-content-header {
-    padding: 0px 15px 15px 15px;
 }
 
 .panel-title {

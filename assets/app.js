@@ -67,14 +67,8 @@ var Esri_WorldTopoMap = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/
 var Esri_WorldImagery = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri'});
 
-var baseLayers = {
-    "Topo": Esri_WorldTopoMap,
-    "World Imagery": Esri_WorldImagery
-    };
 
-var zoomControl = L.control.zoom({ position:'topleft' }).addTo(map);
-
-var layerControl = L.control.layers(baseLayers, null, {collapsed: true, position: 'bottomleft'}).addTo(map);
+var zoomControl = L.control.zoom({ position:'bottomleft' }).addTo(map);
 
 var sidebarControl = L.Control.extend({
         options: {
@@ -109,11 +103,11 @@ var recordLimit = 100;
 var sitesURL = createURL('e1e977d9-7a2a-401d-aa75-8e7e2ddb4e83');
 
 function createURL(resource, site) {
-    var newURL = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
+    var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
     if (typeof site === 'undefined') {
-        return newURL;
+        return url;
     } else {
-        return newURL + '&filters[StationCode]=' + site;
+        return url + '&filters[StationCode]=' + site;
     }
 }
 
@@ -151,6 +145,10 @@ function getData(callback, callbackText, url, offset, data) {
     });
 
 }
+        
+/*************************************
+**************************************
+*************************************/
 
 function processSites(data) {
     featureCollection = [];
@@ -164,14 +162,26 @@ function processSites(data) {
     selectedSitesLayer.addData(featureCollection);
     $("#cover-wrap").hide();  
 }
-        
-/*************************************
-**************************************
-*************************************/
 
 $("#selected-sites-box").click( function() {
     toggleLayer(selectedSitesLayer);
 });
+
+$('#tile-menu input').on('change', function() {
+    var selectedBasemap = $('input[name=tileRadio]:checked').val(); 
+    if (selectedBasemap === "topo") {
+        if (map.hasLayer(Esri_WorldImagery)) {
+            map.removeLayer(Esri_WorldImagery);
+            map.addLayer(Esri_WorldTopoMap);
+        }
+    }
+    if (selectedBasemap === "satellite") {
+        if (map.hasLayer(Esri_WorldTopoMap)) {
+            map.removeLayer(Esri_WorldTopoMap);
+            map.addLayer(Esri_WorldImagery);
+        }
+    }
+ });
 
 function toggleLayer(layer) { 
     if (map.hasLayer(layer)) {
@@ -196,6 +206,7 @@ selectedSitesLayer.on('click', function(e) {
     });
 });
 
+document.getElementById("topo-tile-radio").checked="true";
 document.getElementById("selected-sites-box").checked="true";
 
 function changeMapView(e) {
@@ -451,12 +462,6 @@ function onMarkerClick(e) {
                             .attr("perserveAspectRatio", "xMinYMid")
                             .call(resize);
 
-                        // to register multiple listeners for same event type, 
-                        // you need to add namespace, i.e., 'click.foo'
-                        // necessary if you call invoke this function for multiple svgs
-                        // api docs: https://github.com/mbostock/d3/wiki/Selections#on
-                        d3.select(window).on("resize." + container.attr("id"), resize);
-
                         // get width of container and resize svg to fit it
                         function resize() {
                             var targetWidth = parseInt(container.style("width"));
@@ -517,14 +522,6 @@ function onMarkerClick(e) {
                             var s = d3.event.selection;
                         });
                     
-                    // y-axis grid
-                    /*
-                    focus.append("g")
-                        .attr("class", "axis grid")
-                        .attr("transform", "translate(0," + height + ")")
-                        .call(xgAxis);
-                    */
-
                     // x-axis grid
                     focus.append("g")
                         .attr("class", "axis grid")
@@ -538,17 +535,6 @@ function onMarkerClick(e) {
                     focus.append("g")
                         .attr("class", "yAxis")
                         .call(yAxis);
-        
-                    /*
-                    focus.append("text")
-                        .attr("transform", "rotate(-90)")
-                        .attr("y", 0 - 70)
-                        .attr("x", 0 - (height / 2))
-                        .attr("dy", "1em")
-                        .style("text-anchor", "middle")
-                        .text("cfu / 100 ml")
-                        .attr("class", "graphLabel");
-                    */
 
                     var gColor = "#ED6874";  // color for geomean elements
                     var gCircleOpacity = 1;

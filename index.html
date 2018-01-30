@@ -39,7 +39,12 @@
                         <li class="dropdown">
                             <a class="dropdown-toggle" id="downloadDrop" href="#" role="button" data-toggle="dropdown"><i class="fa fa-list white"></i>&nbsp;&nbsp;Layers <b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                                    <li class="header">Reference</li>
+                                    <li class="header">Basemap</li>
+                                <div id="tile-menu">
+                                    <li><input id="topo-tile-radio" name="tileRadio" value="topo" type="radio" checked>&nbsp;&nbsp;ESRI Topo</li>
+                                    <li><input id="satellite-tile-radio" name="tileRadio" value="satellite" type="radio">&nbsp;&nbsp;ESRI Satellite</li>
+                                </div>
+                                    <li class="header">Reference Layers</li>
                                     <li><input id="counties-box" class="form-check-input" type="checkbox">&nbsp;&nbsp;County Boundaries</li>
                                     <li><input id="rb-boundaries-box" class="form-check-input" type="checkbox">&nbsp;&nbsp;Regional Board Boundaries</li>
                                     <li class="header">Monitoring Sites</li>
@@ -60,13 +65,11 @@
             <div id="sidebar">
             <div class="sidebar-wrapper">
                 <div class="panel panel-default" id="features">
-                <div class="panel-heading">
-                    <h4 class="panel-title" id="panel-title"><button type="button" class="btn btn-xs btn-default pull-left" id="sidebar-hide-btn"><i class="fa fa-chevron-right"></i></button>&nbsp;&nbsp;&nbsp;Site Trends</h3>
-                </div>
                 <div class="panel-body">
                     <div class="row">
                     <div id="panel-content" class="col-xs-12 col-md-12">
                         <div class="panel-content-header">
+                            <button type="button" class="btn btn-xs btn-default pull-left" id="sidebar-hide-btn"><i class="fa fa-chevron-right"></i></button>
                             <h4 class="modal-title text-primary" id="feature-title"></h4>
                         </div>
                         <div id="feature-info" class="panel-body">
@@ -111,7 +114,7 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
         <script src="https://d3js.org/d3.v4.js"></script>
-        <script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.2.0/leaflet-omnivore.min.js'></script>
         <script src='assets/app.js'></script>
 
     </body>
+</html>

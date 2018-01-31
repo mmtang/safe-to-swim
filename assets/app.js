@@ -98,9 +98,9 @@ var selectedSitesLayer = L.geoJson([], {
     }
 }).addTo(map);
 
-var recordLimit = 100;
+var recordLimit = 5000;
 
-var sitesURL = createURL('e1e977d9-7a2a-401d-aa75-8e7e2ddb4e83');
+var sitesURL = createURL('2b68b1ba-474b-4244-88ed-a7733f6ed982');
 
 function createURL(resource, site) {
     var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
@@ -154,10 +154,15 @@ function processSites(data) {
     featureCollection = [];
     for (var i = 0; i < data.length; i++) {
         var site = {};
-        site.type = "Feature";
-        site.geometry = {"type": "Point", "coordinates": [data[i].TargetLongitude, data[i].TargetLatitude]};
-        site.properties = { "StationName": data[i].StationName, "StationCode": data[i].StationCode };
-        featureCollection.push(site);
+        // check for missing properties
+        if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode)) { 
+            continue; 
+        } else {
+            site.type = "Feature";
+            site.geometry = {"type": "Point", "coordinates": [data[i].Longitude, data[i].Latitude]};
+            site.properties = { "StationName": data[i].StationName, "StationCode": data[i].SiteCode };
+            featureCollection.push(site);
+        }
     }
     selectedSitesLayer.addData(featureCollection);
     $("#cover-wrap").hide();  
@@ -241,9 +246,11 @@ function onMarkerClick(e) {
     $("#featureModal").modal("show");
     $("#cover-wrap").show();
 
-    var siteDataURL = createURL('64ccaca5-456c-4a72-98d3-f721d6cb806b', siteClicked);
+    var siteDataURL = createURL('a1bb69a1-9033-4de1-aca4-e1cc141ebae4', siteClicked);
     console.log("siteDataURL:", siteDataURL);
 
+
+    // ***** currently not returning the full dataset *****
 
     /*************************************
     ******* API CALL FOR SITE DATA *******
@@ -255,6 +262,7 @@ function onMarkerClick(e) {
     **************************************
     *************************************/
 
+    
     function createViz(data) {
 
             $("#cover-wrap").hide(); 

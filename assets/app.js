@@ -6,6 +6,9 @@ var map = L.map('map',{
     doubleClickZoom: false
 }); 
 
+// create custom map pane for reference layers
+map.createPane('reference');
+
 $("#about-btn").click(function() {
     $("#aboutModal").modal("show");
     $(".navbar-collapse.in").collapse("hide");
@@ -61,12 +64,37 @@ var ecoli_STV = 320,
     ecoli_GM = 100,
     enterococcus_GM = 30;
 
+// initialize tile layers
 var Esri_WorldTopoMap = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri'}).addTo(map);
 
 var Esri_WorldImagery = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri'});
 
+// initialize reference layers
+var countiesLayer = L.esri.featureLayer({
+    url: 'http://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/CountyBoundaries/MapServer/0',
+    pane: 'reference',
+    style: function (feature) {
+        return {
+            color: '#30A5E7',
+            weight: 3,
+            fillOpacity: 0.1
+        };
+    }
+});
+
+var rbLayer = L.esri.featureLayer({
+    url: 'http://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/rbbound/MapServer/0',
+    pane: 'reference',
+    style: function (feature) {
+        return {
+            color: '#732B8D', 
+            weight: 3,
+            fillOpacity: 0.1
+        };
+    }
+});
 
 var zoomControl = L.control.zoom({ position:'bottomleft' }).addTo(map);
 
@@ -143,7 +171,6 @@ function getData(callback, callbackText, url, offset, data) {
     request.fail(function(res) {
         console.log(res);
     });
-
 }
         
 /*************************************
@@ -172,6 +199,19 @@ $("#selected-sites-box").click( function() {
     toggleLayer(selectedSitesLayer);
 });
 
+// set z-index of reference pane 
+// below overlay pane (z-index: 400) and over tile pane (z-index: 200)
+map.getPane('reference').style.zIndex = 350;
+
+// listeners for toggling reference layers
+$("#counties-box").click( function() {
+    toggleLayer(countiesLayer);
+});
+
+$("#rb-boundaries-box").click( function() {
+    toggleLayer(rbLayer);
+});
+
 $('#tile-menu input').on('change', function() {
     var selectedBasemap = $('input[name=tileRadio]:checked').val(); 
     if (selectedBasemap === "topo") {
@@ -188,7 +228,7 @@ $('#tile-menu input').on('change', function() {
     }
  });
 
-function toggleLayer(layer) { 
+function toggleLayer(layer, customPane) { 
     if (map.hasLayer(layer)) {
         map.removeLayer(layer);
     } else {
@@ -213,6 +253,8 @@ selectedSitesLayer.on('click', function(e) {
 
 document.getElementById("topo-tile-radio").checked="true";
 document.getElementById("selected-sites-box").checked="true";
+document.getElementById("counties-box").checked="";
+document.getElementById("rb-boundaries-box").checked="";
 
 function changeMapView(e) {
     hideSidebarControl();

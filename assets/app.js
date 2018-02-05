@@ -6,60 +6,7 @@ var map = L.map('map',{
     doubleClickZoom: false
 }); 
 
-// create custom map pane for reference layers
-map.createPane('reference');
-
-$("#about-btn").click(function() {
-    $("#aboutModal").modal("show");
-    $(".navbar-collapse.in").collapse("hide");
-    return false;
-});
-
-$("#nav-btn").click(function() {
-    $(".navbar-collapse").collapse("toggle");
-    return false;
-});
-
-$("#sidebar-hide-btn").click(function() {
-    hideSidebar();
-    return false;
-});
-
-function showSidebar () {
-    $("#sidebar").show(200, function() {
-        setTimeout(function() {
-            map.invalidateSize()
-        }, 200); 
-    });
-    hideSidebarControl();
-}
-
-function hideSidebar () {
-    $("#sidebar").hide(200, function() {
-        setTimeout(function() {
-            map.invalidateSize()
-        }, 200); 
-    });
-    showSidebarControl();
-}
-
-function showSidebarControl() {
-    document.getElementById("sidebar-control").style.display = "block";
-}
-
-function hideSidebarControl() {
-    document.getElementById("sidebar-control").style.display = "none";
-}
-
-var ecoli = "E. coli",
-    enterococcus = "Enterococcus",
-    coliformtotal = "Coliform, Total",
-    coliformfecal = "Coliform, Fecal";    
-
-var ecoli_STV = 320,
-    enterococcus_STV = 110,
-    ecoli_GM = 100,
-    enterococcus_GM = 30;
+resetMenu(); 
 
 // initialize tile layers
 var Esri_WorldTopoMap = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
@@ -68,10 +15,16 @@ var Esri_WorldTopoMap = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/
 var Esri_WorldImagery = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri'});
 
+// create custom map pane for reference layers
+map.createPane('refPane');
+// set z-index of reference pane 
+// below overlay pane (z-index: 400) and over tile pane (z-index: 200)
+map.getPane('refPane').style.zIndex = 350;
+
 // initialize reference layers
-var countiesLayer = L.esri.featureLayer({
+var countyLayer = L.esri.featureLayer({
     url: 'http://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/CountyBoundaries/MapServer/0',
-    pane: 'reference',
+    pane: 'refPane',
     style: function (feature) {
         return {
             color: '#30A5E7',
@@ -80,10 +33,9 @@ var countiesLayer = L.esri.featureLayer({
         };
     }
 });
-
 var rbLayer = L.esri.featureLayer({
     url: 'http://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/rbbound/MapServer/0',
-    pane: 'reference',
+    pane: 'refPane',
     style: function (feature) {
         return {
             color: '#732B8D', 
@@ -93,12 +45,10 @@ var rbLayer = L.esri.featureLayer({
     }
 });
 
-var zoomControl = L.control.zoom({ position:'bottomleft' }).addTo(map);
-
+// initialize map control
 var showSidebarMapControl = L.Control.extend({
-        options: {
-            position: 'topright'
-        },
+    options: { position: 'topright'
+    },
     onAdd: function (map) {
         var container = L.DomUtil.create('div', 'sidebar-control-container');
         container.innerHTML = '<div id="sidebar-control"><a href="#" id="sidebar-show-btn" onClick="showSidebar()"><button type="button" class="btn btn-xs btn-default pull-left" id="sidebar-show-btn"><i class="fa fa-chevron-left fa"></i></button></a></div>';
@@ -106,9 +56,12 @@ var showSidebarMapControl = L.Control.extend({
     }
 });
 
+// add map controls
+var zoomControl = L.control.zoom({ position:'bottomleft' }).addTo(map);
 map.addControl(new showSidebarMapControl());
 
-var defaultMarker = {
+// define default style for map markers
+var siteMarker = {
     radius: 5,
     fillColor: "#008080",
     color: "#fff",
@@ -117,15 +70,15 @@ var defaultMarker = {
     fillOpacity: 0.8
 };
 
-var selectedSitesLayer = L.geoJson([], {
+// add site layer
+var siteLayer = L.geoJson([], {
     pointToLayer: function (feature, latlng) {
-        return L.circleMarker(latlng, defaultMarker);
+        return L.circleMarker(latlng, siteMarker);
     }
 }).addTo(map);
 
+// define API request limit
 var recordLimit = 5000;
-
-var sitesURL = createURL('2b68b1ba-474b-4244-88ed-a7733f6ed982');
 
 function createURL(resource, site) {
     var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
@@ -136,13 +89,12 @@ function createURL(resource, site) {
     }
 }
 
-/*************************************
-********* API CALL FOR SITES  ********
-*************************************/
+var siteDataURL = createURL('2b68b1ba-474b-4244-88ed-a7733f6ed982');
 
-getData(processSites, 'processSites', sitesURL);
+// API request for site data
+getData(siteDataURL, processSites, 'processSites');
 
-function getData(callback, callbackText, url, offset, data) {
+function getData(url, callback, callbackText, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
 
@@ -155,13 +107,11 @@ function getData(callback, callbackText, url, offset, data) {
 
     request.done(function(res) {
         var dataPage = res.result.records;
-        console.log("total site records:", res.result.total); 
         data = data.concat(dataPage);
-        if (dataPage.length < recordLimit) {
-            console.log("called site data", data);
+        if (dataPage.length <= recordLimit) {
             callback(data);
         } else {
-            getData(callback, callbackText, url, offset + recordLimit, data);
+            getData(url, callback, callbackText, offset + recordLimit, data);
         }
     });
 
@@ -169,13 +119,9 @@ function getData(callback, callbackText, url, offset, data) {
         console.log(res);
     });
 }
-        
-/*************************************
-**************************************
-*************************************/
 
 function processSites(data) {
-    featureCollection = [];
+    features = [];
     for (var i = 0; i < data.length; i++) {
         var site = {};
         // check for missing properties
@@ -185,45 +131,12 @@ function processSites(data) {
             site.type = "Feature";
             site.geometry = {"type": "Point", "coordinates": [data[i].Longitude, data[i].Latitude]};
             site.properties = { "StationName": data[i].StationName, "StationCode": data[i].SiteCode };
-            featureCollection.push(site);
+            features.push(site);
         }
     }
-    selectedSitesLayer.addData(featureCollection);
+    siteLayer.addData(features);
     $("#cover-wrap").hide();  
 }
-
-$("#selected-sites-box").click( function() {
-    toggleLayer(selectedSitesLayer);
-});
-
-// set z-index of reference pane 
-// below overlay pane (z-index: 400) and over tile pane (z-index: 200)
-map.getPane('reference').style.zIndex = 350;
-
-// listeners for toggling reference layers
-$("#counties-box").click( function() {
-    toggleLayer(countiesLayer);
-});
-
-$("#rb-boundaries-box").click( function() {
-    toggleLayer(rbLayer);
-});
-
-$('#tile-menu input').on('change', function() {
-    var selectedBasemap = $('input[name=tileRadio]:checked').val(); 
-    if (selectedBasemap === "topo") {
-        if (map.hasLayer(Esri_WorldImagery)) {
-            map.removeLayer(Esri_WorldImagery);
-            map.addLayer(Esri_WorldTopoMap);
-        }
-    }
-    if (selectedBasemap === "satellite") {
-        if (map.hasLayer(Esri_WorldTopoMap)) {
-            map.removeLayer(Esri_WorldTopoMap);
-            map.addLayer(Esri_WorldImagery);
-        }
-    }
- });
 
 function toggleLayer(layer, customPane) { 
     if (map.hasLayer(layer)) {
@@ -233,7 +146,7 @@ function toggleLayer(layer, customPane) {
     }
 }
 
-selectedSitesLayer.on('click', function(e) {
+siteLayer.on('click', function(e) {
     console.log(e);
     clearGraph();
     $("#feature-title").html(e.layer.feature.properties.StationName + "<p>Station Code: " + e.layer.feature.properties.StationCode + "</p>");
@@ -243,11 +156,6 @@ selectedSitesLayer.on('click', function(e) {
     }, 350);
     onMarkerClick(e);
 });
-
-document.getElementById("topo-tile-radio").checked="true";
-document.getElementById("selected-sites-box").checked="true";
-document.getElementById("counties-box").checked="";
-document.getElementById("rb-boundaries-box").checked="";
 
 function changeMapView(e) {
     hideSidebarControl();
@@ -261,13 +169,9 @@ function changeMapView(e) {
 }
 
 function onMarkerClick(e) {
-
     var siteClicked = e.layer.feature.properties.StationCode;
-
     // reset layer style
-    selectedSitesLayer.setStyle(defaultMarker);
-    console.log(e, siteClicked);
-
+    siteLayer.setStyle(siteMarker);
     highlightMarker(e);
 
     function highlightMarker(e) {
@@ -276,29 +180,27 @@ function onMarkerClick(e) {
         e.layer.options.weight = 3;
     }
 
-    var content = '<div id="popupMenu"><div id="analyteMenu"></div><div id="filterMenu"></div></div>' + '<div id="siteGraph"><svg width="862" height="390"></div>';
-    $("#feature-info").html(content);
+    var featureContent = '<div id="popupMenu"><div id="analyteContainer"></div><div id="filterContainer"></div></div>' + '<div id="siteGraph"><svg width="862" height="390"></div>';
+    $("#feature-info").html(featureContent);
     $("#featureModal").modal("show");
     // $("#cover-wrap").show();
 
-    var siteDataURL = createURL('64ccaca5-456c-4a72-98d3-f721d6cb806', siteClicked);
-    console.log("siteDataURL:", siteDataURL);
-
+    var trendDataURL = createURL('64ccaca5-456c-4a72-98d3-f721d6cb806b', siteClicked);
 
     // ***** currently not returning the full dataset *****
+    // request trend data
+    getData(trendDataURL, createViz, 'createViz');
 
-    /*************************************
-    ******* API CALL FOR SITE DATA *******
-    *************************************/
-
-    getData(createViz, 'createViz', siteDataURL);
-    
-    /*************************************
-    **************************************
-    *************************************/
-
-    
     function createViz(data) {
+            var ecoli = "E. coli",
+                enterococcus = "Enterococcus",
+                coliformtotal = "Coliform, Total",
+                coliformfecal = "Coliform, Fecal";    
+    
+            var ecoli_STV = 320,
+                enterococcus_STV = 110,
+                ecoli_GM = 100,
+                enterococcus_GM = 30;
 
             $("#cover-wrap").hide(); 
             var Data = processData(data);
@@ -311,49 +213,56 @@ function onMarkerClick(e) {
                     d.sampleDate = parseDate(d.SampleDate);
                     d.result = +d.Result;
                     d.analyte = d.Analyte;
-                    indicatorSet.add(d.analyte);
                     d.resultqualcode = d.ResultQualCode;
                     d.mdl = +d.MDL;
+                    indicatorSet.add(d.analyte);
                 });
 
-                // compatible with IE
+                // convert set object to regular object
+                // changed for IE 11
                 var indicators = [];
-                indicatorSet.forEach(function(v) {
-                    indicators.push(v);
-                });
-                
+                indicatorSet.forEach(function(i) {
+                    indicators.push(i);
+                }); 
                 var defaultAnalyte = indicators[0];
-                console.log("indicators", indicators); 
 
-                d3.select("#analyteSelect").remove();
+                // clear analyte menu
+                $('#analyteMenu').empty();
 
-                // create sidebar menus
                 if (indicators.length > 0) {
-                    // create analyte menu
-                    var analyteSelect = document.createElement("select");
-                    analyteSelect.id = "analyteSelect";
-                    analyteSelect.className = "form-control input-sm";
-                    analyteSelect.innerHTML = "";
+                    // initialize analyte menu
+                    var analyteMenu = document.createElement("select");
+                    analyteMenu.id = "analyteMenu";
+                    analyteMenu.className = "form-control input-sm";
+                    analyteMenu.innerHTML = "";
+                    // populate analyte menu
                     for (var i = 0; i < indicators.length; i++) {
                         var opt = indicators[i];
-                        analyteSelect.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
+                        analyteMenu.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
                     }
-                    var selectDiv = document.getElementById("analyteMenu");
-                    selectDiv.appendChild(analyteSelect);
+                    var analyteContainer = document.getElementById("analyteContainer");
+                    analyteContainer.appendChild(analyteMenu);
                     // create filter menu
-                    var filterSpace = document.getElementById("filterMenu");
-                    var filterContent = '<div id="filterMenu"><div class="form-check"><label><input id="filterData" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filterGeomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
-                    filterSpace.innerHTML += filterContent;
+                    var filterContainer = document.getElementById("filterContainer");
+                    var filterMenu = '<div id="filterMenu"><div class="form-check"><label><input id="filterData" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filterGeomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
+                    filterContainer.innerHTML += filterMenu;
 
                     drawGraph(defaultAnalyte);
+
                 } else {
                     alert("No data for this site.");
                 }
 
-                // listen for analyte change
+                // listener for analyte change
+                $("#analyteMenu").on("change", function() {
+                    drawGraph(this.value);
+                });
+
+                /*
                 d3.selectAll("select").on("change", function() {
                         drawGraph(this.value);
                 });
+                */
 
                 function drawGraph(formAnalyte) {
                     clearGraph(); 
@@ -906,6 +815,84 @@ function onMarkerClick(e) {
 
 } // onMarkerClick()
 
+function showSidebar () {
+    $("#sidebar").show(200, function() {
+        setTimeout(function() {
+            map.invalidateSize()
+        }, 200); 
+    });
+    hideSidebarControl();
+}
+
+function hideSidebar () {
+    $("#sidebar").hide(200, function() {
+        setTimeout(function() {
+            map.invalidateSize()
+        }, 200); 
+    });
+    showSidebarControl();
+}
+
+function showSidebarControl() {
+    document.getElementById("sidebar-control").style.display = "block";
+}
+
+function hideSidebarControl() {
+    document.getElementById("sidebar-control").style.display = "none";
+}
+
+// listeners for sidebar actions
+$("#about-btn").click(function() {
+    $("#aboutModal").modal("show");
+    $(".navbar-collapse.in").collapse("hide");
+    return false;
+});
+
+$("#nav-btn").click(function() {
+    $(".navbar-collapse").collapse("toggle");
+    return false;
+});
+
+$("#sidebar-hide-btn").click(function() {
+    hideSidebar();
+    return false;
+});
+
+// listeners for toggling layers
+$("#sites-box").click( function() {
+    toggleLayer(siteLayer);
+});
+
+$("#counties-box").click( function() {
+    toggleLayer(countyLayer);
+});
+
+$("#rb-boundaries-box").click( function() {
+    toggleLayer(rbLayer);
+});
+
+$('#tile-menu input').on('change', function() {
+    var selectedBasemap = $('input[name=tileRadio]:checked').val(); 
+    if (selectedBasemap === "topo") {
+        if (map.hasLayer(Esri_WorldImagery)) {
+            map.removeLayer(Esri_WorldImagery);
+            map.addLayer(Esri_WorldTopoMap);
+        }
+    }
+    if (selectedBasemap === "satellite") {
+        if (map.hasLayer(Esri_WorldTopoMap)) {
+            map.removeLayer(Esri_WorldTopoMap);
+            map.addLayer(Esri_WorldImagery);
+        }
+    }
+ });
+
+function resetMenu() {
+    document.getElementById("topo-tile-radio").checked="true";
+    document.getElementById("sites-box").checked="true";
+    document.getElementById("counties-box").checked="";
+    document.getElementById("rb-boundaries-box").checked="";
+}
 
 function clearGraph() {
     d3.selectAll(".grid line").remove();

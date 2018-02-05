@@ -20,30 +20,27 @@ $("#nav-btn").click(function() {
     return false;
 });
 
-$("#sidebar-toggle-btn").click(function() {
-    animateSidebar();
-    return false;
-});
-
 $("#sidebar-hide-btn").click(function() {
-    animateSidebar();
+    hideSidebar();
     return false;
 });
 
-function animateSidebar() {
-    $("#sidebar").animate({
-        width: "toggle"
-    }, 250, function() {
-        map.invalidateSize();
-        showSidebarControl();
+function showSidebar () {
+    $("#sidebar").show(200, function() {
+        setTimeout(function() {
+            map.invalidateSize()
+        }, 200); 
     });
+    hideSidebarControl();
 }
 
-function showSidebar() {
-    hideSidebarControl();
-    $("#sidebar").show(250, function() {
-        map.invalidateSize();
+function hideSidebar () {
+    $("#sidebar").hide(200, function() {
+        setTimeout(function() {
+            map.invalidateSize()
+        }, 200); 
     });
+    showSidebarControl();
 }
 
 function showSidebarControl() {
@@ -98,7 +95,7 @@ var rbLayer = L.esri.featureLayer({
 
 var zoomControl = L.control.zoom({ position:'bottomleft' }).addTo(map);
 
-var sidebarControl = L.Control.extend({
+var showSidebarMapControl = L.Control.extend({
         options: {
             position: 'topright'
         },
@@ -109,7 +106,7 @@ var sidebarControl = L.Control.extend({
     }
 });
 
-map.addControl(new sidebarControl());
+map.addControl(new showSidebarMapControl());
 
 var defaultMarker = {
     radius: 5,
@@ -240,15 +237,11 @@ selectedSitesLayer.on('click', function(e) {
     console.log(e);
     clearGraph();
     $("#feature-title").html(e.layer.feature.properties.StationName + "<p>Station Code: " + e.layer.feature.properties.StationCode + "</p>");
-    $("#sidebar").show(200, function() {
-        setTimeout(function() {
-            map.invalidateSize()
-        }, 200); 
-        setTimeout(function() {
-            changeMapView(e);
-        }, 350);
-        onMarkerClick(e);
-    });
+    showSidebar();
+    setTimeout(function() {
+        changeMapView(e);
+    }, 350);
+    onMarkerClick(e);
 });
 
 document.getElementById("topo-tile-radio").checked="true";
@@ -286,9 +279,9 @@ function onMarkerClick(e) {
     var content = '<div id="popupMenu"><div id="analyteMenu"></div><div id="filterMenu"></div></div>' + '<div id="siteGraph"><svg width="862" height="390"></div>';
     $("#feature-info").html(content);
     $("#featureModal").modal("show");
-    $("#cover-wrap").show();
+    // $("#cover-wrap").show();
 
-    var siteDataURL = createURL('a1bb69a1-9033-4de1-aca4-e1cc141ebae4', siteClicked);
+    var siteDataURL = createURL('64ccaca5-456c-4a72-98d3-f721d6cb806', siteClicked);
     console.log("siteDataURL:", siteDataURL);
 
 

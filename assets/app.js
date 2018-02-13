@@ -180,10 +180,10 @@ function onMarkerClick(e) {
         e.layer.options.weight = 3;
     }
 
-    var featureContent = '<div id="popupMenu"><div id="analyteContainer"></div><div id="filterContainer"></div></div>' + '<div id="siteGraph"><svg width="862" height="390"></div>';
+    var featureContent = '<div id="popupMenu"><div id="analyteContainer"></div><div id="filterContainer"></div></div>' + '<div id="siteGraph"><svg width="862" height="390"></div><div class="panel-date"></div>';
     $("#feature-info").html(featureContent);
     $("#featureModal").modal("show");
-    // $("#cover-wrap").show();
+    $("#cover-wrap").show();
 
     var trendDataURL = createURL('64ccaca5-456c-4a72-98d3-f721d6cb806b', siteClicked);
 
@@ -244,7 +244,7 @@ function onMarkerClick(e) {
                     analyteContainer.appendChild(analyteMenu);
                     // create filter menu
                     var filterContainer = document.getElementById("filterContainer");
-                    var filterMenu = '<div id="filterMenu"><div class="form-check"><label><input id="filterData" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filterGeomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
+                    var filterMenu = '<div id="filterMenu"><div class="form-check"><label><input id="filterResult" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filterGeomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
                     filterContainer.innerHTML += filterMenu;
 
                     drawGraph(defaultAnalyte);
@@ -258,36 +258,24 @@ function onMarkerClick(e) {
                     drawGraph(this.value);
                 });
 
-                /*
-                d3.selectAll("select").on("change", function() {
-                        drawGraph(this.value);
-                });
-                */
-
-                function drawGraph(formAnalyte) {
+                function drawGraph(analyte) {
+                    $(".panel-date").empty();
+                    $(".panel-date").append('Drag the handles of the gray box above to change the date view.<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span></p>');
                     clearGraph(); 
                     resetCheckboxes();
-        
-                    var div = d3.select("body").append("div")
-                        .attr("class", "tooltip")
-                        .style("opacity", 0);
 
-                    var newData = data.filter(function(data) { 
-                        if ((data.StationCode === siteClicked) && (data.analyte === formAnalyte)) { return data; }
+                    var graphData = data.filter(function(data) { 
+                        if ((data.StationCode === siteClicked) && (data.analyte === analyte)) { return data; }
                     });
-
-                    // need to redo checks
-                    if (newData.length < 1 ) { window.alert("No data for this indicator."); }
-
-                    newData = newData.sort(function(a, b) { return b.sampleDate - a.sampleDate });  // Sort descending
+                    graphData = graphData.sort(function(a, b) { return b.sampleDate - a.sampleDate });  // sort descending
 
                     // get reference dates
-                    var lastSampleDate = newData[0].sampleDate,
-                        dataArrayLength = newData.length,
-                        earliestDate = newData[dataArrayLength - 1].sampleDate;
+                    var lastSampleDate = graphData[0].sampleDate,
+                        dataArrayLength = graphData.length,
+                        earliestDate = graphData[dataArrayLength - 1].sampleDate;
 
                     var oneDay = (24 * 60 * 60 * 1000);
-                    var geomeanDays = 42;   // offset days: 6 weeks
+                    var SIX_WEEKS = 42;  // 6 weeks * 7 days = 42
                     
                     function getGeomeans(data, startDate, endDate, days) {
                         var geomeansArray = [];
@@ -296,14 +284,13 @@ function onMarkerClick(e) {
                         var stopDate = convertDate(endDate);
                         while(refDate >= stopDate) {
                             var newDate = convertUNIX(refDate);
-                            geomeansArray.push(getGeomeanObject(data, newDate, days));
+                            geomeansArray.push(createGeomeanObject(data, newDate, days));
                             refDate -= oneDay * 7;  // offset is one week
                         }
                         return geomeansArray;
-                    }
-                    
-                    // calculates the geometric mean for a single 6-week date range
-                    function getGeomeanObject(data, startDate, offsetDays) {
+
+                        // calculates the geometric mean for a single 6-week date range
+                    function createGeomeanObject(data, startDate, offsetDays) {
 
                             function getCutoffDate(date, offsetDays) {
                                 var offsetDate = date.getTime() - (oneDay * offsetDays);
@@ -319,7 +306,7 @@ function onMarkerClick(e) {
                                 for (var i = 0; i < data.length; i++) {
                                     var d = data[i];
                                     if ((convertDate(d.sampleDate) <= convertDate(startDate)) && (convertDate(d.sampleDate) >= convertDate(cutoffDate))) {
-                                        if (keepData(d)) {
+                                        if (checkND(d)) {
                                             dateArray.push(d); 
                                         }
                                     }
@@ -328,10 +315,8 @@ function onMarkerClick(e) {
                             }
 
                             // checks whether result is a valid ND (res qual code = "ND" and result is positive)
-                            function keepData(d) {
-                                if ((d.DataQuality === 0) || (d.DataQuality === 4) || (d.DataQuality === 5)) {
-                                    return false;
-                                } else if ((d.resultqualcode === "ND") && (d.result > 0)) {
+                            function checkND(d) {
+                                if ((d.resultqualcode === "ND") && (d.result > 0)) {
                                     return false; 
                                 } else if ((d.resultqualcode === "P") && !(d.result)) {
                                     return false;
@@ -340,17 +325,28 @@ function onMarkerClick(e) {
                                 }
                             }
 
-                            function calculateGeomean(data) {
-                                if (data.length <= 0) {
-                                    console.log("geomean array is empty");
-                                    return null;
+                            // checks whether record has a data quality score of 1-3
+                            function checkQuality(d) {
+                                if ((d.DataQuality === 0) || (d.DataQuality === 4) || (d.DataQuality === 5)) {
+                                    return false;
+                                } else {
+                                    return true;
+                                }
+                            }
+
+                            function gmean(data) {
+                                if (!(data)) { 
+                                    throw new TypeError('gmean()::empty input argument');
+                                }
+                                if (!(data.length)) {
+                                    return null; 
                                 } else {
                                     var product = 1;
                                     data.forEach(function(d) {
-                                        if ((d.resultqualcode === "ND") && (d.mdl > 0)) {
+                                        if (checkND(d) && (d.mdl > 0)) {
                                             product *= d.mdl * 0.5;     // substitute NDs with half of MDL
                                         } else {
-                                            product *= d.result;    // use result for detects
+                                            product *= d.result;    
                                         }
                                     });
                                     return Math.pow(product, (1 / data.length));  // nth root
@@ -366,22 +362,28 @@ function onMarkerClick(e) {
                             } else if (geomeanData.length < 5) {
                                 var geomeanObject = {beginDate: cutoffDate, endDate: startDate, geomean: "NES"}; // not enough samples
                             } else {
-                                var geomean = decimalRound(calculateGeomean(geomeanData), 2);
+                                var geomean = decimalRound(gmean(geomeanData), 2);
                                 var geomeanObject = {beginDate: cutoffDate, endDate: startDate, geomean: geomean};
                             }
                             return geomeanObject;
                     
                     } // getGeomeanObject()
-
+                    }
                     
                     // Compile array of geomean objects
-                    geomeanObjects = getGeomeans(newData, lastSampleDate, earliestDate, geomeanDays);
+                    geomeanObjects = getGeomeans(graphData, lastSampleDate, earliestDate, SIX_WEEKS); 
                     endPoint = geomeanObjects[geomeanObjects.length - 1];
 
                     // Create endpoint geomean object
                     geomeanObjects.push({beginDate: null, endDate: earliestDate, geomean: endPoint.geomean});
                     console.log("geomeanObjects", geomeanObjects);
 
+
+
+                    // initialize graph tooltip
+                    var div = d3.select("body").append("div")
+                        .attr("class", "tooltip")
+                        .style("opacity", 0);
 
                     var margin = {top: 10, right: 20, bottom: 90, left: 50},
                         margin2 = {top: 340, right: 20, bottom: 10, left: 50},
@@ -438,9 +440,10 @@ function onMarkerClick(e) {
                                 .attr("height", height);
 
                     
-                    var currentExtent = d3.extent(newData, function(d) { return d.sampleDate; });  // find extent for x-axis
+                    var currentExtent = d3.extent(graphData, function(d) { return d.sampleDate; });  // find extent for x-axis
+                    console.log("current extent:", currentExtent);
                     var xBufferExtent = bufferExtent(currentExtent, 35);  // buffer x-axis extent so points at end are not cut off
-                    var yMax = d3.max(newData, function(d) { return d.result });  // find max Y data point 
+                    var yMax = d3.max(graphData, function(d) { return d.result });  // find max Y data point 
                     var displayY = compareThresholds(yMax);  // compare threshold values to find max Y for display
 
                     xScale.domain(xBufferExtent);
@@ -448,21 +451,15 @@ function onMarkerClick(e) {
                     xScale2.domain(xScale.domain());
                     yScale2.domain(yScale.domain());
 
-                    var ticksN = 8;  // preferred number of ticks 
-
                     var yAxis = d3.axisLeft(yScale)
                         .tickSize(0)
                         .tickPadding(10);
                     var xAxis = d3.axisBottom(xScale)
-                        .ticks(ticksN)
                         .tickSize(0)
                         .tickPadding(10);
                     var xAxis2 = d3.axisBottom(xScale2)
-                        .ticks(ticksN)
                         .tickSizeOuter(0);
-
                     var xgAxis = d3.axisBottom(xScale)
-                        .ticks(ticksN)
                         .tickSize(-height);
                     var ygAxis = d3.axisLeft(yScale)
                         .tickSize(-width);
@@ -494,7 +491,8 @@ function onMarkerClick(e) {
                     var tooltipOpacity = 1;
                     var lineOpacity = 1;
 
-                    switch (formAnalyte) {
+                    // draw stv threshold line
+                    switch (analyte) {
                         case ecoli:
                             var geomeanThreshold = focus.append('line')
                                 .attr("class", "line")
@@ -535,7 +533,8 @@ function onMarkerClick(e) {
                             break;
                     }
 
-                    switch (formAnalyte) {
+                    // draw gm threshold line
+                    switch (analyte) {
                         case ecoli:
                             var stvThreshold = focus.append('line')
                                 .attr("class", "line")
@@ -577,7 +576,7 @@ function onMarkerClick(e) {
                     }
 
                     // move line labels if overlapping
-                    if ((formAnalyte === enterococcus) || (formAnalyte === ecoli)) {
+                    if ((analyte === enterococcus) || (analyte === ecoli)) {
 
                         var gThresholdLabel = document.getElementById("gmLineLabel"),
                             stvThresholdLabel = document.getElementById("stvLineLabel");
@@ -608,10 +607,10 @@ function onMarkerClick(e) {
                     }
 
                     // add data to main chart
-                    var dots = focus.append("g");
-                        dots.attr("clip-path", "url(#clip)");
-                        dots.selectAll("circle")
-                            .data(newData)
+                    var results = focus.append("g");
+                        results.attr("clip-path", "url(#clip)");
+                        results.selectAll("circle")
+                            .data(graphData)
                             .enter().append("circle")
                             .attr('class', 'circles')
                             .attr("r", 6)
@@ -641,9 +640,9 @@ function onMarkerClick(e) {
                             });
 
                     // add geomean to main chart
-                    var gDots = focus.append("g");
-                        gDots.attr("clip-path", "url(#clip)");
-                        gDots.selectAll("circle")
+                    var geomeans = focus.append("g");
+                        geomeans.attr("clip-path", "url(#clip)");
+                        geomeans.selectAll("circle")
                             .data(geomeanObjects)
                             .enter().append("circle")
                             .filter(function(d) { return (d.geomean !== null) && (d.geomean != "NES") })  // strict not version for null
@@ -679,10 +678,10 @@ function onMarkerClick(e) {
                         .attr("transform", "translate(0," + height2 + ")")
                         .call(xAxis2);
                     
-                    var dots = context.append("g");
-                        dots.attr("clip-path", "url(#clip)");
-                        dots.selectAll("dot")
-                            .data(newData)
+                    var resultsContext = context.append("g");
+                        resultsContext.attr("clip-path", "url(#clip)");
+                        resultsContext.selectAll("dot")
+                            .data(graphData)
                             .enter().append("circle")
                             .attr('class', 'dotContext')
                             .attr("r", 3)
@@ -696,43 +695,37 @@ function onMarkerClick(e) {
                         .call(brush.move, xScale.range());
 
                     // filter listeners
-                    d3.select("#filterData").on("change", toggleData);
+                    d3.select("#filterResult").on("change", toggleResult);
                     d3.select("#filterGeomean").on("change", toggleGeomean);
 
-                    function toggleData() {
+                    function toggleResult() {
                         if(d3.select(this).property("checked")){
                             d3.selectAll(".circles").attr("visibility", "visible");
-                            // include below for toggling off threshold lines 
-                            // d3.selectAll(".stvLine").attr("visibility", "visible"); 
-                            // d3.selectAll(".stvGraphLabel").attr("visibility", "visible");
                         } else {
                             d3.selectAll(".circles").attr("visibility", "hidden");
-                            // include below for toggling off threshold lines 
-                            // d3.selectAll(".stvLine").attr("visibility", "hidden");
-                            // d3.selectAll(".stvGraphLabel").attr("visibility", "hidden");
                         }			
                     }
 
                     function toggleGeomean() {
                         if(d3.select(this).property("checked")){
                             d3.selectAll(".gCircles").attr("visibility", "visible");
-                            // include below for toggling off threshold lines 
-                            // d3.selectAll(".gLine").attr("visibility", "visible");
-                            // d3.selectAll(".gmGraphLabel").attr("visibility", "visible");
                         } else {
                             d3.selectAll(".gCircles").attr("visibility", "hidden");
-                            // include below for toggling off threshold lines 
-                            // d3.selectAll(".gLine").attr("visibility", "hidden");
-                            // d3.selectAll(".gmGraphLabel").attr("visibility", "hidden");
                         }			
                     }
 
                     function brushed() {
-                        var s = d3.event.selection || xScale2.range();
-                        var brushWidth = s[1] - s[0];
+                        // save brush start and end values
+                        var extent = d3.event.selection || xScale2.range();
+                        var brushWidth = extent[1] - extent[0];
+
+                        // update date placeholders
+                        var formatDate = d3.timeFormat("%b %e, %Y");
+                        $(".js-start-date").text(formatDate(xScale2.invert(extent[0])));
+                        $(".js-end-date").text(formatDate(xScale2.invert(extent[1])));
 
                         // manage on-screen graph elements when brush is dragged outside extent
-                        if ((brushWidth === 0) || (s[0] >= width)) { 
+                        if ((brushWidth === 0) || (extent[0] >= width)) { 
                             focus.selectAll(".circles")
                                 .style("opacity", 0);
                             focus.selectAll(".gCircles")
@@ -752,7 +745,7 @@ function onMarkerClick(e) {
                                 .style("opacity", lineOpacity);
                         }
 
-                        xScale.domain(s.map(xScale2.invert, xScale2));
+                        xScale.domain(extent.map(xScale2.invert, xScale2));
                         focus.selectAll(".circles")
                                 .attr("cx", function(d) { return xScale(d.sampleDate); })
                                 .attr("cy", function(d) { return yScale(d.result); });
@@ -760,7 +753,6 @@ function onMarkerClick(e) {
                                 .attr("cx", function(d) { return xScale(d.endDate); })
                                 .attr("cy", function(d) { return yScale(d.geomean); });
                         focus.select(".xAxis").call(xAxis);
-                        // focus.select(".grid").call(xgAxis);
                     }
 
                     function bufferExtent(extent, days) {
@@ -780,7 +772,7 @@ function onMarkerClick(e) {
                         var maxThreshold;
                         // only compare STV because STV > GM
                         // to-do: completely redo this
-                        if (formAnalyte === ecoli) {
+                        if (analyte === ecoli) {
                             if (y < ecoli_STV) {
                                 maxThreshold = ecoli_STV;
                             } else if (y > ecoli_STV) {
@@ -788,7 +780,7 @@ function onMarkerClick(e) {
                             } else {
                                 maxThreshold = ecoli_STV
                             }
-                        } else if (formAnalyte === enterococcus) {
+                        } else if (analyte === enterococcus) {
                             if (y < enterococcus_STV) {
                                 maxThreshold = enterococcus_STV;
                             } else if (y > enterococcus_STV) {
@@ -803,7 +795,7 @@ function onMarkerClick(e) {
                     }
 
                     function resetCheckboxes() {
-                        document.getElementById("filterData").checked="true";
+                        document.getElementById("filterResult").checked="true";
                         document.getElementById("filterGeomean").checked="true";
                     }
 
@@ -871,6 +863,7 @@ $("#rb-boundaries-box").click( function() {
     toggleLayer(rbLayer);
 });
 
+// listener for toggling tile layers
 $('#tile-menu input').on('change', function() {
     var selectedBasemap = $('input[name=tileRadio]:checked').val(); 
     if (selectedBasemap === "topo") {

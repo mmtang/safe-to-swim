@@ -36,9 +36,26 @@ body {
     width: inherit;
 }
 
-.panel-body{
+.panel-body {
     width: inherit;
     padding: 15px ;
+}
+
+.panel-date {
+    margin: 15px 0px;
+    padding: 5px; 
+    text-align: center;
+    font-size: 12px;
+}
+
+.panel-date p {
+    margin: 0px;
+}
+
+.js-start-date,
+.js-end-date {
+    font-weight: bold;
+    color: 
 }
 
 .white {

@@ -23,7 +23,7 @@ map.getPane('refPane').style.zIndex = 350;
 
 // initialize reference layers
 var countyLayer = L.esri.featureLayer({
-    url: 'http://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/CountyBoundaries/MapServer/0',
+    url: 'https://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/CountyBoundaries/MapServer/0',
     pane: 'refPane',
     style: function (feature) {
         return {
@@ -34,7 +34,7 @@ var countyLayer = L.esri.featureLayer({
     }
 });
 var rbLayer = L.esri.featureLayer({
-    url: 'http://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/rbbound/MapServer/0',
+    url: 'https://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/rbbound/MapServer/0',
     pane: 'refPane',
     style: function (feature) {
         return {
@@ -639,21 +639,13 @@ function onMarkerClick(e) {
                                         var widthThreshold = windowWidth * 0.75;
                                         var tooltipWidth = document.getElementById("tooltipD").offsetWidth;
                                         // checks for points positioned in second half of graph and moves the tooltip left
-                                        if (d3.event.pageX > widthThreshold) {
-                                            return d3.event.pageX - tooltipWidth + "px";
-                                        } else {
-                                            return d3.event.pageX + "px";
-                                        }
+                                        return d3.select(this).attr("cx") + "px";
                                     })
                                     .style("top", function() {
                                         var divOffset = document.getElementById("siteGraph").offsetHeight;
                                         var relativePos = divOffset - d3.event.pageY;
                                         var tooltipHeight = document.getElementById("tooltipD").offsetHeight;
-                                        if (relativePos > 0) {
-                                            return d3.event.pageY + "px";
-                                        } else {
-                                            return d3.event.pageY - tooltipHeight + "px";
-                                        }
+                                        return d3.select(this).attr("cy") + "px";
                                     });
                                 d3.select(this)
                                     .attr("fill", "#84c0e3");

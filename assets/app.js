@@ -147,7 +147,7 @@ function toggleLayer(layer, customPane) {
 }
 
 siteLayer.on('click', function(e) {
-    console.log(e);
+
     clearGraph();
     $("#feature-title").html(e.layer.feature.properties.StationName + "<p>Station Code: " + e.layer.feature.properties.StationCode + "</p>");
     showSidebar();
@@ -186,6 +186,7 @@ function onMarkerClick(e) {
     $("#cover-wrap").show();
 
     var trendDataURL = createURL('64ccaca5-456c-4a72-98d3-f721d6cb806b', siteClicked);
+    console.log("trendData:", trendDataURL);
 
     // ***** currently not returning the full dataset *****
     // request trend data
@@ -376,13 +377,17 @@ function onMarkerClick(e) {
 
                     // Create endpoint geomean object
                     geomeanObjects.push({beginDate: null, endDate: earliestDate, geomean: endPoint.geomean});
-                    console.log("geomeanObjects", geomeanObjects);
-
-
 
                     // initialize graph tooltip
-                    var div = d3.select("body").append("div")
+                    var tooltipD = d3.select("body").append("div")
                         .attr("class", "tooltip")
+                        .attr("id", "tooltipD")
+                        .style("opacity", 0);
+
+                    // initialize geomean tooltip
+                    var tooltipG = d3.select("body").append("div")
+                        .attr("class", "tooltip")
+                        .attr("id", "tooltipG")
                         .style("opacity", 0);
 
                     var margin = {top: 10, right: 20, bottom: 90, left: 50},
@@ -416,6 +421,12 @@ function onMarkerClick(e) {
                             .attr("perserveAspectRatio", "xMinYMid")
                             .call(resize);
 
+                        // to register multiple listeners for same event type, 
+-                       // you need to add namespace, i.e., 'click.foo'
+-                       // necessary if you call invoke this function for multiple svgs
+-                       // api docs: https://github.com/mbostock/d3/wiki/Selections#on
+                        d3.select(window).on("resize." + container.attr("id"), resize);
+
                         // get width of container and resize svg to fit it
                         function resize() {
                             var targetWidth = parseInt(container.style("width"));
@@ -441,7 +452,6 @@ function onMarkerClick(e) {
 
                     
                     var currentExtent = d3.extent(graphData, function(d) { return d.sampleDate; });  // find extent for x-axis
-                    console.log("current extent:", currentExtent);
                     var xBufferExtent = bufferExtent(currentExtent, 35);  // buffer x-axis extent so points at end are not cut off
                     var yMax = d3.max(graphData, function(d) { return d.result });  // find max Y data point 
                     var displayY = compareThresholds(yMax);  // compare threshold values to find max Y for display
@@ -620,18 +630,37 @@ function onMarkerClick(e) {
                             .style("opacity", circleOpacity)
                             .on("mouseover", function(d) {
                                 var tooltipDate = d3.timeFormat("%b %e, %Y");  // format date value for tooltip
-                                div.transition()
+                                tooltipA.transition()
                                     .duration(100)
                                     .style("opacity", tooltipOpacity);
-                                div.html("Sample Date: " + tooltipDate(d.sampleDate) + "<br/ >" + "Program: " + d.Program + "<br/ >" + "Result: " + d.result + " " + d.Unit)
-                                    .style("left", (d3.event.pageX) + "px")
-                                    .style("top", (d3.event.pageY) + "px");
+                                tooltipA.html("Sample Date: " + tooltipDate(d.sampleDate) + "<br/ >" + "Program: " + d.Program + "<br/ >" + "Result: " + d.result + " " + d.Unit)
+                                    .style("left", function() {
+                                        var windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+                                        var widthThreshold = windowWidth * 0.75;
+                                        var tooltipWidth = document.getElementById("tooltipD").offsetWidth;
+                                        // checks for points positioned in second half of graph and moves the tooltip left
+                                        if (d3.event.pageX > widthThreshold) {
+                                            return d3.event.pageX - tooltipWidth + "px";
+                                        } else {
+                                            return d3.event.pageX + "px";
+                                        }
+                                    })
+                                    .style("top", function() {
+                                        var divOffset = document.getElementById("siteGraph").offsetHeight;
+                                        var relativePos = divOffset - d3.event.pageY;
+                                        var tooltipHeight = document.getElementById("tooltipD").offsetHeight;
+                                        if (relativePos > 0) {
+                                            return d3.event.pageY + "px";
+                                        } else {
+                                            return d3.event.pageY - tooltipHeight + "px";
+                                        }
+                                    });
                                 d3.select(this)
                                     .attr("fill", "#84c0e3");
 
                             })
                             .on("mouseout", function(d) {
-                                div.transition()
+                                tooltipA.transition()
                                     .duration(100)
                                     .style("opacity", 0);
                                 d3.select(this)
@@ -654,17 +683,36 @@ function onMarkerClick(e) {
                             .style("opacity", gCircleOpacity)
                             .on("mouseover", function(d) {
                                 var tooltipDate = d3.timeFormat("%b %e, %Y");  // format date value for tooltip
-                                div.transition()
+                                tooltipG.transition()
                                     .duration(50)
                                     .style("opacity", tooltipOpacity);
-                                div.html("Date: " + tooltipDate(d.endDate) + "<br/ >Geometric Mean: " + d.geomean)
-                                    .style("left", (d3.event.pageX) + "px")
-                                    .style("top", (d3.event.pageY) + "px");
+                                tooltipG.html("Date: " + tooltipDate(d.endDate) + "<br/ >Geometric Mean: " + d.geomean)
+                                    .style("left", function() {
+                                        var windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+                                        var widthThreshold = windowWidth * 0.75;
+                                        var tooltipWidth = document.getElementById("tooltipG").offsetWidth;
+                                        // checks for points positioned in second half of graph and moves the tooltip left
+                                        if (d3.event.pageX > widthThreshold) {
+                                            return d3.event.pageX - tooltipWidth + "px";
+                                        } else {
+                                            return d3.event.pageX + "px";
+                                        }
+                                    })
+                                    .style("top", function() {
+                                        var divOffset = document.getElementById("siteGraph").offsetHeight;
+                                        var relativePos = divOffset - d3.event.pageY;
+                                        var tooltipHeight = document.getElementById("tooltipG").offsetHeight;
+                                        if (relativePos > 0) {
+                                            return d3.event.pageY + "px";
+                                        } else {
+                                            return d3.event.pageY - tooltipHeight + "px";
+                                        }
+                                    });
                                 d3.select(this)
                                     .attr("fill", "#f2afa4");
                             })
                             .on("mouseout", function(d) {
-                                div.transition()
+                                tooltipG.transition()
                                     .duration(50)
                                     .style("opacity", 0);
                                 d3.select(this)

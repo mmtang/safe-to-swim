@@ -89,7 +89,7 @@ function createURL(resource, site) {
     }
 }
 
-var siteDataURL = createURL('2b68b1ba-474b-4244-88ed-a7733f6ed982');
+var siteDataURL = createURL('ffdbb549-5bb9-4d07-92a4-7fb3f4eb42e6');
 
 // API request for site data
 getData(siteDataURL, processSites, 'processSites');
@@ -135,7 +135,7 @@ function processSites(data) {
         }
     }
     siteLayer.addData(features);
-    $("#cover-wrap").hide();  
+    $(".background-mask").hide();  
 }
 
 function toggleLayer(layer, customPane) { 
@@ -183,9 +183,9 @@ function onMarkerClick(e) {
     var featureContent = '<div id="popupMenu"><div id="analyteContainer"></div><div id="filterContainer"></div></div>' + '<div id="siteGraph"><svg width="862" height="390"></div><div class="panel-date"></div>';
     $("#feature-info").html(featureContent);
     $("#featureModal").modal("show");
-    $("#cover-wrap").show();
+    $(".background-mask").show();
 
-    var trendDataURL = createURL('64ccaca5-456c-4a72-98d3-f721d6cb806b', siteClicked);
+    var trendDataURL = createURL('92efe9a2-075c-419d-8305-3184cc5e55ef', siteClicked);
     console.log("trendData:", trendDataURL);
 
     // ***** currently not returning the full dataset *****
@@ -203,7 +203,7 @@ function onMarkerClick(e) {
                 ecoli_GM = 100,
                 enterococcus_GM = 30;
 
-            $("#cover-wrap").hide(); 
+            $(".background-mask").hide(); 
             var Data = processData(data);
 
             function processData(data) {
@@ -928,22 +928,8 @@ function resetMenu() {
 }
 
 function clearGraph() {
-    d3.selectAll(".grid line").remove();
-    d3.selectAll(".circles").remove();
-    d3.selectAll(".gCircles").remove();
-    d3.selectAll('.line').remove();
-    d3.selectAll(".xAxis").remove();
-    d3.selectAll(".xAxis2").remove();
-    d3.selectAll('.yAxis').remove();
-    d3.selectAll('.xLabel').remove();
-    d3.selectAll('.yLabel').remove();
-    d3.selectAll('.dotContext').remove();
-    d3.selectAll('.brush').remove();
-    d3.selectAll('.gmLineLabel').remove();
-    d3.selectAll('.stvLineLabel').remove();
-    d3.selectAll('.svgLegend').remove();
-    d3.selectAll('.legend').remove();
-    d3.selectAll('.graphLabel').remove();
+    var svg = d3.select("svg");
+    svg.selectAll("*").remove();
 }
 
 function decimalRound(x, n) {

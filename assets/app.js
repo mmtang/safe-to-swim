@@ -77,6 +77,9 @@ var siteLayer = L.geoJson([], {
     }
 }).addTo(map);
 
+
+var isSidebarOpen = false;
+
 // define API request limit
 var recordLimit = 5000;
 
@@ -146,6 +149,16 @@ function toggleLayer(layer, customPane) {
     }
 }
 
+function getWidth() {
+    return Math.max(
+      document.body.scrollWidth,
+      document.documentElement.scrollWidth,
+      document.body.offsetWidth,
+      document.documentElement.offsetWidth,
+      document.documentElement.clientWidth
+    );
+}
+
 siteLayer.on('click', function(e) {
 
     clearGraph();
@@ -183,7 +196,7 @@ function onMarkerClick(e) {
     var featureContent = '<div id="popupMenu"><div id="analyteContainer"></div><div id="filterContainer"></div></div>' + '<div id="siteGraph"><svg width="862" height="390"></div><div class="panel-date"></div>';
     $("#feature-info").html(featureContent);
     $("#featureModal").modal("show");
-    $(".background-mask").show();
+    // $(".background-mask").show();
 
     var trendDataURL = createURL('92efe9a2-075c-419d-8305-3184cc5e55ef', siteClicked);
     console.log("trendData:", trendDataURL);
@@ -290,7 +303,7 @@ function onMarkerClick(e) {
                         }
                         return geomeansArray;
 
-                        // calculates the geometric mean for a single 6-week date range
+                    // calculates the geometric mean for a single 6-week date range
                     function createGeomeanObject(data, startDate, offsetDays) {
 
                             function getCutoffDate(date, offsetDays) {
@@ -847,8 +860,16 @@ function onMarkerClick(e) {
 
 } // onMarkerClick()
 
-function showSidebar () {
-    $("#sidebar").show(200, function() {
+function showSidebar() {
+    var windowWidth = getWidth();
+    if (windowWidth <= 767) {  // base mobile layout max width = 767 px
+        document.getElementById('mobile-menu-btn').style.display = 'none';
+        document.getElementById('mobile-close-btn').style.display = 'inline';
+        var animationTime = 0;
+    } else {
+        var animationTime = 200;
+    }
+    $("#sidebar").show(animationTime, function() {
         setTimeout(function() {
             map.invalidateSize()
         }, 200); 
@@ -856,8 +877,17 @@ function showSidebar () {
     hideSidebarControl();
 }
 
-function hideSidebar () {
-    $("#sidebar").hide(200, function() {
+function hideSidebar() {
+    isSidebarOpen = false;
+    var windowWidth = getWidth();
+    if (windowWidth <= 767) {  // base mobile layout max width = 767 px
+        document.getElementById('mobile-menu-btn').style.display = 'inline';
+        document.getElementById('mobile-close-btn').style.display = 'none';
+        var animationTime = 0;
+    } else {
+        var animationTime = 200;
+    }
+    $("#sidebar").hide(animationTime, function() {
         setTimeout(function() {
             map.invalidateSize()
         }, 200); 
@@ -889,6 +919,11 @@ $("#sidebar-hide-btn").click(function() {
     hideSidebar();
     return false;
 });
+
+$("#mobile-close-btn").click(function() {
+    hideSidebar();
+    return false;
+})
 
 // listeners for toggling layers
 $("#sites-box").click( function() {

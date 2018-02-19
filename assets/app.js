@@ -81,7 +81,7 @@ var siteLayer = L.geoJson([], {
 var isSidebarOpen = false;
 
 // define API request limit
-var recordLimit = 5000;
+var recordLimit = 1000;
 
 function createURL(resource, site) {
     var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
@@ -196,16 +196,16 @@ function onMarkerClick(e) {
     var featureContent = '<div id="popupMenu"><div id="analyteContainer"></div><div id="filterContainer"></div></div>' + '<div id="siteGraph"><svg width="862" height="390"></div><div class="panel-date"></div>';
     $("#feature-info").html(featureContent);
     $("#featureModal").modal("show");
-    // $(".background-mask").show();
+    $(".background-mask").show();
 
     var trendDataURL = createURL('92efe9a2-075c-419d-8305-3184cc5e55ef', siteClicked);
     console.log("trendData:", trendDataURL);
 
-    // ***** currently not returning the full dataset *****
     // request trend data
     getData(trendDataURL, createViz, 'createViz');
 
     function createViz(data) {
+            console.log("data:", data);
             var ecoli = "E. coli",
                 enterococcus = "Enterococcus",
                 coliformtotal = "Coliform, Total",
@@ -224,11 +224,11 @@ function onMarkerClick(e) {
                 var indicatorSet = new Set(); 
 
                 data.forEach(function(d) {
-                    d.sampleDate = parseDate(d.SampleDate);
-                    d.result = +d.Result;
-                    d.analyte = d.Analyte;
-                    d.resultqualcode = d.ResultQualCode;
-                    d.mdl = +d.MDL;
+                    d.sampleDate = parseDate(d.sampledate);
+                    d.result = +d.result;
+                    d.analyte = d.analyte;
+                    d.resultqualcode = d.resultqualcode;
+                    d.mdl = +d.mdl;
                     indicatorSet.add(d.analyte);
                 });
 
@@ -243,7 +243,7 @@ function onMarkerClick(e) {
                 // clear analyte menu
                 $('#analyteMenu').empty();
 
-                if (indicators.length > 0) {
+                if (indicators.length > 0 || data.length === 0) {
                     // initialize analyte menu
                     var analyteMenu = document.createElement("select");
                     analyteMenu.id = "analyteMenu";
@@ -279,7 +279,7 @@ function onMarkerClick(e) {
                     resetCheckboxes();
 
                     var graphData = data.filter(function(data) { 
-                        if ((data.StationCode === siteClicked) && (data.analyte === analyte)) { return data; }
+                        if ((data.stationcode === siteClicked) && (data.analyte === analyte)) { return data; }
                     });
                     graphData = graphData.sort(function(a, b) { return b.sampleDate - a.sampleDate });  // sort descending
 
@@ -643,29 +643,38 @@ function onMarkerClick(e) {
                             .style("opacity", circleOpacity)
                             .on("mouseover", function(d) {
                                 var tooltipDate = d3.timeFormat("%b %e, %Y");  // format date value for tooltip
-                                tooltipA.transition()
+                                tooltipD.transition()
                                     .duration(100)
                                     .style("opacity", tooltipOpacity);
-                                tooltipA.html("Sample Date: " + tooltipDate(d.sampleDate) + "<br/ >" + "Program: " + d.Program + "<br/ >" + "Result: " + d.result + " " + d.Unit)
+                                tooltipD.html("Sample Date: " + tooltipDate(d.sampleDate) + "<br/ >" + "Program: " + d.program + "<br/ >" + "Result: " + d.result + " " + d.unit)
                                     .style("left", function() {
                                         var windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
                                         var widthThreshold = windowWidth * 0.75;
                                         var tooltipWidth = document.getElementById("tooltipD").offsetWidth;
                                         // checks for points positioned in second half of graph and moves the tooltip left
-                                        return d3.select(this).attr("cx") + "px";
+                                        if (d3.event.pageX > widthThreshold) {
+                                            return d3.event.pageX - tooltipWidth + "px";
+                                        } else {
+                                            return d3.event.pageX + "px";
+                                        }
                                     })
                                     .style("top", function() {
                                         var divOffset = document.getElementById("siteGraph").offsetHeight;
                                         var relativePos = divOffset - d3.event.pageY;
                                         var tooltipHeight = document.getElementById("tooltipD").offsetHeight;
-                                        return d3.select(this).attr("cy") + "px";
+                                        // checks for tooltip positioned in approx. top half of graph
+                                        if (relativePos > 0) {
+                                            return d3.event.pageY + "px";
+                                        } else {
+                                            return d3.event.pageY - tooltipHeight + "px";
+                                        }
                                     });
                                 d3.select(this)
                                     .attr("fill", "#84c0e3");
 
                             })
                             .on("mouseout", function(d) {
-                                tooltipA.transition()
+                                tooltipD.transition()
                                     .duration(100)
                                     .style("opacity", 0);
                                 d3.select(this)
@@ -707,6 +716,7 @@ function onMarkerClick(e) {
                                         var divOffset = document.getElementById("siteGraph").offsetHeight;
                                         var relativePos = divOffset - d3.event.pageY;
                                         var tooltipHeight = document.getElementById("tooltipG").offsetHeight;
+                                        // checks for tooltip positioned in approx. top half of graph
                                         if (relativePos > 0) {
                                             return d3.event.pageY + "px";
                                         } else {

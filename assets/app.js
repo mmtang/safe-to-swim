@@ -1,3 +1,6 @@
+
+
+
 var map = L.map('map',{ 
     center: [37.4050, -119.0179], 
     zoom: 6, 
@@ -77,7 +80,7 @@ var siteLayer = L.geoJson([], {
 }).addTo(map);
 
 // define API request limit
-var recordLimit = 1000;
+var recordLimit = 5000;
 
 function createURL(resource, site) {
     var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
@@ -94,6 +97,7 @@ var siteDataURL = createURL('ffdbb549-5bb9-4d07-92a4-7fb3f4eb42e6');
 getData(siteDataURL, processSites, 'processSites');
 
 function getData(url, callback, callbackText, offset, data) {
+    console.log(url);
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
 
@@ -107,7 +111,9 @@ function getData(url, callback, callbackText, offset, data) {
     request.done(function(res) {
         var dataPage = res.result.records;
         data = data.concat(dataPage);
-        if (dataPage.length <= recordLimit) {
+        console.log(dataPage.length);
+        console.log(recordLimit);
+        if (dataPage.length < recordLimit) {
             callback(data);
         } else {
             getData(url, callback, callbackText, offset + recordLimit, data);
@@ -116,10 +122,11 @@ function getData(url, callback, callbackText, offset, data) {
 
     request.fail(function(res) {
         console.log(res);
+        alert("Data failed to load.");
     });
 }
 
-function processSites(data) {
+function processSites(data, callback) {
     features = [];
     for (var i = 0; i < data.length; i++) {
         var site = {};
@@ -134,7 +141,9 @@ function processSites(data) {
         }
     }
     siteLayer.addData(features);
-    $(".background-mask").hide();  
+    setTimeout(function() {
+        $(".background-mask").hide();  
+    }, 1000);
 }
 
 function toggleLayer(layer, customPane) { 
@@ -195,10 +204,8 @@ function onMarkerClick(e) {
 
     var trendDataURL = createURL('23a59a2c-4a95-456f-b39e-41446bdc5724', siteClicked);
 
-    // ***** currently not returning the full dataset *****
     // request trend data
     getData(trendDataURL, createViz, 'createViz');
-    console.log(trendDataURL);
 
     function createViz(data) {
             var ecoli = "E. coli",
@@ -210,6 +217,16 @@ function onMarkerClick(e) {
                 enterococcus_STV = 110,
                 ecoli_GM = 100,
                 enterococcus_GM = 30;
+
+            var dataQuality0 = "MetaData, QC record",
+                dataQuality1 = "Passed QC"
+                dataQuality2 = "Some review needed",
+                dataQuality3 = "Spatial Accuracy Unknown",
+                dataQuality4 = "Extensive review needed",
+                dataQuality5 = "Unknown data quality",
+                dataQuality6 = "Reject record",
+                dataQuality7 = "Error";
+
 
             $(".background-mask").hide(); 
             var Data = processData(data);
@@ -322,6 +339,7 @@ function onMarkerClick(e) {
                                         }
                                     }
                                 };
+                                console.log("dateArray", dateArray);
                                 return dateArray;
                             }
 
@@ -338,7 +356,7 @@ function onMarkerClick(e) {
 
                             // checks whether record has a data quality score of 1-3
                             function checkQuality(d) {
-                                if ((d.DataQuality === 0) || (d.DataQuality === 4) || (d.DataQuality === 5)) {
+                                if ((d.DataQuality === dataQuality0) || (d.DataQuality === dataQuality4) || (d.DataQuality === dataQuality5)) {
                                     return false;
                                 } else {
                                     return true;
@@ -383,6 +401,7 @@ function onMarkerClick(e) {
                     
                     // Compile array of geomean objects
                     geomeanObjects = getGeomeans(graphData, lastSampleDate, earliestDate, SIX_WEEKS); 
+                    console.log("geomeanObjects", geomeanObjects);
                     endPoint = geomeanObjects[geomeanObjects.length - 1];
 
                     // Create endpoint geomean object

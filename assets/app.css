@@ -428,7 +428,7 @@ body {
     font-size: 11px;
     border-radius: 6px;
     pointer-events: none;
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: rgba(255, 255, 255, 0.9);
     box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 5px;
     border-radius: 0px;
 }
@@ -438,7 +438,7 @@ body {
 }
 
 #tooltipG {
-    border: 1px solid rgba(237, 104, 116, 0.6);
+    border: 1px solid rgba(237, 104, 116, 0.8);
 }
 
 #sidebar-control {

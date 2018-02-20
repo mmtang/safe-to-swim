@@ -1,5 +1,5 @@
 var map = L.map('map',{ 
-    center: [37.4050, -119.2179], 
+    center: [37.4050, -119.0179], 
     zoom: 6, 
     preferCanvas: true,
     zoomControl: false,
@@ -17,8 +17,7 @@ var Esri_WorldImagery = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/
 
 // create custom map pane for reference layers
 map.createPane('refPane');
-// set z-index of reference pane 
-// below overlay pane (z-index: 400) and over tile pane (z-index: 200)
+// set z-index of reference pane below overlay pane (400) and over tile pane (200)
 map.getPane('refPane').style.zIndex = 350;
 
 // initialize reference layers
@@ -78,7 +77,7 @@ var siteLayer = L.geoJson([], {
 }).addTo(map);
 
 // define API request limit
-var recordLimit = 5000;
+var recordLimit = 1000;
 
 function createURL(resource, site) {
     var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
@@ -660,10 +659,11 @@ function onMarkerClick(e) {
                                         var divOffset = document.getElementById("siteGraph").offsetHeight;
                                         var relativePos = divOffset - d3.event.pageY;
                                         var tooltipHeight = document.getElementById("tooltipD").offsetHeight;
-                                        if (relativePos > 0) {
-                                            return d3.event.pageY + "px";
-                                        } else {
+                                        // checks for points positioned in lower half of graph and moves the tooltip up
+                                        if (relativePos < 0) {
                                             return d3.event.pageY - tooltipHeight + "px";
+                                        } else {
+                                            return d3.event.pageY + "px";
                                         }
                                     });
                                 d3.select(this)
@@ -713,10 +713,11 @@ function onMarkerClick(e) {
                                         var divOffset = document.getElementById("siteGraph").offsetHeight;
                                         var relativePos = divOffset - d3.event.pageY;
                                         var tooltipHeight = document.getElementById("tooltipG").offsetHeight;
-                                        if (relativePos > 0) {
-                                            return d3.event.pageY + "px";
-                                        } else {
+                                        // checks for points positioned in lower half of graph and moves the tooltip up
+                                        if (relativePos < 0) {
                                             return d3.event.pageY - tooltipHeight + "px";
+                                        } else {
+                                            return d3.event.pageY + "px";
                                         }
                                     });
                                 d3.select(this)
@@ -868,7 +869,7 @@ function onMarkerClick(e) {
 
 function showSidebar() {
     var windowWidth = getWidth();
-    if (windowWidth <= 767) {  // base mobile layout max width = 767 px
+    if (windowWidth <= 767) {  // for mobile layout
         document.getElementById('mobile-menu-btn').style.display = 'none';
         document.getElementById('mobile-close-btn').style.display = 'inline';
         var animationTime = 0;
@@ -886,7 +887,7 @@ function showSidebar() {
 function hideSidebar() {
     isSidebarOpen = false;
     var windowWidth = getWidth();
-    if (windowWidth <= 767) {  // base mobile layout max width = 767 px
+    if (windowWidth <= 767) {  // for mobile layout
         document.getElementById('mobile-menu-btn').style.display = 'inline';
         document.getElementById('mobile-close-btn').style.display = 'none';
         var animationTime = 0;

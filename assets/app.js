@@ -1,5 +1,5 @@
 var map = L.map('map',{ 
-    center: [37.4050, -119.4179], 
+    center: [37.4050, -119.2179], 
     zoom: 6, 
     preferCanvas: true,
     zoomControl: false,
@@ -51,7 +51,7 @@ var showSidebarMapControl = L.Control.extend({
     },
     onAdd: function (map) {
         var container = L.DomUtil.create('div', 'sidebar-control-container');
-        container.innerHTML = '<div id="sidebar-control"><a href="#" id="sidebar-show-btn" onClick="showSidebar()"><button type="button" class="btn btn-xs btn-default pull-left" id="sidebar-show-btn"><i class="fa fa-chevron-left fa"></i></button></a></div>';
+        container.innerHTML = '<div id="sidebar-control"><a href="#" onClick="showSidebar()"><button type="button" class="btn btn-xs btn-default pull-left" id="sidebar-show-btn"><i class="fa fa-chevron-left fa"></i></button></a></div>';
         return container;
     }
 });
@@ -77,11 +77,8 @@ var siteLayer = L.geoJson([], {
     }
 }).addTo(map);
 
-
-var isSidebarOpen = false;
-
 // define API request limit
-var recordLimit = 1000;
+var recordLimit = 5000;
 
 function createURL(resource, site) {
     var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
@@ -160,13 +157,12 @@ function getWidth() {
 }
 
 siteLayer.on('click', function(e) {
-
     clearGraph();
     $("#feature-title").html(e.layer.feature.properties.StationName + "<p>Station Code: " + e.layer.feature.properties.StationCode + "</p>");
     showSidebar();
     setTimeout(function() {
         changeMapView(e);
-    }, 350);
+    }, 400);
     onMarkerClick(e);
 });
 
@@ -198,14 +194,14 @@ function onMarkerClick(e) {
     $("#featureModal").modal("show");
     $(".background-mask").show();
 
-    var trendDataURL = createURL('92efe9a2-075c-419d-8305-3184cc5e55ef', siteClicked);
-    console.log("trendData:", trendDataURL);
+    var trendDataURL = createURL('23a59a2c-4a95-456f-b39e-41446bdc5724', siteClicked);
 
+    // ***** currently not returning the full dataset *****
     // request trend data
     getData(trendDataURL, createViz, 'createViz');
+    console.log(trendDataURL);
 
     function createViz(data) {
-            console.log("data:", data);
             var ecoli = "E. coli",
                 enterococcus = "Enterococcus",
                 coliformtotal = "Coliform, Total",
@@ -223,12 +219,14 @@ function onMarkerClick(e) {
                 var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
                 var indicatorSet = new Set(); 
 
+                console.log("data:", data);
+
                 data.forEach(function(d) {
-                    d.sampleDate = parseDate(d.sampledate);
-                    d.result = +d.result;
-                    d.analyte = d.analyte;
-                    d.resultqualcode = d.resultqualcode;
-                    d.mdl = +d.mdl;
+                    d.sampleDate = parseDate(d.SampleDate);
+                    d.result = +d.Result;
+                    d.analyte = d.Analyte;
+                    d.resultqualcode = d.ResultQualCode;
+                    d.mdl = +d.MDL;
                     indicatorSet.add(d.analyte);
                 });
 
@@ -279,7 +277,7 @@ function onMarkerClick(e) {
                     resetCheckboxes();
 
                     var graphData = data.filter(function(data) { 
-                        if ((data.stationcode === siteClicked) && (data.analyte === analyte)) { return data; }
+                        if ((data.StationCode === siteClicked) && (data.analyte === analyte)) { return data; }
                     });
                     graphData = graphData.sort(function(a, b) { return b.sampleDate - a.sampleDate });  // sort descending
 
@@ -381,7 +379,7 @@ function onMarkerClick(e) {
                             }
                             return geomeanObject;
                     
-                    } // getGeomeanObject()
+                        } // getGeomeanObject()
                     }
                     
                     // Compile array of geomean objects
@@ -646,7 +644,7 @@ function onMarkerClick(e) {
                                 tooltipD.transition()
                                     .duration(100)
                                     .style("opacity", tooltipOpacity);
-                                tooltipD.html("Sample Date: " + tooltipDate(d.sampleDate) + "<br/ >" + "Program: " + d.program + "<br/ >" + "Result: " + d.result + " " + d.unit)
+                                tooltipD.html("Sample Date: " + tooltipDate(d.sampleDate) + "<br/ >" + "Program: " + d.Program + "<br/ >" + "Result: " + d.result + " " + d.Unit)
                                     .style("left", function() {
                                         var windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
                                         var widthThreshold = windowWidth * 0.75;
@@ -662,7 +660,6 @@ function onMarkerClick(e) {
                                         var divOffset = document.getElementById("siteGraph").offsetHeight;
                                         var relativePos = divOffset - d3.event.pageY;
                                         var tooltipHeight = document.getElementById("tooltipD").offsetHeight;
-                                        // checks for tooltip positioned in approx. top half of graph
                                         if (relativePos > 0) {
                                             return d3.event.pageY + "px";
                                         } else {
@@ -716,7 +713,6 @@ function onMarkerClick(e) {
                                         var divOffset = document.getElementById("siteGraph").offsetHeight;
                                         var relativePos = divOffset - d3.event.pageY;
                                         var tooltipHeight = document.getElementById("tooltipG").offsetHeight;
-                                        // checks for tooltip positioned in approx. top half of graph
                                         if (relativePos > 0) {
                                             return d3.event.pageY + "px";
                                         } else {
@@ -881,8 +877,8 @@ function showSidebar() {
     }
     $("#sidebar").show(animationTime, function() {
         setTimeout(function() {
-            map.invalidateSize()
-        }, 200); 
+            map.invalidateSize();
+        }, 400); 
     });
     hideSidebarControl();
 }
@@ -900,7 +896,7 @@ function hideSidebar() {
     $("#sidebar").hide(animationTime, function() {
         setTimeout(function() {
             map.invalidateSize()
-        }, 200); 
+        }, 400); 
     });
     showSidebarControl();
 }

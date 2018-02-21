@@ -150,6 +150,7 @@ function processSites(data, callback) {
     siteLayer.addData(features);
     setTimeout(function() {
         $(".background-mask").hide();  
+        $("#aboutModal").modal('show');
     }, 1000);
 }
 

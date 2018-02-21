@@ -254,6 +254,11 @@ body {
     font-size: 11px;
 }
 
+.warning {
+    color: red;
+    background-color: rgba(229,229,229,0.3);
+}
+
 .navbar-inverse {
     background-color: #0F4475;
     border-color: #0F4475;

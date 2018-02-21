@@ -495,7 +495,7 @@ body {
 }
 
 .xAxis, .yAxis, .xAxis2 {
-    font-family: 'Roboto Condensed', sans-serif;
+    /* font-family: 'Roboto Condensed', sans-serif; */
 }
 
 .yLabel {
@@ -518,7 +518,7 @@ rect.pane {
         position: relative;
         float: right;
         display: none;
-        width: 55%;
+        width: 66%;
         height: 100%;
         max-width: 100%;
     }

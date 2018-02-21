@@ -651,7 +651,7 @@ function onMarkerClick(e) {
                                 tooltipD.html("Sample Date: " + tooltipDate(d.sampleDate) + "<br/ >" + "Program: " + d.Program + "<br/ >" + "Result: " + d.result + " " + d.Unit)
                                     .style("left", function() {
                                         var windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-                                        var widthThreshold = windowWidth * 0.75;
+                                        var widthThreshold = windowWidth * 0.68;
                                         var tooltipWidth = document.getElementById("tooltipD").offsetWidth;
                                         // checks for points positioned in second half of graph and moves the tooltip left
                                         if (d3.event.pageX > widthThreshold) {
@@ -705,7 +705,7 @@ function onMarkerClick(e) {
                                 tooltipG.html("Date: " + tooltipDate(d.endDate) + "<br/ >Geometric Mean: " + d.geomean)
                                     .style("left", function() {
                                         var windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-                                        var widthThreshold = windowWidth * 0.75;
+                                        var widthThreshold = windowWidth * 0.68;
                                         var tooltipWidth = document.getElementById("tooltipG").offsetWidth;
                                         // checks for points positioned in second half of graph and moves the tooltip left
                                         if (d3.event.pageX > widthThreshold) {
@@ -979,6 +979,7 @@ function resetMenu() {
 function clearGraph() {
     var svg = d3.select("svg");
     svg.selectAll("*").remove();
+    d3.selectAll(".tooltip").remove();
 }
 
 function decimalRound(x, n) {

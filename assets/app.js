@@ -1,4 +1,14 @@
+/*
 
+   Author: 
+
+   Michelle Tang
+   Office of Information Management and Analysis
+   State Water Resources Control Board
+
+   https://github.com/mmtang/safe-to-swim/
+
+*/
 
 
 var map = L.map('map',{ 
@@ -97,7 +107,6 @@ var siteDataURL = createURL('ffdbb549-5bb9-4d07-92a4-7fb3f4eb42e6');
 getData(siteDataURL, processSites, 'processSites');
 
 function getData(url, callback, callbackText, offset, data) {
-    console.log(url);
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
 
@@ -111,8 +120,6 @@ function getData(url, callback, callbackText, offset, data) {
     request.done(function(res) {
         var dataPage = res.result.records;
         data = data.concat(dataPage);
-        console.log(dataPage.length);
-        console.log(recordLimit);
         if (dataPage.length < recordLimit) {
             callback(data);
         } else {
@@ -207,7 +214,7 @@ function onMarkerClick(e) {
     // request trend data
     getData(trendDataURL, createViz, 'createViz');
 
-    function createViz(data) {
+    function createViz(initialData) {
             var ecoli = "E. coli",
                 enterococcus = "Enterococcus",
                 coliformtotal = "Coliform, Total",
@@ -227,15 +234,23 @@ function onMarkerClick(e) {
                 dataQuality6 = "Reject record",
                 dataQuality7 = "Error";
 
+            /* removed data quality filtering for now
+            var qualityData = initialData.filter(d => {
+                return (d.DataQuality === dataQuality1) || (d.DataQuality === dataQuality2) || (d.DataQuality === dataQuality3);
+            });
+            */
 
-            $(".background-mask").hide(); 
-            var Data = processData(data);
+            if (initialData.length > 0) {
+                processData(initialData);
+                $(".background-mask").hide(); 
+            } else {
+                $(".background-mask").hide(); 
+                alert("No data for selected site.");
+            }
 
             function processData(data) {
                 var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
                 var indicatorSet = new Set(); 
-
-                console.log("data:", data);
 
                 data.forEach(function(d) {
                     d.sampleDate = parseDate(d.SampleDate);
@@ -257,29 +272,24 @@ function onMarkerClick(e) {
                 // clear analyte menu
                 $('#analyteMenu').empty();
 
-                if (indicators.length > 0 || data.length === 0) {
-                    // initialize analyte menu
-                    var analyteMenu = document.createElement("select");
-                    analyteMenu.id = "analyteMenu";
-                    analyteMenu.className = "form-control input-sm";
-                    analyteMenu.innerHTML = "";
-                    // populate analyte menu
-                    for (var i = 0; i < indicators.length; i++) {
-                        var opt = indicators[i];
-                        analyteMenu.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
-                    }
-                    var analyteContainer = document.getElementById("analyteContainer");
-                    analyteContainer.appendChild(analyteMenu);
-                    // create filter menu
-                    var filterContainer = document.getElementById("filterContainer");
-                    var filterMenu = '<div id="filterMenu"><div class="form-check"><label><input id="filterResult" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filterGeomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
-                    filterContainer.innerHTML += filterMenu;
-
-                    drawGraph(defaultAnalyte);
-
-                } else {
-                    alert("No data for this site.");
+                // initialize analyte menu
+                var analyteMenu = document.createElement("select");
+                analyteMenu.id = "analyteMenu";
+                analyteMenu.className = "form-control input-sm";
+                analyteMenu.innerHTML = "";
+                // populate analyte menu
+                for (var i = 0; i < indicators.length; i++) {
+                    var opt = indicators[i];
+                    analyteMenu.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
                 }
+                var analyteContainer = document.getElementById("analyteContainer");
+                analyteContainer.appendChild(analyteMenu);
+                // create filter menu
+                var filterContainer = document.getElementById("filterContainer");
+                var filterMenu = '<div id="filterMenu"><div class="form-check"><label><input id="filterResult" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filterGeomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
+                filterContainer.innerHTML += filterMenu;
+
+                drawGraph(defaultAnalyte);
 
                 // listener for analyte change
                 $("#analyteMenu").on("change", function() {
@@ -327,40 +337,16 @@ function onMarkerClick(e) {
 
                             function getSampleArray(data, startDate, cutoffDate) {
                                 if (data.length === 0) {
-                                    console.log("no data for geomean range");
                                     return null;
                                 }
                                 var dateArray = [];
                                 for (var i = 0; i < data.length; i++) {
                                     var d = data[i];
                                     if ((convertDate(d.sampleDate) <= convertDate(startDate)) && (convertDate(d.sampleDate) >= convertDate(cutoffDate))) {
-                                        if (checkND(d)) {
                                             dateArray.push(d); 
-                                        }
                                     }
                                 };
-                                console.log("dateArray", dateArray);
                                 return dateArray;
-                            }
-
-                            // checks whether result is a valid ND (res qual code = "ND" and result is positive)
-                            function checkND(d) {
-                                if ((d.resultqualcode === "ND") && (d.result > 0)) {
-                                    return false; 
-                                } else if ((d.resultqualcode === "P") && !(d.result)) {
-                                    return false;
-                                } else {
-                                    return true;
-                                }
-                            }
-
-                            // checks whether record has a data quality score of 1-3
-                            function checkQuality(d) {
-                                if ((d.DataQuality === dataQuality0) || (d.DataQuality === dataQuality4) || (d.DataQuality === dataQuality5)) {
-                                    return false;
-                                } else {
-                                    return true;
-                                }
                             }
 
                             function gmean(data) {
@@ -372,13 +358,14 @@ function onMarkerClick(e) {
                                 } else {
                                     var product = 1;
                                     data.forEach(function(d) {
-                                        if (checkND(d) && (d.mdl > 0)) {
+                                        if ((d.result === 0) && (d.mdl > 0)) {
                                             product *= d.mdl * 0.5;     // substitute NDs with half of MDL
                                         } else {
                                             product *= d.result;    
                                         }
                                     });
-                                    return Math.pow(product, (1 / data.length));  // nth root
+                                    var geomean = Math.pow(product, (1 / data.length)); // nth root
+                                    return geomean;  
                                 }
                             }
 
@@ -401,7 +388,6 @@ function onMarkerClick(e) {
                     
                     // Compile array of geomean objects
                     geomeanObjects = getGeomeans(graphData, lastSampleDate, earliestDate, SIX_WEEKS); 
-                    console.log("geomeanObjects", geomeanObjects);
                     endPoint = geomeanObjects[geomeanObjects.length - 1];
 
                     // Create endpoint geomean object
@@ -481,7 +467,7 @@ function onMarkerClick(e) {
 
                     
                     var currentExtent = d3.extent(graphData, function(d) { return d.sampleDate; });  // find extent for x-axis
-                    var xBufferExtent = bufferExtent(currentExtent, 35);  // buffer x-axis extent so points at end are not cut off
+                    var xBufferExtent = bufferExtent(currentExtent, 35);  // buffer x-axis extent
                     var yMax = d3.max(graphData, function(d) { return d.result });  // find max Y data point 
                     var displayY = compareThresholds(yMax);  // compare threshold values to find max Y for display
 
@@ -524,7 +510,7 @@ function onMarkerClick(e) {
                         .attr("class", "yAxis")
                         .call(yAxis);
 
-                    var gColor = "#ED6874";  // color for geomean elements
+                    var gColor = "#ED6874"; 
                     var gCircleOpacity = 1;
                     var circleOpacity = 0.7;
                     var tooltipOpacity = 1;
@@ -757,6 +743,7 @@ function onMarkerClick(e) {
                         .attr("transform", "translate(0," + height2 + ")")
                         .call(xAxis2);
                     
+                    /* 
                     var resultsContext = context.append("g");
                         resultsContext.attr("clip-path", "url(#clip)");
                         resultsContext.selectAll("dot")
@@ -767,6 +754,7 @@ function onMarkerClick(e) {
                             .style("opacity", 0.5)
                             .attr("cx", function(d) { return xScale2(d.sampleDate); })
                             .attr("cy", function(d) { return yScale2(d.result); });
+                    */
                                                                 
                     context.append("g")
                         .attr("class", "brush")
@@ -898,7 +886,7 @@ function showSidebar() {
     $("#sidebar").show(animationTime, function() {
         setTimeout(function() {
             map.invalidateSize();
-        }, 400); 
+        }, 200); 
     });
     hideSidebarControl();
 }
@@ -916,7 +904,7 @@ function hideSidebar() {
     $("#sidebar").hide(animationTime, function() {
         setTimeout(function() {
             map.invalidateSize()
-        }, 400); 
+        }, 200); 
     });
     showSidebarControl();
 }

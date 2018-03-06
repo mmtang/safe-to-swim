@@ -1,12 +1,10 @@
 /*
 
-   Author: 
+California State Water Resources Control Board (SWRCB)
+Office of Information Management and Analysis (OIMA) 
 
-   Michelle Tang
-   Office of Information Management and Analysis
-   State Water Resources Control Board
-
-   https://github.com/mmtang/safe-to-swim/
+Michelle Tang (michelle.tang@waterboards.ca.gov)
+https://github.com/mmtang
 
 */
 
@@ -129,6 +127,7 @@ function getData(url, callback, callbackText, offset, data) {
 
     request.fail(function(res) {
         console.log(res);
+        $(".background-mask").hide();
         alert("Data failed to load.");
     });
 }
@@ -211,7 +210,6 @@ function onMarkerClick(e) {
     $(".background-mask").show();
 
     var trendDataURL = createURL('23a59a2c-4a95-456f-b39e-41446bdc5724', siteClicked);
-
     // request trend data
     getData(trendDataURL, createViz, 'createViz');
 
@@ -262,8 +260,7 @@ function onMarkerClick(e) {
                     indicatorSet.add(d.analyte);
                 });
 
-                // convert set object to regular object
-                // changed for IE 11
+                // Array.from not supported by IE11
                 var indicators = [];
                 indicatorSet.forEach(function(i) {
                     indicators.push(i);
@@ -652,7 +649,7 @@ function onMarkerClick(e) {
                                 tooltipD.html("Sample Date: " + tooltipDate(d.sampleDate) + "<br/ >" + "Program: " + d.Program + "<br/ >" + "Result: " + d.result + " " + d.Unit)
                                     .style("left", function() {
                                         var windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-                                        var widthThreshold = windowWidth * 0.68;
+                                        var widthThreshold = windowWidth * 0.75;
                                         var tooltipWidth = document.getElementById("tooltipD").offsetWidth;
                                         // checks for points positioned in second half of graph and moves the tooltip left
                                         if (d3.event.pageX > widthThreshold) {
@@ -706,7 +703,7 @@ function onMarkerClick(e) {
                                 tooltipG.html("Date: " + tooltipDate(d.endDate) + "<br/ >Geometric Mean: " + d.geomean)
                                     .style("left", function() {
                                         var windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-                                        var widthThreshold = windowWidth * 0.68;
+                                        var widthThreshold = windowWidth * 0.75;
                                         var tooltipWidth = document.getElementById("tooltipG").offsetWidth;
                                         // checks for points positioned in second half of graph and moves the tooltip left
                                         if (d3.event.pageX > widthThreshold) {

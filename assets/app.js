@@ -253,12 +253,25 @@ function onMarkerClick(e) {
 
                 data.forEach(function(d) {
                     d.sampleDate = parseDate(d.SampleDate);
-                    d.result = +d.Result;
                     d.analyte = d.Analyte;
                     d.resultqualcode = d.ResultQualCode;
                     d.mdl = +d.MDL;
+                    if (checkND(d)) {
+                        var sub = d.mdl / 2;
+                        d.result = sub;
+                    } else {
+                        d.result = +d.Result;
+                    }
                     indicatorSet.add(d.analyte);
                 });
+
+                function checkND(d) {
+                    if ((d.result <= 0) || (d.resultqualcode === "ND")) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
 
                 // Array.from not supported by IE11
                 var indicators = [];
@@ -304,7 +317,6 @@ function onMarkerClick(e) {
                         if ((data.StationCode === siteClicked) && (data.analyte === analyte)) { return data; }
                     });
                     graphData = graphData.sort(function(a, b) { return b.sampleDate - a.sampleDate });  // sort descending
-                    console.log(graphData);
 
                     // get reference dates
                     var lastSampleDate = graphData[0].sampleDate,
@@ -359,7 +371,9 @@ function onMarkerClick(e) {
                                     data.forEach(function(d) {
                                         // check for NDs and substitue with half of MDL
                                         if (checkND(d)) {
-                                            product *= d.mdl / 2;
+                                            var sub = d.mdl / 2;
+                                            d.result = sub;
+                                            product *= sub;
                                         } else {
                                             product *= d.result;    
                                         }
@@ -631,14 +645,6 @@ function onMarkerClick(e) {
                         return isOverlap;
                     }
 
-                    function checkND(d) {
-                        if ((d.result <= 0) && (d.resultqualcode === "ND")) {
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    }
-
                     // add data to main chart
                     var results = focus.append("g");
                         results.attr("clip-path", "url(#clip)");
@@ -649,13 +655,7 @@ function onMarkerClick(e) {
                             .attr("r", 6)
                             .attr("fill", "rgb(51, 91, 150)")
                             .attr("cx", function(d) { return xScale(d.sampleDate); })
-                            .attr("cy", function(d) { 
-                                if (checkND(d)) {
-                                    return yScale(d.mdl / 2)
-                                } else {
-                                    return yScale(d.result);
-                                }
-                            })
+                            .attr("cy", function(d) { return yScale(d.result); })
                             .style("opacity", circleOpacity)
                             .on("mouseover", function(d) {
                                 var tooltipDate = d3.timeFormat("%b %e, %Y");  // format date value for tooltip

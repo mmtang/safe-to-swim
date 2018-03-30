@@ -99,7 +99,7 @@ function createURL(resource, site) {
     }
 }
 
-var siteDataURL = createURL('ffdbb549-5bb9-4d07-92a4-7fb3f4eb42e6');
+var siteDataURL = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
 
 // API request for site data
 getData(siteDataURL, processSites, 'processSites');
@@ -264,6 +264,7 @@ function onMarkerClick(e) {
                     }
                     indicatorSet.add(d.analyte);
                 });
+                console.log(data);
 
                 function checkND(d) {
                     if ((d.result <= 0) || (d.resultqualcode === "ND")) {

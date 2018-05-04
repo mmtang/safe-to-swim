@@ -19,7 +19,15 @@ body {
 }
 
 .panel-date {
-    margin: 15px 0px;
+    margin: 15px 0px 0px 0px;
+    padding: 5px; 
+    text-align: center;
+    font-size: 12px;
+}
+
+#scale-container {
+    display: none;
+    margin: 5px;
     padding: 5px; 
     text-align: center;
     font-size: 12px;
@@ -188,7 +196,7 @@ body {
 .menu-header  {
     padding: 8px 0 2px 0px;
     font-size: 1.1em;
-    color: #CC662F;
+    color: #ed7f44;
 }
 
 .dropdown-menu a i {

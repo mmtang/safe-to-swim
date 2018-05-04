@@ -204,7 +204,7 @@ function onMarkerClick(e) {
         e.layer.options.weight = 3;
     }
 
-    var featureContent = '<div id="popupMenu"><div id="analyteContainer"></div><div id="filterContainer"></div></div>' + '<div id="siteGraph"><svg width="862" height="390"></div><div class="panel-date"></div>';
+    var featureContent = '<div id="popupMenu"><div id="analyteContainer"></div><div id="filterContainer"></div></div>' + '<div id="siteGraph"><svg width="862" height="390"></div><div class="panel-date"></div><div id="scale-container"></div>';
     $("#feature-info").html(featureContent);
     $("#featureModal").modal("show");
     $(".background-mask").show();
@@ -302,6 +302,8 @@ function onMarkerClick(e) {
                 var filterContainer = document.getElementById("filterContainer");
                 var filterMenu = '<div id="filterMenu"><div class="form-check"><label><input id="filterResult" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filterGeomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
                 filterContainer.innerHTML += filterMenu;
+                // scale menu
+                $('#scale-container').append('<div class="btn-group btn-group-sm" role="group"><button type="button" class="btn btn-default">Linear Scale</button><button type="button" class="btn btn-default">Log Scale</button></div>');
 
                 drawGraph(defaultAnalyte);
 
@@ -423,20 +425,15 @@ function onMarkerClick(e) {
                         .style("opacity", 0);
 
                     var margin = {top: 10, right: 20, bottom: 90, left: 50},
-                        margin2 = {top: 340, right: 20, bottom: 10, left: 50},
+                        margin2 = {top: 380, right: 20, bottom: 10, left: 50},
                         width = 862 - margin.left - margin.right,
-                        height = 390 - margin.top - margin.bottom,
-                        height2 = 370 - margin2.top - margin2.bottom;
-                    
-                    var xScale = d3.scaleTime().range([0, width]),
-                        xScale2 = d3.scaleTime().range([0, width]),
-                        yScale = d3.scaleLinear().range([height, 0]),
-                        yScale2 = d3.scaleLinear().range([height2, 0]);
+                        height = 420 - margin.top - margin.bottom,
+                        height2 = 410 - margin2.top - margin2.bottom;
                 
                     var svg = d3.select("#siteGraph")
                         .select("svg")
                             .attr("width", width + margin.left + margin.right)
-                            .attr("height", height + margin.top + margin.bottom)
+                            .attr("height", height + margin.top + margin.bottom + margin2.bottom)
                             .attr("class", "graph")
                             .call(responsive);
                     
@@ -487,6 +484,16 @@ function onMarkerClick(e) {
                     var xBufferExtent = bufferExtent(currentExtent, 35);  // buffer x-axis extent
                     var yMax = d3.max(graphData, function(d) { return d.result });  // find max Y data point 
                     var displayY = compareThresholds(yMax);  // compare threshold values to find max Y for display
+
+                    var xScale = d3.scaleTime().range([0, width]),
+                        xScale2 = d3.scaleTime().range([0, width]),
+                        yScale = d3.scaleLinear().range([height, 0]),
+                        yScale2 = d3.scaleLinear().range([height2, 0]);
+
+                    var logScale = d3.scaleLog()
+                        .domain([0.1, displayY])
+                        .range([height, 0]);
+
 
                     xScale.domain(xBufferExtent);
                     yScale.domain([0, Math.ceil(roundHundred(displayY + (displayY / 3)))]);  // add buffer to top
@@ -905,7 +912,11 @@ function showSidebar() {
     } else {
         var animationTime = 0;
     }
-    $("#sidebar").show();
+    $("#sidebar").show(animationTime, function() {
+        setTimeout(function() {
+            map.invalidateSize(true);
+        }, 200); 
+    });
     hideSidebarControl();
 }
 

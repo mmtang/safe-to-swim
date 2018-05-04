@@ -182,7 +182,6 @@ function getWidth() {
 siteLayer.on('click', function(e) {
     clearGraph();
     $("#feature-title").html(e.layer.feature.properties.StationName + "<p>Station Code: " + e.layer.feature.properties.StationCode + "</p>");
-    showSidebar();
     setTimeout(function() {
         changeMapView(e);
     }, 400);
@@ -191,13 +190,6 @@ siteLayer.on('click', function(e) {
 
 function changeMapView(e) {
     hideSidebarControl();
-    var currentZoom = map.getZoom();
-    if (currentZoom > 12) { 
-        var targetZoom = currentZoom;  // preserve current zoom 
-    } else {
-        targetZoom = 12;
-    }
-    map.setView(e.latlng, targetZoom, { animation: true });  
 }
 
 function onMarkerClick(e) {
@@ -895,6 +887,11 @@ function onMarkerClick(e) {
 
             } // processData()
 
+        showSidebar();
+        setTimeout(function() {
+            map.invalidateSize(true);
+        }, 100); 
+
     } // createViz()
 
 } // onMarkerClick()
@@ -906,13 +903,9 @@ function showSidebar() {
         document.getElementById('mobile-close-btn').style.display = 'inline';
         var animationTime = 0;
     } else {
-        var animationTime = 200;
+        var animationTime = 0;
     }
-    $("#sidebar").show(animationTime, function() {
-        setTimeout(function() {
-            map.invalidateSize();
-        }, 200); 
-    });
+    $("#sidebar").show();
     hideSidebarControl();
 }
 
@@ -924,11 +917,11 @@ function hideSidebar() {
         document.getElementById('mobile-close-btn').style.display = 'none';
         var animationTime = 0;
     } else {
-        var animationTime = 200;
+        var animationTime = 0;
     }
     $("#sidebar").hide(animationTime, function() {
         setTimeout(function() {
-            map.invalidateSize()
+            map.invalidateSize(true);
         }, 200); 
     });
     showSidebarControl();

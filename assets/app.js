@@ -287,6 +287,8 @@ function onMarkerClick(e) {
                 indicatorSet.forEach(function(i) {
                     indicators.push(i);
                 }); 
+                // sort desc so that Enteroccocus and E. coli appear first 
+                indicators.sort(function(a,b) { return b > a; });
                 var defaultAnalyte = indicators[0];
 
                 // clear analyte menu

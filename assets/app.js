@@ -82,6 +82,14 @@ var siteMarker = {
 
 // add site layer
 var siteLayer = L.geoJson([], {
+    onEachFeature: function(feature, layer) {
+        // add site name tooltip
+        if (feature.properties.StationName) {
+            layer.bindPopup(feature.properties.StationName, {closeButton: false, offset: L.point(0, 0)});
+            layer.on('mouseover', function() { layer.openPopup(); });
+            layer.on('mouseout', function() { layer.closePopup(); });
+        }
+    },
     pointToLayer: function (feature, latlng) {
         return L.circleMarker(latlng, siteMarker);
     }
@@ -149,7 +157,7 @@ function processSites(data, callback) {
     siteLayer.addData(features);
     setTimeout(function() {
         $(".background-mask").hide();  
-        $("#aboutModal").modal('show');
+        // $("#aboutModal").modal('show');
     }, 1000);
 }
 

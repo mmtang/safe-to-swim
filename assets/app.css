@@ -227,6 +227,9 @@ body {
     border: 1px;
 }
 
+.leaflet-container {
+    font-family: 'Roboto', sans-serif;
+}
 
 .leaflet-right .leaflet-control {
     margin-right: 0px;

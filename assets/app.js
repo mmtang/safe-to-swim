@@ -148,10 +148,15 @@ function processSites(data, callback) {
         if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode)) { 
             continue; 
         } else {
+            // filter out site name 'Leona Creek at Brommer Trailer Park' because coordinates are inaccurate
+            if (data[i].SiteCode === '304-LEONA-21') {
+                continue
+            } else {
             site.type = "Feature";
             site.geometry = {"type": "Point", "coordinates": [data[i].Longitude, data[i].Latitude]};
             site.properties = { "StationName": data[i].StationName, "StationCode": data[i].SiteCode };
             features.push(site);
+            }
         }
     }
     siteLayer.addData(features);

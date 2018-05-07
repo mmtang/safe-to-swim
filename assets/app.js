@@ -13,64 +13,11 @@ var map = L.map('map',{
     center: [37.4050, -119.0179], 
     zoom: 6, 
     preferCanvas: true,
-    zoomControl: false,
-    doubleClickZoom: false
+    doubleClickZoom: false, 
+    zoomControl: false
 }); 
 
-resetMenu(); 
-
-// initialize tile layers
-var Esri_WorldTopoMap = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri'}).addTo(map);
-
-var Esri_WorldImagery = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri'});
-
-// create custom map pane for reference layers
-map.createPane('refPane');
-// set z-index of reference pane below overlay pane (400) and over tile pane (200)
-map.getPane('refPane').style.zIndex = 350;
-
-// initialize reference layers
-var countyLayer = L.esri.featureLayer({
-    url: 'https://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/CountyBoundaries/MapServer/0',
-    pane: 'refPane',
-    style: function (feature) {
-        return {
-            color: '#30A5E7',
-            weight: 3,
-            fillOpacity: 0.1
-        };
-    }
-});
-var rbLayer = L.esri.featureLayer({
-    url: 'https://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/rbbound/MapServer/0',
-    pane: 'refPane',
-    style: function (feature) {
-        return {
-            color: '#732B8D', 
-            weight: 3,
-            fillOpacity: 0.1
-        };
-    }
-});
-
-// initialize map control
-var showSidebarMapControl = L.Control.extend({
-    options: { position: 'topright'
-    },
-    onAdd: function (map) {
-        var container = L.DomUtil.create('div', 'sidebar-control-container');
-        container.innerHTML = '<div id="sidebar-control"><a href="#" onClick="showSidebar()"><button type="button" class="btn btn-xs btn-default pull-left" id="sidebar-show-btn"><i class="fa fa-chevron-left fa"></i></button></a></div>';
-        return container;
-    }
-});
-
-// add map controls
-var zoomControl = L.control.zoom({ position:'bottomleft' }).addTo(map);
-map.addControl(new showSidebarMapControl());
-
-// define default style for map markers
+// default style for map markers
 var siteMarker = {
     radius: 5,
     fillColor: "#008080",
@@ -80,127 +27,79 @@ var siteMarker = {
     fillOpacity: 0.8
 };
 
-// add site layer
-var siteLayer = L.geoJson([], {
-    onEachFeature: function(feature, layer) {
-        // add site name tooltip
-        if (feature.properties.StationName) {
-            layer.bindPopup(feature.properties.StationName, {closeButton: false, offset: L.point(0, 0)});
-            layer.on('mouseover', function() { layer.openPopup(); });
-            layer.on('mouseout', function() { layer.closePopup(); });
-        }
-    },
-    pointToLayer: function (feature, latlng) {
-        return L.circleMarker(latlng, siteMarker);
-    }
-}).addTo(map);
-
-// define API request limit
+// limit the number of records from the API
 var recordLimit = 5000;
 
-function createURL(resource, site) {
-    var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
-    if (typeof site === 'undefined') {
-        return url;
-    } else {
-        return url + '&filters[StationCode]=' + site;
-    }
-}
+resetLayerMenu(); 
+addTileLayers();
+addRefLayers(); 
+addMapControls(); 
+addSiteLayer(); 
 
-var siteDataURL = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
 
-// API request for site data
-getData(siteDataURL, processSites, 'processSites');
 
-function getData(url, callback, callbackText, offset, data) {
-    if (typeof offset === 'undefined') { offset = 0; }
-    if (typeof data === 'undefined') { data = []; }
 
-    var request = $.ajax({
-        url: url,
-        data: {offset: offset},
-        dataType: "jsonp",
-        jsonpCallback: callbackText,
-    });
-
-    request.done(function(res) {
-        var dataPage = res.result.records;
-        data = data.concat(dataPage);
-        if (dataPage.length < recordLimit) {
-            callback(data);
-        } else {
-            getData(url, callback, callbackText, offset + recordLimit, data);
+function addSiteLayer() {
+    // initialize layer
+    var siteLayer = L.geoJson([], {
+        onEachFeature: function(feature, layer) {
+            // add site name tooltip
+            if (feature.properties.StationName) {
+                layer.bindPopup(feature.properties.StationName, {closeButton: false, offset: L.point(0, 0)});
+                layer.on('mouseover', function() { layer.openPopup(); });
+                layer.on('mouseout', function() { layer.closePopup(); });
+            }
+        },
+        pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, siteMarker);
         }
+    }).addTo(map);
+
+    // request sites from API and process data
+    var sites = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
+    getData(sites, processSites); 
+
+    // add listener
+    siteLayer.on('click', function(e) {
+        $("#feature-title").html(e.layer.feature.properties.StationName + "<p>Station Code: " + e.layer.feature.properties.StationCode + "</p>");
+        setTimeout(function() {
+            hideSidebarControl();
+        }, 400);
+        // reset layer style to clear site selection
+        siteLayer.setStyle(siteMarker);
+        onMarkerClick(e);
     });
 
-    request.fail(function(res) {
-        console.log(res);
-        $(".background-mask").hide();
-        alert("Data failed to load.");
-    });
-}
-
-function processSites(data, callback) {
-    features = [];
-    for (var i = 0; i < data.length; i++) {
-        var site = {};
-        // check for missing properties
-        if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode)) { 
-            continue; 
-        } else {
-            // filter out site name 'Leona Creek at Brommer Trailer Park' because coordinates are inaccurate
-            if (data[i].SiteCode === '304-LEONA-21') {
-                continue
+    function processSites(data, callback) {
+        features = [];
+        for (var i = 0; i < data.length; i++) {
+            var site = {};
+            // check for missing essential properties
+            if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode)) { 
+                continue; 
             } else {
-            site.type = "Feature";
-            site.geometry = {"type": "Point", "coordinates": [data[i].Longitude, data[i].Latitude]};
-            site.properties = { "StationName": data[i].StationName, "StationCode": data[i].SiteCode };
-            features.push(site);
+                // filter out site name 'Leona Creek at Brommer Trailer Park' for inaccurate coordinates
+                if (data[i].SiteCode === '304-LEONA-21') {
+                    continue
+                } else {
+                site.type = "Feature";
+                site.geometry = {"type": "Point", "coordinates": [data[i].Longitude, data[i].Latitude]};
+                site.properties = { "StationName": data[i].StationName, "StationCode": data[i].SiteCode };
+                features.push(site);
+                }
             }
         }
+        siteLayer.addData(features);
+        setTimeout(function() {
+            $(".background-mask").hide();  
+            // $("#aboutModal").modal('show');
+        }, 1000);
     }
-    siteLayer.addData(features);
-    setTimeout(function() {
-        $(".background-mask").hide();  
-        // $("#aboutModal").modal('show');
-    }, 1000);
-}
-
-function toggleLayer(layer, customPane) { 
-    if (map.hasLayer(layer)) {
-        map.removeLayer(layer);
-    } else {
-        map.addLayer(layer);
-    }
-}
-
-function getWidth() {
-    return Math.max(
-      document.body.scrollWidth,
-      document.documentElement.scrollWidth,
-      document.body.offsetWidth,
-      document.documentElement.offsetWidth,
-      document.documentElement.clientWidth
-    );
-}
-
-siteLayer.on('click', function(e) {
-    clearGraph();
-    $("#feature-title").html(e.layer.feature.properties.StationName + "<p>Station Code: " + e.layer.feature.properties.StationCode + "</p>");
-    setTimeout(function() {
-        changeMapView(e);
-    }, 400);
-    onMarkerClick(e);
-});
-
-function changeMapView(e) {
-    hideSidebarControl();
 }
 
 function onMarkerClick(e) {
     var siteClicked = e.layer.feature.properties.StationCode;
     // reset layer style
-    siteLayer.setStyle(siteMarker);
     highlightMarker(e);
 
     function highlightMarker(e) {
@@ -216,7 +115,7 @@ function onMarkerClick(e) {
 
     var trendDataURL = createURL('23a59a2c-4a95-456f-b39e-41446bdc5724', siteClicked);
     // request trend data
-    getData(trendDataURL, createViz, 'createViz');
+    getData(trendDataURL, createViz);
 
     function createViz(initialData) {
             var ecoli = "E. coli",
@@ -320,7 +219,7 @@ function onMarkerClick(e) {
                 function drawGraph(analyte) {
                     $(".panel-date").empty();
                     $(".panel-date").append('Drag the handles of the gray box above to change the date view.<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span></p>');
-                    clearGraph(); 
+                    clearChart(); 
                     resetCheckboxes();
 
                     var graphData = data.filter(function(data) { 
@@ -908,50 +807,14 @@ function onMarkerClick(e) {
 
 } // onMarkerClick()
 
-function showSidebar() {
-    var windowWidth = getWidth();
-    if (windowWidth <= 767) {  // for mobile layout
-        document.getElementById('mobile-menu-btn').style.display = 'none';
-        document.getElementById('mobile-close-btn').style.display = 'inline';
-        var animationTime = 0;
-    } else {
-        var animationTime = 0;
-    }
-    $("#sidebar").show(animationTime, function() {
-        setTimeout(function() {
-            map.invalidateSize(true);
-        }, 200); 
-    });
-    hideSidebarControl();
-}
 
-function hideSidebar() {
-    isSidebarOpen = false;
-    var windowWidth = getWidth();
-    if (windowWidth <= 767) {  // for mobile layout
-        document.getElementById('mobile-menu-btn').style.display = 'inline';
-        document.getElementById('mobile-close-btn').style.display = 'none';
-        var animationTime = 0;
-    } else {
-        var animationTime = 0;
-    }
-    $("#sidebar").hide(animationTime, function() {
-        setTimeout(function() {
-            map.invalidateSize(true);
-        }, 200); 
-    });
-    showSidebarControl();
-}
 
-function showSidebarControl() {
-    document.getElementById("sidebar-control").style.display = "block";
-}
 
-function hideSidebarControl() {
-    document.getElementById("sidebar-control").style.display = "none";
-}
 
-// listeners for sidebar actions
+/*
+/ Listeners
+*/
+
 $("#about-btn").click(function() {
     $("#aboutModal").modal("show");
     $(".navbar-collapse.in").collapse("hide");
@@ -978,39 +841,199 @@ $("#sites-box").click( function() {
     toggleLayer(siteLayer);
 });
 
-$("#counties-box").click( function() {
-    toggleLayer(countyLayer);
-});
 
-$("#rb-boundaries-box").click( function() {
-    toggleLayer(rbLayer);
-});
+/*
+/ App Helper Functions 
+*/
 
-// listener for toggling tile layers
-$('#tile-menu input').on('change', function() {
-    var selectedBasemap = $('input[name=tileRadio]:checked').val(); 
-    if (selectedBasemap === "topo") {
-        if (map.hasLayer(Esri_WorldImagery)) {
-            map.removeLayer(Esri_WorldImagery);
-            map.addLayer(Esri_WorldTopoMap);
-        }
+function createURL(resource, site) {
+    var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
+    if (typeof site === 'undefined') {
+        return url;
+    } else {
+        // optional site parameter
+        return url + '&filters[StationCode]=' + site;
     }
-    if (selectedBasemap === "satellite") {
-        if (map.hasLayer(Esri_WorldTopoMap)) {
-            map.removeLayer(Esri_WorldTopoMap);
-            map.addLayer(Esri_WorldImagery);
-        }
-    }
- });
+}
 
-function resetMenu() {
+function getData(url, callback, offset, data) {
+    if (typeof offset === 'undefined') { offset = 0; }
+    if (typeof data === 'undefined') { data = []; }
+
+    var request = $.ajax({
+        url: url,
+        data: {offset: offset},
+        dataType: "jsonp",
+        jsonpCallback: callback.name,
+    });
+    request.done(function(res) {
+        var dataPage = res.result.records;
+        data = data.concat(dataPage);
+        if (dataPage.length < recordLimit) {
+            callback(data);
+        } else {
+            getData(url, callback, offset + recordLimit, data);
+        }
+    });
+    request.fail(function(res) {
+        console.log(res);
+        hideLoading(); 
+        alert("Data failed to load.");
+    });
+}
+
+function getWidth() {
+    return Math.max(
+      document.body.scrollWidth,
+      document.documentElement.scrollWidth,
+      document.body.offsetWidth,
+      document.documentElement.offsetWidth,
+      document.documentElement.clientWidth
+    );
+}
+
+function hideLoading() {
+    $(".background-mask").hide();
+}
+
+function hideSidebar() {
+    isSidebarOpen = false;
+    var windowWidth = getWidth();
+    if (windowWidth <= 767) {  // for mobile layout
+        document.getElementById('mobile-menu-btn').style.display = 'inline';
+        document.getElementById('mobile-close-btn').style.display = 'none';
+        var animationTime = 0;
+    } else {
+        var animationTime = 0;
+    }
+    $("#sidebar").hide(animationTime, function() {
+        setTimeout(function() {
+            map.invalidateSize(true);
+        }, 200); 
+    });
+    showSidebarControl();
+}
+
+function hideSidebarControl() {
+    document.getElementById("sidebar-control").style.display = "none";
+}
+
+function showSidebar() {
+    var windowWidth = getWidth();
+    if (windowWidth <= 767) {  // for mobile layout
+        document.getElementById('mobile-menu-btn').style.display = 'none';
+        document.getElementById('mobile-close-btn').style.display = 'inline';
+        var animationTime = 0;
+    } else {
+        var animationTime = 0;
+    }
+    $("#sidebar").show(animationTime, function() {
+        setTimeout(function() {
+            map.invalidateSize(true);
+        }, 200); 
+    });
+    hideSidebarControl();
+}
+
+function showSidebarControl() {
+    document.getElementById("sidebar-control").style.display = "block";
+}
+
+function resetLayerMenu() {
     document.getElementById("topo-tile-radio").checked="true";
     document.getElementById("sites-box").checked="true";
     document.getElementById("counties-box").checked="";
     document.getElementById("rb-boundaries-box").checked="";
 }
 
-function clearGraph() {
+
+/*
+/ Map Helper Functions 
+*/
+
+function addMapControls() {
+    var sidebarControl = L.Control.extend({
+        options: { position: 'topright'
+        },
+        onAdd: function (map) {
+            var container = L.DomUtil.create('div', 'sidebar-control-container');
+            container.innerHTML = '<div id="sidebar-control"><a href="#" onClick="showSidebar()"><button type="button" class="btn btn-xs btn-default pull-left" id="sidebar-show-btn"><i class="fa fa-chevron-left fa"></i></button></a></div>';
+            return container;
+        }
+    });
+    map.addControl(new sidebarControl());
+    var zoomControl = L.control.zoom({ position:'bottomleft' }).addTo(map);
+}
+
+function addRefLayers() {
+    map.createPane('refPane');
+    // set z-index of reference pane under overlay pane (400) and over tile pane (200)
+    map.getPane('refPane').style.zIndex = 350;
+    // initialize layers
+    var countyLayer = L.esri.featureLayer({
+        url: 'https://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/CountyBoundaries/MapServer/0',
+        pane: 'refPane',
+        style: function (feature) {
+            return {
+                color: '#30A5E7',
+                weight: 3,
+                fillOpacity: 0.1
+            };
+        }
+    });
+    var rbLayer = L.esri.featureLayer({
+        url: 'https://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/rbbound/MapServer/0',
+        pane: 'refPane',
+        style: function (feature) {
+            return {
+                color: '#732B8D', 
+                weight: 3,
+                fillOpacity: 0.1
+            };
+        }
+    });
+    // add listeners
+    $("#counties-box").click( function() { toggleLayer(countyLayer); });
+    $("#rb-boundaries-box").click( function() { toggleLayer(rbLayer); });
+}
+
+function addTileLayers() {
+    var Esri_WorldTopoMap = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri'}).addTo(map);
+    var Esri_WorldImagery = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri'});
+        
+    // listener for toggling tile layers
+    $('#tile-menu input').on('change', function() {
+        var selectedBasemap = $('input[name=tileRadio]:checked').val(); 
+        if (selectedBasemap === "topo") {
+            if (map.hasLayer(Esri_WorldImagery)) {
+                map.removeLayer(Esri_WorldImagery);
+                map.addLayer(Esri_WorldTopoMap);
+            }
+        }
+        if (selectedBasemap === "satellite") {
+            if (map.hasLayer(Esri_WorldTopoMap)) {
+                map.removeLayer(Esri_WorldTopoMap);
+                map.addLayer(Esri_WorldImagery);
+            }
+        }
+    });
+}
+
+function toggleLayer(layer, customPane) { 
+    if (map.hasLayer(layer)) {
+        map.removeLayer(layer);
+    } else {
+        map.addLayer(layer);
+    }
+}
+
+/*
+/ D3 Helper Functions 
+*/
+
+function clearChart() {
     var svg = d3.select("svg");
     svg.selectAll("*").remove();
     d3.selectAll(".tooltip").remove();

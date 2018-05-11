@@ -1,19 +1,6 @@
 /*************************************************************
 *************************************************************/
 
-// callback for processData
-function createChart(data) {
-    // instantiate new Chart class object
-    var chartMargin = {top: 10, right: 20, bottom: 90, left: 50};
-    var chart = new Chart({
-        element: document.getElementById('chart-container'),
-        margin: chartMargin,
-        data: data,
-        width: 960,
-        height: 400
-    });
-}
-
 var Chart = function(opts) {
     this.element = opts.element;
     this.data = opts.data;
@@ -23,9 +10,6 @@ var Chart = function(opts) {
     this.height = opts.height;
 
     this.initializeChart();
-    this.drawChart();
-    this.initializeBrush();
-    this.drawBrush();
 }
 
 Chart.prototype.initializeChart = function() {
@@ -33,7 +17,8 @@ Chart.prototype.initializeChart = function() {
     this.svg = d3.select(this.element).append('svg')
         .attr('id', 'graph')
         .attr('width', this.width + this.margin.left + this.margin.right)
-        .attr('height', this.height + this.margin.top + this.margin.bottom);
+        .attr('height', this.height + this.margin.top + this.margin.bottom)
+        .call(this.responsive);
     this.focus = this.svg.append('g')
         .attr('class', 'focus')
         .attr('transform', 'translate(' + this.margin.left + ', ' + (this.margin.top + 10) + ')');
@@ -43,7 +28,37 @@ Chart.prototype.initializeChart = function() {
         .append('rect')
             .attr('width', this.width)
             .attr('height', this.height);
-    this.clearGraph();
+    this.clearChart();
+}
+
+Chart.prototype.responsive = function() {
+    function responsive(svg) {
+        console.log('test');
+        // get container + svg aspect ratio
+        var container = d3.select(svg.node().parentNode),
+            width = parseInt(svg.style("width")),
+            height = parseInt(svg.style("height")),
+            aspect = width / height;
+
+        // add viewBox and preserveAspectRatio properties,
+        // and call resize so that svg resizes on inital page load
+        svg.attr("viewBox", "0 0 " + width + " " + height)
+            .attr("perserveAspectRatio", "xMinYMid")
+            .call(resize);
+
+        // to register multiple listeners for same event type, 
+-       // you need to add namespace, i.e., 'click.foo'
+-       // necessary if you call invoke this function for multiple svgs
+-       // api docs: https://github.com/mbostock/d3/wiki/Selections#on
+        d3.select(window).on("resize." + container.attr("id"), resize);
+
+        // get width of container and resize svg to fit it
+        function resize() {
+            var targetWidth = parseInt(container.style("width"));
+            svg.attr("width", targetWidth);
+            svg.attr("height", Math.round(targetWidth / aspect));
+        }
+    } 
 }
 
 Chart.prototype.initializeBrush = function() {
@@ -91,10 +106,12 @@ Chart.prototype.createBrush = function() {
 }
 
 Chart.prototype.createBrushScales = function() {
-    this.xBrushScale = d3.scaleTime().range([0, this.width]);
-    this.yBrushScale = d3.scaleLinear().range([this.brushHeight, 0]);
-    this.xBrushScale.domain(this.xScale.domain());
-    this.yBrushScale.domain(this.yScale.domain());
+    this.xBrushScale = d3.scaleTime()
+        .domain(this.xScale.domain())
+        .range([0, this.width]);
+    this.yBrushScale = d3.scaleLinear()
+        .domain(this.yScale.domain())
+        .range([this.brushHeight, 0]);
 }
 
 Chart.prototype.drawBrush = function() {
@@ -132,7 +149,7 @@ Chart.prototype.brushed = function(parent) {
     parent.focus.select('.x-axis').call(parent.xAxis);
 }
 
-Chart.prototype.clearGraph = function() {
+Chart.prototype.clearChart = function() {
     d3.selectAll('.tooltip').remove();
 }
 
@@ -145,25 +162,40 @@ Chart.prototype.createTooltip = function(name) {
 
 Chart.prototype.drawChart = function() {
     this.createScales();
-    this.addAxes();
-    var stvLine = this.addLine(9320, '#ed3935', tooltipSTV);
-    var results = this.addPoints(this.data, 6, 'rgb(51, 91, 150)', tooltipResult);
+    // this.addAxes();
+    // var stvLine = this.addLine(9320, '#ed3935', tooltipSTV);
+    // var results = this.addPoints(this.data, 6, 'rgb(51, 91, 150)', tooltipResult);
 }
 
-Chart.prototype.createScales = function() {
+Chart.prototype.createScales = function(threshold) {
     // calculate min and max for data
-    var xExtent = d3.extent(this.data, function(d,i) { return d.sampleDate; });
+    var xExtent = d3.extent(this.data, function(d,i) { return d.sampledate; });
     var yExtent = d3.extent(this.data, function(d,i) { return d.result; });
-    // force zero baseline if all data points are positive
-    if (yExtent[0] > 0) {
-        yExtent[0] = 0;
-    }
+    var xBuffered = bufferX(xExtent, 35);  
+    var yMax = d3.max(this.data, function(d) { return d.result }); 
+    var yDisplay = Math.max(yMax, threshold);
+    // add arbitrary buffer to max y value
+    var yBuffered = Math.ceil(roundHundred(yDisplay + (yDisplay / 3)))
+
     this.xScale = d3.scaleTime()
-        .domain(xExtent)
+        .domain(xBuffered)
         .range([0, this.width]);
     this.yScale = d3.scaleLinear()
-        .domain(yExtent)
+        .domain([0, yBuffered])
         .range([this.height, 0]);
+    this.logScale = d3.scaleLog()
+        .domain([0.1, yBuffered])
+        .range([this.height, 0]);
+
+    function bufferX(extent, days) {
+        var extentMin = convertDate(extent[0]);
+        var newMin = extentMin - ((24 * 60 * 60 * 1000) * days); 
+        newMin = convertUNIX(newMin);
+        var extentMax = convertDate(extent[1]);
+        var newMax = extentMax + ((24 * 60 * 60 * 1000) * days);
+        newMax = convertUNIX(newMax);
+        return [newMin, newMax];
+    }
 }
 
 Chart.prototype.addAxes = function() {
@@ -181,9 +213,6 @@ Chart.prototype.addAxes = function() {
 }
 
 Chart.prototype.addLine = function(val, color, content) {
-    //initialize tooltip
-    this.createTooltip('tooltipLine');
-
     var _this = this;
     var line = _this.focus.append('line')
         .attr('class', 'line')
@@ -216,9 +245,6 @@ Chart.prototype.createTooltip = function(name) {
 }
 
 Chart.prototype.addPoints = function(data, radius, color, content) {
-    //initialize tooltip
-    this.createTooltip('tooltipPoint');
-
     var _this = this;
     var points = this.focus.append('g');
     points.attr('clip-path', 'url(#clip)');

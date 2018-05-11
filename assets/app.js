@@ -8,6 +8,10 @@ https://github.com/mmtang
 
 */
 
+var ecoli = new Analyte('E. coli', 320, 100),
+    enterococcus = new Analyte('Enterococcus', 110, 30),
+    coliformtotal = new Analyte('Coliform, Total'),
+    coliformfecal = new Analyte('Coliform, Fecal');
 
 var map = L.map('map',{ 
     center: [37.4050, -119.0179], 
@@ -36,187 +40,143 @@ addRefLayers();
 addMapControls(); 
 addSiteLayer(); 
 
-
-
-
-function addSiteLayer() {
-    // initialize layer
-    var siteLayer = L.geoJson([], {
-        onEachFeature: function(feature, layer) {
-            // add site name tooltip
-            if (feature.properties.StationName) {
-                layer.bindPopup(feature.properties.StationName, {closeButton: false, offset: L.point(0, 0)});
-                layer.on('mouseover', function() { layer.openPopup(); });
-                layer.on('mouseout', function() { layer.closePopup(); });
-            }
-        },
-        pointToLayer: function (feature, latlng) {
-            return L.circleMarker(latlng, siteMarker);
-        }
-    }).addTo(map);
-
-    // request sites from API and process data
-    var sites = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
-    getData(sites, processSites); 
-
-    // add listener
-    siteLayer.on('click', function(e) {
-        $("#feature-title").html(e.layer.feature.properties.StationName + "<p>Station Code: " + e.layer.feature.properties.StationCode + "</p>");
-        setTimeout(function() {
-            hideSidebarControl();
-        }, 400);
-        // reset layer style to clear site selection
-        siteLayer.setStyle(siteMarker);
-        onMarkerClick(e);
-    });
-
-    function processSites(data, callback) {
-        features = [];
-        for (var i = 0; i < data.length; i++) {
-            var site = {};
-            // check for missing essential properties
-            if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode)) { 
-                continue; 
-            } else {
-                // filter out site name 'Leona Creek at Brommer Trailer Park' for inaccurate coordinates
-                if (data[i].SiteCode === '304-LEONA-21') {
-                    continue
-                } else {
-                site.type = "Feature";
-                site.geometry = {"type": "Point", "coordinates": [data[i].Longitude, data[i].Latitude]};
-                site.properties = { "StationName": data[i].StationName, "StationCode": data[i].SiteCode };
-                features.push(site);
-                }
-            }
-        }
-        siteLayer.addData(features);
-        setTimeout(function() {
-            $(".background-mask").hide();  
-            // $("#aboutModal").modal('show');
-        }, 1000);
-    }
-}
-
 function onMarkerClick(e) {
     var siteClicked = e.layer.feature.properties.StationCode;
+    var path = createURL('23a59a2c-4a95-456f-b39e-41446bdc5724', siteClicked);
     highlightMarker(e);
     showLoading(); 
     initializeSidebar(); 
-
-    var path = createURL('23a59a2c-4a95-456f-b39e-41446bdc5724', siteClicked);
-    getData(path, createViz);
-} // onMarkerClick()
-
-
-function createViz(initialData) {
-    var ecoli = "E. coli",
-        enterococcus = "Enterococcus",
-        coliformtotal = "Coliform, Total",
-        coliformfecal = "Coliform, Fecal";    
-
-    var ecoli_STV = 320,
-        enterococcus_STV = 110,
-        ecoli_GM = 100,
-        enterococcus_GM = 30;
-
-    var dataQuality0 = "MetaData, QC record",
-        dataQuality1 = "Passed QC"
-        dataQuality2 = "Some review needed",
-        dataQuality3 = "Spatial Accuracy Unknown",
-        dataQuality4 = "Extensive review needed",
-        dataQuality5 = "Unknown data quality",
-        dataQuality6 = "Reject record",
-        dataQuality7 = "Error";
-
-    /* removed data quality filtering for now
-    var qualityData = initialData.filter(d => {
-        return (d.DataQuality === dataQuality1) || (d.DataQuality === dataQuality2) || (d.DataQuality === dataQuality3);
-    });
-    */
-
-    if (initialData.length > 0) {
-        processData(initialData);
-        $(".background-mask").hide(); 
-    } else {
-        $(".background-mask").hide(); 
-        alert("No data for selected site.");
-    }
+    getData(path, processData);
 
     function processData(data) {
-        var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
-        var indicatorSet = new Set(); 
+        /*  
+        // data quality column names
+        var dataQuality0 = "MetaData, QC record",
+            dataQuality1 = "Passed QC"
+            dataQuality2 = "Some review needed",
+            dataQuality3 = "Spatial Accuracy Unknown",
+            dataQuality4 = "Extensive review needed",
+            dataQuality5 = "Unknown data quality",
+            dataQuality6 = "Reject record",
+            dataQuality7 = "Error";
 
-        data.forEach(function(d) {
-            d.sampleDate = parseDate(d.SampleDate);
-            d.analyte = d.Analyte;
-            d.resultqualcode = d.ResultQualCode;
-            d.mdl = +d.MDL;
-            if (checkND(d)) {
-                var sub = d.mdl / 2;
-                d.result = sub;
-            } else {
-                d.result = +d.Result;
-            }
-            indicatorSet.add(d.analyte);
+        var qualityData = initialData.filter(d => {
+            return (d.DataQuality === dataQuality1) || (d.DataQuality === dataQuality2) || (d.DataQuality === dataQuality3);
         });
-        console.log(data);
-
-        function checkND(d) {
-            if ((d.result <= 0) || (d.resultqualcode === "ND")) {
-                return true;
-            } else {
-                return false;
+        */
+        if (data.length > 0) {
+            hideLoading();
+            var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
+            var analyteSet = new Set(); 
+            var chartData = [];
+            for(var i = 0; i < data.length; i++) {
+                var d = {};
+                d.Analyte = data[i].Analyte;
+                analyteSet.add(data[i].Analyte);
+                d.DataQuality = data[i].DataQuality;
+                d.DataQualityIndicator = data[i].DataQualityIndicator;
+                d.mdl = +data[i].MDL;
+                d.Program = data[i].Program;
+                // change all non-detects before charting and calculating the geomean
+                // result = new field, Result = original field
+                if (checkND(data[i])) {
+                    // use half the method detection limit for non-detects
+                    d.result = d.mdl / 2;
+                } else {
+                    d.result = +data[i].Result;
+                }
+                d.ResultQualCode = data[i].ResultQualCode;
+                d.sampledate = parseDate(data[i].SampleDate);
+                d.StationCode = data[i].StationCode;
+                d.StationName = data[i].StationName;
+                d.Unit = data[i].Unit;
+                chartData.push(d);
             }
+            var analytes = [];
+            analyteSet.forEach(function(i) { analytes.push(i); }); 
+            // sort descending so that Enteroccocus and E. coli appear first 
+            analytes.sort(function(a,b) { return b > a; });
+            var defaultAnalyte = analytes[0];
+            addAnalyteMenu(analytes);
+            addFilterMenu(); 
+            addScaleMenu(); 
+            addChart(chartData, defaultAnalyte);
+        } else {
+            hideLoading();
+            alert("No data for selected site.");
         }
+    }  
 
-        // Array.from not supported by IE11
-        var indicators = [];
-        indicatorSet.forEach(function(i) {
-            indicators.push(i);
-        }); 
-        // sort desc so that Enteroccocus and E. coli appear first 
-        indicators.sort(function(a,b) { return b > a; });
-        var defaultAnalyte = indicators[0];
+    function addChart(data, analyte) {
+        resetFilterBoxes();
+        initializeDatePanel();
+        
+        var chartMargin = {top: 10, right: 20, bottom: 90, left: 50};
+        var chart = new Chart({
+            element: document.getElementById('chart-container'),
+            margin: chartMargin,
+            data: data,
+            width: 862 - chartMargin.left - chartMargin.right,
+            height: 490 - chartMargin.top - chartMargin.bottom
+        })
 
-        // clear analyte menu
-        $('#analyteMenu').empty();
-
-        // initialize analyte menu
-        var analyteMenu = document.createElement("select");
-        analyteMenu.id = "analyteMenu";
-        analyteMenu.className = "form-control input-sm";
-        analyteMenu.innerHTML = "";
-        // populate analyte menu
-        for (var i = 0; i < indicators.length; i++) {
-            var opt = indicators[i];
-            analyteMenu.innerHTML += "<option value=\"" + opt + "\">" + opt + "</option>";
+        if (analyte === ecoli.name) {
+            chart.createScales(ecoli.stv);
+        } else if (analyte === enterococcus.name) {
+            chart.createScales(enterococcus.stv);
+        } else {
+            chart.createScales();
         }
-        var analyteContainer = document.getElementById("analyteContainer");
-        analyteContainer.appendChild(analyteMenu);
-        // create filter menu
-        var filterContainer = document.getElementById("filterContainer");
-        var filterMenu = '<div id="filterMenu"><div class="form-check"><label><input id="filterResult" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filterGeomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
-        filterContainer.innerHTML += filterMenu;
-        // scale menu
-        $('#scale-container').append('<div class="btn-group btn-group-sm" role="group"><button type="button" class="btn btn-default">Linear Scale</button><button type="button" class="btn btn-default">Log Scale</button></div>');
+        
+        chart.addAxes();
 
-        drawGraph(defaultAnalyte);
+        
 
-        // listener for analyte change
-        $("#analyteMenu").on("change", function() {
-            drawGraph(this.value);
+
+
+        
+    
+            
+
+        chart.createTooltip('tooltipLine');
+        chart.createTooltip('tooltipPoint');
+
+    }
+
+
+
+
+
+
+
+
+
+    function processDataOld(data) {
+        
+
+            
+    
+
+  
+        
+        
+        var chartData = data.filter(function(data) { 
+            if ((data.StationCode === siteClicked) && (data.analyte === analyte)) { return data; }
         });
+        
+        
 
-        function drawGraph(analyte) {
-            $(".panel-date").empty();
-            $(".panel-date").append('Drag the handles of the gray box above to change the date view.<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span></p>');
-            clearChart(); 
-            resetCheckboxes();
 
-            var graphData = data.filter(function(data) { 
-                if ((data.StationCode === siteClicked) && (data.analyte === analyte)) { return data; }
-            });
-            graphData = graphData.sort(function(a, b) { return b.sampleDate - a.sampleDate });  // sort descending
+        function addChart(data, analyte) {
+              
+    
+            
+    
+
+            
+            
+
+            
 
             // get reference dates
             var lastSampleDate = graphData[0].sampleDate,
@@ -307,93 +267,13 @@ function createViz(initialData) {
             // Create endpoint geomean object
             geomeanObjects.push({beginDate: null, endDate: earliestDate, geomean: endPoint.geomean});
 
-            // initialize graph tooltip
-            var tooltipD = d3.select("body").append("div")
-                .attr("class", "tooltip")
-                .attr("id", "tooltipD")
-                .style("opacity", 0);
 
-            // initialize geomean tooltip
-            var tooltipG = d3.select("body").append("div")
-                .attr("class", "tooltip")
-                .attr("id", "tooltipG")
-                .style("opacity", 0);
 
-            var margin = {top: 10, right: 20, bottom: 90, left: 50},
-                margin2 = {top: 380, right: 20, bottom: 10, left: 50},
-                width = 862 - margin.left - margin.right,
-                height = 420 - margin.top - margin.bottom,
-                height2 = 410 - margin2.top - margin2.bottom;
-        
-            var svg = d3.select("#siteGraph")
-                .select("svg")
-                    .attr("width", width + margin.left + margin.right)
-                    .attr("height", height + margin.top + margin.bottom + margin2.bottom)
-                    .attr("class", "graph")
-                    .call(responsive);
-            
-            function responsive(svg) {
-                // get container + svg aspect ratio
-                var container = d3.select(svg.node().parentNode),
-                    width = parseInt(svg.style("width")),
-                    height = parseInt(svg.style("height")),
-                    aspect = width / height;
-
-                // add viewBox and preserveAspectRatio properties,
-                // and call resize so that svg resizes on inital page load
-                svg.attr("viewBox", "0 0 " + width + " " + height)
-                    .attr("perserveAspectRatio", "xMinYMid")
-                    .call(resize);
-
-                // to register multiple listeners for same event type, 
--                       // you need to add namespace, i.e., 'click.foo'
--                       // necessary if you call invoke this function for multiple svgs
--                       // api docs: https://github.com/mbostock/d3/wiki/Selections#on
-                d3.select(window).on("resize." + container.attr("id"), resize);
-
-                // get width of container and resize svg to fit it
-                function resize() {
-                    var targetWidth = parseInt(container.style("width"));
-                    svg.attr("width", targetWidth);
-                    svg.attr("height", Math.round(targetWidth / aspect));
-                }
-            } 
-                
-            var focus = svg.append("g")
-                .attr("class", "focus")
-                .attr("transform", "translate(" + margin.left + "," + (margin.top + 10) + ")");
-            
-            var context = svg.append("g")
-                .attr("class", "context")
-                .attr("transform", "translate(" + margin2.left + "," + (margin2.top + 10) + ")");
-
-            context.append("defs").append("clipPath")
-                        .attr("id", "clip")
-                        .attr("fill", gColor)
-                    .append("rect")
-                        .attr("width", width)
-                        .attr("height", height);
 
             
-            var currentExtent = d3.extent(graphData, function(d) { return d.sampleDate; });  // find extent for x-axis
-            var xBufferExtent = bufferExtent(currentExtent, 35);  // buffer x-axis extent
-            var yMax = d3.max(graphData, function(d) { return d.result });  // find max Y data point 
-            var displayY = compareThresholds(yMax);  // compare threshold values to find max Y for display
+            
 
-            var xScale = d3.scaleTime().range([0, width]),
-                xScale2 = d3.scaleTime().range([0, width]),
-                yScale = d3.scaleLinear().range([height, 0]),
-                yScale2 = d3.scaleLinear().range([height2, 0]);
-
-            var logScale = d3.scaleLog()
-                .domain([0.1, displayY])
-                .range([height, 0]);
-
-
-            xScale.domain(xBufferExtent);
-            yScale.domain([0, Math.ceil(roundHundred(displayY + (displayY / 3)))]);  // add buffer to top
-            xScale2.domain(xScale.domain());
-            yScale2.domain(yScale.domain());
+            
 
             var yAxis = d3.axisLeft(yScale)
                 .tickSize(0)
@@ -580,7 +460,7 @@ function createViz(initialData) {
                                 }
                             })
                             .style("top", function() {
-                                var divOffset = document.getElementById("siteGraph").offsetHeight;
+                                var divOffset = document.getElementById("site-graph").offsetHeight;
                                 var relativePos = divOffset - d3.event.pageY;
                                 var tooltipHeight = document.getElementById("tooltipD").offsetHeight;
                                 // checks for points positioned in lower half of graph and moves the tooltip up
@@ -634,7 +514,7 @@ function createViz(initialData) {
                                 }
                             })
                             .style("top", function() {
-                                var divOffset = document.getElementById("siteGraph").offsetHeight;
+                                var divOffset = document.getElementById("site-graph").offsetHeight;
                                 var relativePos = divOffset - d3.event.pageY;
                                 var tooltipHeight = document.getElementById("tooltipG").offsetHeight;
                                 // checks for points positioned in lower half of graph and moves the tooltip up
@@ -681,8 +561,8 @@ function createViz(initialData) {
                 .call(brush.move, xScale.range());
 
             // filter listeners
-            d3.select("#filterResult").on("change", toggleResult);
-            d3.select("#filterGeomean").on("change", toggleGeomean);
+            d3.select("#filter-result").on("change", toggleResult);
+            d3.select("#filter-geomean").on("change", toggleGeomean);
 
             function toggleResult() {
                 if(d3.select(this).property("checked")){
@@ -740,51 +620,6 @@ function createViz(initialData) {
                         .attr("cy", function(d) { return yScale(d.geomean); });
                 focus.select(".xAxis").call(xAxis);
             }
-
-            function bufferExtent(extent, days) {
-                // pad min
-                var extentMin = convertDate(extent[0]);
-                var newExtentMin = extentMin - (oneDay * days); 
-                newExtentMin = convertUNIX(newExtentMin);
-                // pad max
-                var extentMax = convertDate(extent[1]);
-                var newExtentMax = extentMax + (oneDay * days);
-                newExtentMax = convertUNIX(newExtentMax);
-                newExtentObject = [newExtentMin, newExtentMax]; 
-                return newExtentObject;
-            }
-
-            function compareThresholds(y) {
-                var maxThreshold;
-                // only compare STV because STV > GM
-                // to-do: completely redo this
-                if (analyte === ecoli) {
-                    if (y < ecoli_STV) {
-                        maxThreshold = ecoli_STV;
-                    } else if (y > ecoli_STV) {
-                        maxThreshold = y;
-                    } else {
-                        maxThreshold = ecoli_STV
-                    }
-                } else if (analyte === enterococcus) {
-                    if (y < enterococcus_STV) {
-                        maxThreshold = enterococcus_STV;
-                    } else if (y > enterococcus_STV) {
-                        maxThreshold = y;
-                    } else {
-                        maxThreshold = enterococcus_STV;
-                    }
-                } else {
-                    return y;
-                }
-                return maxThreshold; 
-            }
-
-            function resetCheckboxes() {
-                document.getElementById("filterResult").checked="true";
-                document.getElementById("filterGeomean").checked="true";
-            }
-
         } // drawGraph()
 
     } // processData()
@@ -794,7 +629,7 @@ setTimeout(function() {
     map.invalidateSize(true);
 }, 100); 
 
-} // createViz()
+} // createChart()
 
 
 
@@ -834,6 +669,42 @@ $("#sites-box").click( function() {
 /*
 / App Helper Functions 
 */
+
+function addAnalyteMenu(analytes) {
+    $('#analyte-menu').empty();
+    // initialize dropdown
+    var analyteMenu = document.createElement('select');
+    analyteMenu.id = 'analyte-menu';
+    analyteMenu.className = 'form-control input-sm';
+    analyteMenu.innerHTML = '';
+    // populate dropdown
+    for (var i = 0; i < analytes.length; i++) {
+        var opt = analytes[i];
+        analyteMenu.innerHTML += '<option value=\"" + opt + "\">' + opt + '</option>';
+    }
+    var analyteContainer = document.getElementById("analyte-container");
+    analyteContainer.appendChild(analyteMenu);
+    // create listener
+    $("#analyte-menu").on("change", function() {
+        drawChart(this.value);
+    });
+}
+
+function addFilterMenu() {
+    var filterContainer = document.getElementById("filter-container");
+    var filterMenu = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
+    filterContainer.innerHTML += filterMenu;
+}
+
+function addScaleMenu() {
+    $('#scale-container').append('<div class="btn-group btn-group-sm" role="group"><button type="button" class="btn btn-default">Linear Scale</button><button type="button" class="btn btn-default">Log Scale</button></div>');
+}
+
+function Analyte(name, stv, geomean) {
+    this.name = name;
+    this.stv = stv;
+    this.geomean = geomean;
+}
 
 function createURL(resource, site) {
     var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
@@ -907,9 +778,26 @@ function hideSidebarControl() {
     document.getElementById("sidebar-control").style.display = "none";
 }
 
+function initializeDatePanel() {
+    $(".date-panel").empty();
+    $(".date-panel").append('Drag the handles of the gray box above to change the date view.<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span></p>');
+}
+
 function initializeSidebar() {
-    var featureContent = '<div id="popupMenu"><div id="analyteContainer"></div><div id="filterContainer"></div></div>' + '<div id="siteGraph"><svg width="862" height="390"></div><div class="panel-date"></div><div id="scale-container"></div>';
+    var featureContent = '<div id="popup-menu"><div id="analyte-container"></div><div id="filter-container"></div></div>' + '<div id="chart-container"></div><div class="date-panel"></div><div id="scale-container"></div>';
     $("#feature-info").html(featureContent);
+}
+
+function resetFilterBoxes() {
+    document.getElementById("filter-result").checked="true";
+    document.getElementById("filter-geomean").checked="true";
+}
+
+function resetLayerMenu() {
+    document.getElementById("topo-tile-radio").checked="true";
+    document.getElementById("sites-box").checked="true";
+    document.getElementById("counties-box").checked="";
+    document.getElementById("rb-boundaries-box").checked="";
 }
 
 function showLoading() {
@@ -935,13 +823,6 @@ function showSidebar() {
 
 function showSidebarControl() {
     document.getElementById("sidebar-control").style.display = "block";
-}
-
-function resetLayerMenu() {
-    document.getElementById("topo-tile-radio").checked="true";
-    document.getElementById("sites-box").checked="true";
-    document.getElementById("counties-box").checked="";
-    document.getElementById("rb-boundaries-box").checked="";
 }
 
 
@@ -995,6 +876,63 @@ function addRefLayers() {
     $("#rb-boundaries-box").click( function() { toggleLayer(rbLayer); });
 }
 
+function addSiteLayer() {
+    // initialize layer
+    var siteLayer = L.geoJson([], {
+        onEachFeature: function(feature, layer) {
+            // add site name tooltip
+            if (feature.properties.StationName) {
+                layer.bindPopup(feature.properties.StationName, {closeButton: false, offset: L.point(0, 0)});
+                layer.on('mouseover', function() { layer.openPopup(); });
+                layer.on('mouseout', function() { layer.closePopup(); });
+            }
+        },
+        pointToLayer: function (feature, latlng) {
+            return L.circleMarker(latlng, siteMarker);
+        }
+    }).addTo(map);
+
+    // request sites from API and process data
+    var sites = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
+    getData(sites, processSites); 
+
+    // add listener
+    siteLayer.on('click', function(e) {
+        $("#feature-title").html(e.layer.feature.properties.StationName + "<p>Station Code: " + e.layer.feature.properties.StationCode + "</p>");
+        setTimeout(function() {
+            hideSidebarControl();
+        }, 400);
+        // reset layer style to clear site selection
+        siteLayer.setStyle(siteMarker);
+        onMarkerClick(e);
+    });
+
+    function processSites(data, callback) {
+        features = [];
+        for (var i = 0; i < data.length; i++) {
+            var site = {};
+            // check for missing essential properties
+            if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode)) { 
+                continue; 
+            } else {
+                // filter out site name 'Leona Creek at Brommer Trailer Park' for inaccurate coordinates
+                if (data[i].SiteCode === '304-LEONA-21') {
+                    continue
+                } else {
+                site.type = "Feature";
+                site.geometry = {"type": "Point", "coordinates": [data[i].Longitude, data[i].Latitude]};
+                site.properties = { "StationName": data[i].StationName, "StationCode": data[i].SiteCode };
+                features.push(site);
+                }
+            }
+        }
+        siteLayer.addData(features);
+        setTimeout(function() {
+            $(".background-mask").hide();  
+        }, 1000);
+    }
+}
+
 function addTileLayers() {
     var Esri_WorldTopoMap = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri'}).addTo(map);
@@ -1037,19 +975,18 @@ function toggleLayer(layer, customPane) {
 / D3 Helper Functions 
 */
 
+function checkND(d) {
+    if ((d.result <= 0) || (d.ResultQualCode === "ND")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 function clearChart() {
     var svg = d3.select("svg");
     svg.selectAll("*").remove();
     d3.selectAll(".tooltip").remove();
-}
-
-function decimalRound(x, n) {
-    if (x === null) { return null; }
-    return x.toFixed(n);
-}
-
-function roundHundred(value) {
-    return (value / 100) * 100
 }
 
 // convert to UNIX time
@@ -1060,4 +997,22 @@ function convertDate(date) {
 // convert to Javascript date
 function convertUNIX(seconds) {
     return new Date(seconds);
+}
+
+function decimalRound(x, n) {
+    if (x === null) { return null; }
+    return x.toFixed(n);
+}
+
+function maxDisplay(y) {
+    // for both analytes, STV value is higher than the GM value
+    if (analyte === ecoli) {
+        return Math.max(stvEcoli, y);
+    } else if (analyte === enterococcus) {
+        return Math.max(stvEnterococcus, y);
+    }
+}
+
+function roundHundred(value) {
+    return (value / 100) * 100
 }

@@ -129,26 +129,12 @@ function onMarkerClick(e) {
         }
         
         chart.addAxes();
-
-        
-
-
-
-        
-    
-            
-
         chart.createTooltip('tooltipLine');
         chart.createTooltip('tooltipPoint');
+        chart.addPoints(data, 6, '#335b96', tooltipResult);
+
 
     }
-
-
-
-
-
-
-
 
 
     function processDataOld(data) {
@@ -716,30 +702,20 @@ function createURL(resource, site) {
     }
 }
 
-function getData(url, callback, offset, data) {
-    if (typeof offset === 'undefined') { offset = 0; }
-    if (typeof data === 'undefined') { data = []; }
-
-    var request = $.ajax({
+function getData(url, callback) {
+    $.ajax({
+        type: "GET",
         url: url,
-        data: {offset: offset},
-        dataType: "jsonp",
         jsonpCallback: callback.name,
-    });
-    request.done(function(res) {
-        var dataPage = res.result.records;
-        data = data.concat(dataPage);
-        if (dataPage.length < recordLimit) {
-            callback(data);
-        } else {
-            getData(url, callback, offset + recordLimit, data);
+        dataType: "jsonp",
+        success: function(res) {
+            var records = res.result.records;
+            callback(records);
+        },
+        error: function(e) {
+            console.log(e);
         }
-    });
-    request.fail(function(res) {
-        console.log(res);
-        hideLoading(); 
-        alert("Data failed to load.");
-    });
+    }); 
 }
 
 function getWidth() {
@@ -1015,4 +991,21 @@ function maxDisplay(y) {
 
 function roundHundred(value) {
     return (value / 100) * 100
+}
+
+function tooltipGM(d) {
+    var tooltipDate = d3.timeFormat('%b %e, %Y');
+    var content = "Date: " + tooltipDate(d.endDate) + "<br/ >Geometric Mean: " + d.geomean;
+    return content;
+}
+
+function tooltipResult(d) {
+    var tooltipDate = d3.timeFormat('%b %e, %Y');
+    var resultContent = 'Program: ' + d.Program + '<br>Date: ' + tooltipDate(d.sampledate) + '<br>Analyte: ' + d.Analyte + '<br>Result: ' + d.result + ' ' + d.Unit;
+    return resultContent;
+}
+
+function tooltipSTV(val) {
+    var content = 'Statistical Threshold Value (STV):<br/>' + val + ' cfu/100 mL';
+    return content;
 }

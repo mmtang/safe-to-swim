@@ -254,7 +254,7 @@ Chart.prototype.addPoints = function(data, radius, color, content) {
         .attr('class', 'circle')
         .attr('r', radius)
         .attr('fill', color)
-        .attr('cx', function(d) { return _this.xScale(d.sampleDate); })
+        .attr('cx', function(d) { return _this.xScale(d.sampledate); })
         .attr('cy', function(d) { return _this.yScale(d.result); })
         .style('opacity', 0.7)
         .on('mouseover', function(d) {
@@ -290,10 +290,10 @@ Chart.prototype.positionTooltip = function(axis, tooltipID) {
     // checks for elements plotted in the left/right or top/bottom half of chart and positions the tooltip accordingly
     // axis is 'x' or 'y'
     if (axis === 'x') {
-        var eventPos = d3.event.pageX;
-        var divExtent = document.getElementById('chart-container').offsetWidth;
-        var divOffset = document.getElementById('chart-container').offsetLeft;
-        var tooltipExtent = document.getElementById(tooltipID).offsetWidth;
+        var eventPos = d3.event.pageX; // get mouse position
+        var divExtent = document.getElementById('chart-container').offsetWidth; // get width of container holding chart
+        var divOffset = document.getElementById('sidebar').offsetLeft; // get offset of chart container from left (parent container)
+        var tooltipExtent = document.getElementById(tooltipID).offsetWidth; // get tooltip div width
     } else if (axis === 'y') {
         var eventPos = d3.event.pageY;
         var divExtent = document.getElementById('chart-container').offsetHeight;

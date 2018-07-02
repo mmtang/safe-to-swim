@@ -439,14 +439,17 @@ body {
     text-align: left;
     vertical-align: middle;
     padding: 8px 12px 8px 10px;
-    /* white-space: nowrap; */  
     font-family: inherit;
     font-size: 11px;
-    border-radius: 6px;
-    pointer-events: none;
     background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: rgba(0, 0, 0, 0.15) 0px 2px 5px;
+    border: 1px solid;
     border-radius: 0px;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 3px;
+    pointer-events: none;
+}
+
+#tooltipLine {
+    text-align: center;
 }
 
 #tooltipD {

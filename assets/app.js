@@ -81,7 +81,7 @@ function onMarkerClick(e) {
                 // result = new field, Result = original field
                 if (checkND(data[i])) {
                     // use half the method detection limit for non-detects
-                    d.result = d.mdl / 2;
+                    d.result = d.mdl * 0.5;
                 } else {
                     d.result = +data[i].Result;
                 }
@@ -101,6 +101,11 @@ function onMarkerClick(e) {
             addFilterMenu(); 
             addScaleMenu(); 
             addChart(chartData, defaultAnalyte);
+            // add listener for analyte menu
+            $('#analyte-menu').on('change', function() {
+                console.log(this);
+                addChart(chartData, this.value);
+            });
         } else {
             hideLoading();
             alert("No data for selected site.");
@@ -108,52 +113,45 @@ function onMarkerClick(e) {
     }  
 
     function addChart(data, analyte) {
-        resetFilterBoxes();
+        console.log('Analyte:', analyte);
+        resetFilters();
         initializeDatePanel();
+        console.log(data);
+        var chartData = data.filter(function(d) {
+            return d.Analyte === analyte;
+        });
+        console.log('chartData', chartData);
         
         var chartMargin = {top: 10, right: 20, bottom: 90, left: 50};
         var chart = new Chart({
             element: document.getElementById('chart-container'),
             margin: chartMargin,
-            data: data,
+            data: chartData,
             width: 862 - chartMargin.left - chartMargin.right,
             height: 490 - chartMargin.top - chartMargin.bottom
         })
 
+        // calculate axis buffers based on analyte selected
         if (analyte === ecoli.name) {
             chart.createScales(ecoli.stv);
         } else if (analyte === enterococcus.name) {
             chart.createScales(enterococcus.stv);
         } else {
-            chart.createScales();
+            chart.createScales(null);
         }
         
         chart.addAxes();
         chart.createTooltip('tooltipLine');
         chart.createTooltip('tooltipPoint');
-        chart.addPoints(data, 6, '#335b96', tooltipResult);
-
-
+        chart.addPoints(chartData, 6, '#335b96', tooltipResult);
     }
 
+    
 
     function processDataOld(data) {
         
 
-            
-    
-
-  
-        
-        
-        var chartData = data.filter(function(data) { 
-            if ((data.StationCode === siteClicked) && (data.analyte === analyte)) { return data; }
-        });
-        
-        
-
-
-        function addChart(data, analyte) {
+        function addChartOld(data, analyte) {
               
     
             
@@ -261,18 +259,7 @@ function onMarkerClick(e) {
 
             
 
-            var yAxis = d3.axisLeft(yScale)
-                .tickSize(0)
-                .tickPadding(10);
-            var xAxis = d3.axisBottom(xScale)
-                .tickSize(0)
-                .tickPadding(10);
-            var xAxis2 = d3.axisBottom(xScale2)
-                .tickSizeOuter(0);
-            var xgAxis = d3.axisBottom(xScale)
-                .tickSize(-height);
-            var ygAxis = d3.axisLeft(yScale)
-                .tickSize(-width);
+
 
             var brush = d3.brushX()
                 .extent([[0, 0], [width, height2]])
@@ -666,14 +653,10 @@ function addAnalyteMenu(analytes) {
     // populate dropdown
     for (var i = 0; i < analytes.length; i++) {
         var opt = analytes[i];
-        analyteMenu.innerHTML += '<option value=\"" + opt + "\">' + opt + '</option>';
+        analyteMenu.innerHTML += '<option value=\"' + opt + '\">' + opt + '</option>';
     }
     var analyteContainer = document.getElementById("analyte-container");
     analyteContainer.appendChild(analyteMenu);
-    // create listener
-    $("#analyte-menu").on("change", function() {
-        drawChart(this.value);
-    });
 }
 
 function addFilterMenu() {
@@ -764,7 +747,7 @@ function initializeSidebar() {
     $("#feature-info").html(featureContent);
 }
 
-function resetFilterBoxes() {
+function resetFilters() {
     document.getElementById("filter-result").checked="true";
     document.getElementById("filter-geomean").checked="true";
 }

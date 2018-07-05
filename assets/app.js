@@ -122,7 +122,7 @@ function onMarkerClick(e) {
         });
         console.log('chartData', chartData);
         
-        var chartMargin = {top: 10, right: 20, bottom: 90, left: 50};
+        var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
         var chart = new Chart({
             element: document.getElementById('chart-container'),
             margin: chartMargin,
@@ -144,6 +144,7 @@ function onMarkerClick(e) {
         chart.createTooltip('tooltipLine');
         chart.createTooltip('tooltipPoint');
         chart.addPoints(chartData, 6, '#335b96', tooltipResult);
+        chart.drawBrush();
     }
 
     
@@ -257,16 +258,6 @@ function onMarkerClick(e) {
             
             
 
-            
-
-
-
-            var brush = d3.brushX()
-                .extent([[0, 0], [width, height2]])
-                .on("brush", brushed)
-                .on('end', function() {
-                    var s = d3.event.selection;
-                });
             
             // x-axis grid
             focus.append("g")
@@ -403,58 +394,6 @@ function onMarkerClick(e) {
                 return isOverlap;
             }
 
-            // add data to main chart
-            var results = focus.append("g");
-                results.attr("clip-path", "url(#clip)");
-                results.selectAll("circle")
-                    .data(graphData)
-                    .enter().append("circle")
-                    .attr('class', 'circles')
-                    .attr("r", 6)
-                    .attr("fill", "rgb(51, 91, 150)")
-                    .attr("cx", function(d) { return xScale(d.sampleDate); })
-                    .attr("cy", function(d) { return yScale(d.result); })
-                    .style("opacity", circleOpacity)
-                    .on("mouseover", function(d) {
-                        var tooltipDate = d3.timeFormat("%b %e, %Y");  // format date value for tooltip
-                        tooltipD.transition()
-                            .duration(100)
-                            .style("opacity", tooltipOpacity);
-                        tooltipD.html("Sample Date: " + tooltipDate(d.sampleDate) + "<br/ >" + "Program: " + d.Program + "<br/ >" + "Result: " + d.result + " " + d.Unit)
-                            .style("left", function() {
-                                var windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-                                var widthThreshold = windowWidth * 0.75;
-                                var tooltipWidth = document.getElementById("tooltipD").offsetWidth;
-                                // checks for points positioned in second half of graph and moves the tooltip left
-                                if (d3.event.pageX > widthThreshold) {
-                                    return d3.event.pageX - tooltipWidth + "px";
-                                } else {
-                                    return d3.event.pageX + "px";
-                                }
-                            })
-                            .style("top", function() {
-                                var divOffset = document.getElementById("site-graph").offsetHeight;
-                                var relativePos = divOffset - d3.event.pageY;
-                                var tooltipHeight = document.getElementById("tooltipD").offsetHeight;
-                                // checks for points positioned in lower half of graph and moves the tooltip up
-                                if (relativePos < 0) {
-                                    return d3.event.pageY - tooltipHeight + "px";
-                                } else {
-                                    return d3.event.pageY + "px";
-                                }
-                            });
-                        d3.select(this)
-                            .attr("fill", "#84c0e3");
-
-                    })
-                    .on("mouseout", function(d) {
-                        tooltipD.transition()
-                            .duration(100)
-                            .style("opacity", 0);
-                        d3.select(this)
-                            .attr("fill", "rgb(51, 91, 150)")
-                            .style("opacity", circleOpacity);
-                    });
 
             // add geomean to main chart
             var geomeans = focus.append("g");
@@ -528,10 +467,6 @@ function onMarkerClick(e) {
                     .attr("cy", function(d) { return yScale2(d.result); });
             */
                                                         
-            context.append("g")
-                .attr("class", "brush")
-                .call(brush)
-                .call(brush.move, xScale.range());
 
             // filter listeners
             d3.select("#filter-result").on("change", toggleResult);
@@ -553,46 +488,6 @@ function onMarkerClick(e) {
                 }			
             }
 
-            function brushed() {
-                // save brush start and end values
-                var extent = d3.event.selection || xScale2.range();
-                var brushWidth = extent[1] - extent[0];
-
-                // update date placeholders
-                var formatDate = d3.timeFormat("%b %e, %Y");
-                $(".js-start-date").text(formatDate(xScale2.invert(extent[0])));
-                $(".js-end-date").text(formatDate(xScale2.invert(extent[1])));
-
-                // manage on-screen graph elements when brush is dragged outside extent
-                if ((brushWidth === 0) || (extent[0] >= width)) { 
-                    focus.selectAll(".circles")
-                        .style("opacity", 0);
-                    focus.selectAll(".gCircles")
-                        .style("opacity", 0);
-                    focus.selectAll(".line")
-                        .style("opacity", 0);
-                    focus.selectAll(".graphLabel")
-                        .style("opacity", 0);
-                } else {
-                    focus.selectAll(".circles")
-                        .style("opacity", circleOpacity);
-                    focus.selectAll(".gCircles")
-                        .style("opacity", gCircleOpacity);
-                    focus.selectAll(".line")
-                        .style("opacity", lineOpacity);
-                    focus.selectAll(".graphLabel")
-                        .style("opacity", lineOpacity);
-                }
-
-                xScale.domain(extent.map(xScale2.invert, xScale2));
-                focus.selectAll(".circles")
-                        .attr("cx", function(d) { return xScale(d.sampleDate); })
-                        .attr("cy", function(d) { return yScale(d.result); });
-                focus.selectAll(".gCircles")
-                        .attr("cx", function(d) { return xScale(d.endDate); })
-                        .attr("cy", function(d) { return yScale(d.geomean); });
-                focus.select(".xAxis").call(xAxis);
-            }
         } // drawGraph()
 
     } // processData()
@@ -609,7 +504,7 @@ setTimeout(function() {
 
 
 /*
-/ Listeners
+/ Global Listeners
 */
 
 $("#about-btn").click(function() {
@@ -984,7 +879,7 @@ function tooltipGM(d) {
 
 function tooltipResult(d) {
     var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var resultContent = 'Program: ' + d.Program + '<br>Date: ' + tooltipDate(d.sampledate) + '<br>Analyte: ' + d.Analyte + '<br>Result: ' + d.result + ' ' + d.Unit;
+    var resultContent = 'Program: ' + d.Program + '<br>Analyte: ' + d.Analyte + '<br>Date: ' + tooltipDate(d.sampledate) + '<br>Result: ' + d.result + ' ' + d.Unit;
     return resultContent;
 }
 

@@ -7,7 +7,7 @@ var Chart = function(opts) {
     // margin = {top: ?, right: ?, bottom: ?, left: ?}
     this.margin = opts.margin;
     this.width = opts.width;
-    this.height = opts.height;
+    this.height = opts.height - 10;
 
     this.initializeChart();
 }
@@ -64,7 +64,7 @@ Chart.prototype.responsive = function() {
 Chart.prototype.initializeBrush = function() {
     this.brushHeight = 25;
     // position of brush from top of graph
-    var brushSpace = this.height + this.brushHeight + 20;
+    var brushSpace = this.height + this.brushHeight + 30;
     this.brushMargin = {top: brushSpace, right: 20, bottom: 10, left: 50};
     // create svg for chart brush
     this.context = this.svg.append('g')
@@ -115,11 +115,12 @@ Chart.prototype.createBrushScales = function() {
 }
 
 Chart.prototype.drawBrush = function() {
+    this.initializeBrush();
     this.createBrushScales();
     this.createBrush();
-    this.addBrush();
     this.createBrushAxis();
     this.addBrushAxis();
+    this.addBrush();
 }
 
 Chart.prototype.brushed = function(parent) {
@@ -144,9 +145,14 @@ Chart.prototype.brushed = function(parent) {
     }
     // redraw graph elements
     parent.focus.selectAll('.circle')
-        .attr('cx', function(d) { return parent.xScale(d.sampleDate); })
+        .attr('cx', function(d) { return parent.xScale(d.sampledate); })
         .attr('cy', function(d) { return parent.yScale(d.result); });
     parent.focus.select('.x-axis').call(parent.xAxis);
+
+    // update date placeholders
+    var formatDate = d3.timeFormat("%b %e, %Y");
+    $(".js-start-date").text(formatDate(this.xBrushScale.invert(selection[0])));
+    $(".js-end-date").text(formatDate(this.xBrushScale.invert(selection[1])));
 }
 
 Chart.prototype.clearChart = function() {
@@ -173,8 +179,9 @@ Chart.prototype.createScales = function(threshold) {
     var yExtent = d3.extent(this.data, function(d,i) { return d.result; });
     var xBuffered = bufferX(xExtent, 35);  
     var yMax = d3.max(this.data, function(d) { return d.result }); 
+    // compare the max Y to the given threshold and pick the greater value
     var yDisplay = Math.max(yMax, threshold);
-    // add arbitrary buffer to max y value
+    // add arbitrary buffer to y axis
     var yBuffered = Math.ceil(roundHundred(yDisplay + (yDisplay / 3)))
 
     this.xScale = d3.scaleTime()

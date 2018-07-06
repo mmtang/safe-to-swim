@@ -258,13 +258,43 @@ Chart.prototype.addPoints = function(data, radius, color, content) {
     points.selectAll('circle')
         .data(data)
         .enter().append('circle')
-        // option to assign 2nd class
         .attr('class', 'circle')
         .attr('r', radius)
         .attr('fill', color)
         .attr('cx', function(d) { return _this.xScale(d.sampledate); })
         .attr('cy', function(d) { return _this.yScale(d.result); })
         .style('opacity', 0.7)
+        .on('mouseover', function(d) {
+            var _d = d;
+            _this.toggleTooltip(tooltipPoint, 1);
+            d3.select(this).attr('fill', '#56f6ff');
+            d3.select(tooltipPoint)
+                .html(function() { return content.call(this, _d); })
+                .style('left', function() { return _this.positionTooltip('x', 'tooltipPoint'); })
+                .style('top', function() { return _this.positionTooltip('y', 'tooltipPoint'); })
+                .style('border-color', color);
+        })
+        .on('mouseout', function() {
+            _this.toggleTooltip(tooltipPoint, 0);
+            d3.select(this)
+                .attr('fill', color);
+        });
+}
+
+Chart.prototype.addGPoints = function(data, radius, color, content) {
+    var _this = this;
+    var points = this.focus.append('g');
+    points.attr('clip-path', 'url(#clip)');
+    points.selectAll('circle')
+        .data(data)
+        .enter().append('circle')
+        .filter(function(d) { return (d.geomean !== null) && (d.geomean != "NES") })
+        .attr('class', 'gCircle')
+        .attr('r', radius)
+        .attr('fill', color)
+        .attr('cx', function(d) { return _this.xScale(d.endDate); })
+        .attr('cy', function(d) { return _this.yScale(d.geomean); })
+        .style('opacity', 0.8)
         .on('mouseover', function(d) {
             var _d = d;
             _this.toggleTooltip(tooltipPoint, 1);

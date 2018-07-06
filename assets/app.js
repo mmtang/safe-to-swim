@@ -117,6 +117,8 @@ function onMarkerClick(e) {
         var chartData = data.filter(function(d) {
             return d.Analyte === analyte;
         });
+        var geomeanData = getGeomeans(chartData);
+        console.log(geomeanData);
         
         var blue = '#335b96', red = '#ED6874';
         var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
@@ -140,9 +142,7 @@ function onMarkerClick(e) {
         chart.addAxes();
         chart.createTooltip('tooltipLine');
         chart.createTooltip('tooltipPoint');
-        chart.addPoints(chartData, 6, blue, tooltipResult);
-        chart.drawBrush();
-        
+
         // add threshold lines based on analyte selected
         if (analyte === ecoli.name) {
             chart.addLine(ecoli.stv, blue, tooltipThresholdSTV);
@@ -151,6 +151,10 @@ function onMarkerClick(e) {
             chart.addLine(enterococcus.stv, blue, tooltipThresholdSTV);
             chart.addLine(enterococcus.geomean, red, tooltipThresholdGM);
         }
+        
+        chart.addPoints(chartData, 6, blue, tooltipResult);
+        chart.addGPoints(geomeanData, 5, red, tooltipGM);
+        chart.drawBrush();
 
         // add chart filter listeners
         d3.select('#filter-result').on('change', function() { togglePoints(this, '.circle'); });
@@ -175,13 +179,6 @@ function onMarkerClick(e) {
 
             
 
-            // get reference dates
-            var lastSampleDate = graphData[0].sampleDate,
-                dataArrayLength = graphData.length,
-                earliestDate = graphData[dataArrayLength - 1].sampleDate;
-
-            var oneDay = (24 * 60 * 60 * 1000);
-            var SIX_WEEKS = 42;  // 6 weeks * 7 days = 42
             
             function getGeomeans(data, startDate, endDate, days) {
                 var geomeansArray = [];
@@ -727,11 +724,6 @@ function convertDate(date) {
 // convert to Javascript date
 function convertUNIX(seconds) {
     return new Date(seconds);
-}
-
-function decimalRound(x, n) {
-    if (x === null) { return null; }
-    return x.toFixed(n);
 }
 
 function maxDisplay(y) {

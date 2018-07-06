@@ -234,7 +234,7 @@ Chart.prototype.addLine = function(val, color, content) {
             var _d = d;
             _this.toggleTooltip(tooltipLine, 1);
             d3.select(tooltipLine)
-                .html(function() { return tooltipCaller(content, val); })
+                .html(function() { return caller(content, val); })
                 .style('left', function() { return _this.positionLineTooltip('x', 'tooltipLine'); })
                 .style('top', function() { return _this.positionLineTooltip('y', 'tooltipLine'); })
                 .style('border-color', color);
@@ -258,6 +258,7 @@ Chart.prototype.addPoints = function(data, radius, color, content) {
     points.selectAll('circle')
         .data(data)
         .enter().append('circle')
+        // option to assign 2nd class
         .attr('class', 'circle')
         .attr('r', radius)
         .attr('fill', color)

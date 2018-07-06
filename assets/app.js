@@ -152,6 +152,11 @@ function onMarkerClick(e) {
             chart.addLine(enterococcus.geomean, red, tooltipThresholdGM);
         }
 
+        // add chart filter listeners
+        d3.select('#filter-result').on('change', function() { togglePoints(this, '.circle'); });
+
+        		
+
     }
 
     
@@ -286,7 +291,7 @@ function onMarkerClick(e) {
             var tooltipOpacity = 1;
             var lineOpacity = 1;
 
-            
+
             // add geomean to main chart
             var geomeans = focus.append("g");
                 geomeans.attr("clip-path", "url(#clip)");
@@ -358,27 +363,6 @@ function onMarkerClick(e) {
                     .attr("cx", function(d) { return xScale2(d.sampleDate); })
                     .attr("cy", function(d) { return yScale2(d.result); });
             */
-                                                        
-
-            // filter listeners
-            d3.select("#filter-result").on("change", toggleResult);
-            d3.select("#filter-geomean").on("change", toggleGeomean);
-
-            function toggleResult() {
-                if(d3.select(this).property("checked")){
-                    d3.selectAll(".circles").attr("visibility", "visible");
-                } else {
-                    d3.selectAll(".circles").attr("visibility", "hidden");
-                }			
-            }
-
-            function toggleGeomean() {
-                if(d3.select(this).property("checked")){
-                    d3.selectAll(".gCircles").attr("visibility", "visible");
-                } else {
-                    d3.selectAll(".gCircles").attr("visibility", "hidden");
-                }			
-            }
 
         } // drawGraph()
 
@@ -763,9 +747,17 @@ function roundHundred(value) {
     return (value / 100) * 100
 }
 
-function tooltipCaller(callback, param) {
+function caller(callback, param) {
     return callback(param);
 }
+
+function togglePoints(context, name) {
+    if (d3.select(context).property('checked')){
+        d3.selectAll(name).attr('visibility', 'visible');
+    } else {
+        d3.selectAll(name).attr('visibility', 'hidden');
+    }
+}	
 
 function tooltipGM(d) {
     var tooltipDate = d3.timeFormat('%b %e, %Y');

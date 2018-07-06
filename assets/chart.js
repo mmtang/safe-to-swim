@@ -7,7 +7,7 @@ var Chart = function(opts) {
     // margin = {top: ?, right: ?, bottom: ?, left: ?}
     this.margin = opts.margin;
     this.width = opts.width;
-    this.height = opts.height - 10;
+    this.height = opts.height;
 
     this.initializeChart();
 }
@@ -224,7 +224,7 @@ Chart.prototype.addLine = function(val, color, content) {
     var line = _this.focus.append('line')
         .attr('class', 'line')
         .style('stroke', color)
-        .style('stroke-width', 2.5)
+        .style('stroke-width', 3)
         .style('stroke-dasharray', ('9, 3'))
         .attr('x1', 0)
         .attr('x2', _this.width)
@@ -234,7 +234,7 @@ Chart.prototype.addLine = function(val, color, content) {
             var _d = d;
             _this.toggleTooltip(tooltipLine, 1);
             d3.select(tooltipLine)
-                .html(function() { return content.call(this, _d) })
+                .html(function() { return tooltipCaller(content, val); })
                 .style('left', function() { return _this.positionLineTooltip('x', 'tooltipLine'); })
                 .style('top', function() { return _this.positionLineTooltip('y', 'tooltipLine'); })
                 .style('border-color', color);

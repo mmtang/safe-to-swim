@@ -103,7 +103,6 @@ function onMarkerClick(e) {
             addChart(chartData, defaultAnalyte);
             // add listener for analyte menu
             $('#analyte-menu').on('change', function() {
-                console.log(this);
                 addChart(chartData, this.value);
             });
         } else {
@@ -113,15 +112,13 @@ function onMarkerClick(e) {
     }  
 
     function addChart(data, analyte) {
-        console.log('Analyte:', analyte);
         resetFilters();
         initializeDatePanel();
-        console.log(data);
         var chartData = data.filter(function(d) {
             return d.Analyte === analyte;
         });
-        console.log('chartData', chartData);
         
+        var blue = '#335b96', red = '#ED6874';
         var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
         var chart = new Chart({
             element: document.getElementById('chart-container'),
@@ -143,8 +140,18 @@ function onMarkerClick(e) {
         chart.addAxes();
         chart.createTooltip('tooltipLine');
         chart.createTooltip('tooltipPoint');
-        chart.addPoints(chartData, 6, '#335b96', tooltipResult);
+        chart.addPoints(chartData, 6, blue, tooltipResult);
         chart.drawBrush();
+        
+        // add threshold lines based on analyte selected
+        if (analyte === ecoli.name) {
+            chart.addLine(ecoli.stv, blue, tooltipThresholdSTV);
+            chart.addLine(ecoli.geomean, red, tooltipThresholdGM);
+        } else if (analyte === enterococcus.name) {
+            chart.addLine(enterococcus.stv, blue, tooltipThresholdSTV);
+            chart.addLine(enterococcus.geomean, red, tooltipThresholdGM);
+        }
+
     }
 
     
@@ -279,122 +286,7 @@ function onMarkerClick(e) {
             var tooltipOpacity = 1;
             var lineOpacity = 1;
 
-            // draw stv threshold line
-            switch (analyte) {
-                case ecoli:
-                    var geomeanThreshold = focus.append('line')
-                        .attr("class", "line")
-                        .style('stroke', "rgb(51, 91, 150)")
-                        .style('stroke-width', 2)
-                        .style('opacity', lineOpacity)
-                        .attr('x1', 0)
-                        .attr('y1', yScale(ecoli_STV))
-                        .attr('x2', width)
-                        .attr('y2', yScale(ecoli_STV));
-                    focus.append("text")
-                        .attr("transform", "translate(" + (width - 100) + "," + (yScale(ecoli_STV) - 10) + ")")
-                        .attr("dy", ".35em")
-                        .attr("class","stvLineLabel")
-                        .attr("id", "stvLineLabel")
-                        .attr("text-anchor", "start")
-                        .style("fill", "rgb(51, 91, 150)")
-                        .text("STV: " + ecoli_STV + " cfu/100 mL");
-                    break;
-                case enterococcus:
-                    var geomeanThreshold = focus.append('line')
-                        .attr("class", "line")
-                        .style('stroke', "rgb(51, 91, 150)")
-                        .style('stroke-width', 2)
-                        .style('opacity', lineOpacity)
-                        .attr('x1', 0)
-                        .attr('y1', yScale(enterococcus_STV))
-                        .attr('x2', width)
-                        .attr('y2', yScale(enterococcus_STV));
-                    focus.append("text")
-                        .attr("transform", "translate(" + (width - 100) + "," + (yScale(enterococcus_STV) - 10) + ")")
-                        .attr("dy", ".35em")
-                        .attr("class","stvLineLabel")
-                        .attr("id", "stvLineLabel")
-                        .attr("text-anchor", "start")
-                        .style("fill", "rgb(51, 91, 150)")
-                        .text("STV: " + enterococcus_STV + " cfu/100 mL");
-                    break;
-            }
-
-            // draw gm threshold line
-            switch (analyte) {
-                case ecoli:
-                    var stvThreshold = focus.append('line')
-                        .attr("class", "line")
-                        .style('stroke', gColor)
-                        .style('stroke-width', 2)
-                        .style('opacity', lineOpacity)
-                        .attr('x1', 0)
-                        .attr('y1', yScale(ecoli_GM))
-                        .attr('x2', width)
-                        .attr('y2', yScale(ecoli_GM));
-                    focus.append("text")
-                        .attr("transform", "translate(" + (width - 91) + "," + (yScale(ecoli_GM) - 10) + ")")
-                        .attr("dy", ".35em")
-                        .attr("class","gmLineLabel")
-                        .attr("id", "gmLineLabel")
-                        .attr("text-anchor", "start")
-                        .style("fill", gColor)
-                        .text("GM: " + ecoli_GM + " cfu/100 mL");
-                    break;
-                case enterococcus:
-                    var stvThreshold = focus.append('line')
-                        .attr("class", "line")
-                        .style('stroke', gColor)
-                        .style('stroke-width', 2)
-                        .style('opacity', lineOpacity)
-                        .attr('x1', 0)
-                        .attr('y1', yScale(enterococcus_GM))
-                        .attr('x2', width)
-                        .attr('y2', yScale(enterococcus_GM));
-                    focus.append("text")
-                        .attr("transform", "translate(" + (width - 91) + "," + (yScale(enterococcus_GM) - 10) + ")")
-                        .attr("dy", ".35em")
-                        .attr("class","gmLineLabel")
-                        .attr("id", "gmLineLabel")
-                        .attr("text-anchor", "start")
-                        .style("fill", gColor)
-                        .text("GM: " + enterococcus_GM + " cfu/100 mL");
-                    break;
-            }
-
-            // move line labels if overlapping
-            if ((analyte === enterococcus) || (analyte === ecoli)) {
-
-                var gThresholdLabel = document.getElementById("gmLineLabel"),
-                    stvThresholdLabel = document.getElementById("stvLineLabel");
-                
-                if (intersect(gThresholdLabel, stvThresholdLabel)) {
-                    d3.select("#stvLineLabel").attr("dy", "-8");;
-                }
-            }
-
-            function getPositions(elem) {
-                var clientRect = elem.getBoundingClientRect();
-                return [
-                    [ clientRect.left, clientRect.left + clientRect.width ],
-                    [ clientRect.top, clientRect.top + clientRect.height ]
-                ];
-            }
-
-            function intersect(elemA, elemB) {
-                var posA = getPositions(elemA),
-                    posB = getPositions(elemB),
-                    isOverlap = false;
-
-                if (posA[0][0] < posB[0][1] && posA[0][1] > posB[0][0] &&
-                    posA[1][0] < posB[1][1] && posA[1][1] > posB[1][0])
-                    isOverlap = true;
-
-                return isOverlap;
-            }
-
-
+            
             // add geomean to main chart
             var geomeans = focus.append("g");
                 geomeans.attr("clip-path", "url(#clip)");
@@ -871,6 +763,10 @@ function roundHundred(value) {
     return (value / 100) * 100
 }
 
+function tooltipCaller(callback, param) {
+    return callback(param);
+}
+
 function tooltipGM(d) {
     var tooltipDate = d3.timeFormat('%b %e, %Y');
     var content = "Date: " + tooltipDate(d.endDate) + "<br/ >Geometric Mean: " + d.geomean;
@@ -883,7 +779,12 @@ function tooltipResult(d) {
     return resultContent;
 }
 
-function tooltipSTV(val) {
+function tooltipThresholdSTV(val) {
     var content = 'Statistical Threshold Value (STV):<br/>' + val + ' cfu/100 mL';
+    return content;
+}
+
+function tooltipThresholdGM(val) {
+    var content = 'Geomean Threshold:<br/>' + val + ' cfu/100 mL';
     return content;
 }

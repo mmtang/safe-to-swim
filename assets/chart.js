@@ -66,6 +66,21 @@ Chart.prototype.addBrushAxis = function() {
         .call(this.xBrushAxis);
 }
 
+Chart.prototype.addBrushPoints = function(data, radius, color) {
+    var _this = this;
+    var points = this.context.append('g');
+    points.attr('clip-path', 'url(#clip)');
+    points.selectAll('circle')
+        .data(data)
+        .enter().append('circle')
+        .attr('class', 'bCircle')
+        .attr('r', radius)
+        .attr('fill', color)
+        .attr('cx', function(d) { return _this.xBrushScale(d.sampledate); })
+        .attr('cy', function(d) { return _this.yBrushScale(d.result); })
+        .style('opacity', chartOpacity);
+}
+
 Chart.prototype.createBrush = function() {
     var _this = this;
     this.brush = d3.brushX()

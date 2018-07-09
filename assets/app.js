@@ -155,6 +155,7 @@ function onMarkerClick(e) {
         chart.addPoints(chartData, 6, blue, tooltipResult);
         chart.addGPoints(geomeanData, 5, red, tooltipGM);
         chart.drawBrush();
+        chart.addBrushPoints(chartData, 3, blue);
 
 
         // add chart filter listeners
@@ -162,50 +163,12 @@ function onMarkerClick(e) {
         d3.select('#filter-geomean').on('change', function() { togglePoints(this, '.gCircle'); });
     }
 
-    
-
-    function processDataOld(data) {
-        
-
-        function addChartOld(data, analyte) {
-              
-            
-            // x-axis grid
-            focus.append("g")
-                .attr("class", "axis grid")
-                .call(ygAxis);
-
-            context.append("g")
-                .attr("class", "xAxis2")
-                .attr("transform", "translate(0," + height2 + ")")
-                .call(xAxis2);
-            
-            /* 
-            var resultsContext = context.append("g");
-                resultsContext.attr("clip-path", "url(#clip)");
-                resultsContext.selectAll("dot")
-                    .data(graphData)
-                    .enter().append("circle")
-                    .attr('class', 'dotContext')
-                    .attr("r", 3)
-                    .style("opacity", 0.5)
-                    .attr("cx", function(d) { return xScale2(d.sampleDate); })
-                    .attr("cy", function(d) { return yScale2(d.result); });
-            */
-
-        } // drawGraph()
-
-    } // processData()
-
 showSidebar();
 setTimeout(function() {
     map.invalidateSize(true);
 }, 100); 
 
-} // createChart()
-
-
-
+} // onMarkerClick
 
 
 /*
@@ -232,11 +195,6 @@ $("#mobile-close-btn").click(function() {
     hideSidebar();
     return false;
 })
-
-// listeners for toggling layers
-$("#sites-box").click( function() {
-    toggleLayer(siteLayer);
-});
 
 
 /*
@@ -384,7 +342,6 @@ function showSidebarControl() {
     document.getElementById("sidebar-control").style.display = "block";
 }
 
-
 /*
 / Map Helper Functions 
 */
@@ -455,7 +412,9 @@ function addSiteLayer() {
     var sites = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
     getData(sites, processSites); 
 
-    // add listener
+    // add listeners
+    document.getElementById('sites-box').addEventListener('click', function() { toggleLayer(siteLayer); });
+    // leaflet event
     siteLayer.on('click', function(e) {
         $("#feature-title").html(e.layer.feature.properties.StationName + "<p>Station Code: " + e.layer.feature.properties.StationCode + "</p>");
         setTimeout(function() {
@@ -478,10 +437,10 @@ function addSiteLayer() {
                 if (data[i].SiteCode === '304-LEONA-21') {
                     continue
                 } else {
-                site.type = "Feature";
-                site.geometry = {"type": "Point", "coordinates": [data[i].Longitude, data[i].Latitude]};
-                site.properties = { "StationName": data[i].StationName, "StationCode": data[i].SiteCode };
-                features.push(site);
+                    site.type = "Feature";
+                    site.geometry = {"type": "Point", "coordinates": [data[i].Longitude, data[i].Latitude]};
+                    site.properties = { "StationName": data[i].StationName, "StationCode": data[i].SiteCode };
+                    features.push(site);
                 }
             }
         }

@@ -160,7 +160,6 @@ function onMarkerClick(e) {
         // add chart filter listeners
         d3.select('#filter-result').on('change', function() { togglePoints(this, '.circle'); });
         d3.select('#filter-geomean').on('change', function() { togglePoints(this, '.gCircle'); });
-
     }
 
     
@@ -574,6 +573,34 @@ function roundHundred(value) {
 
 function caller(callback, param) {
     return callback(param);
+}
+
+function responsive() {
+    // get container + svg aspect ratio
+    var svg = d3.select('#graph'),
+        container = svg.node().parentNode,
+        width = parseInt(svg.style('width')),
+        height = parseInt(svg.style('height')),
+        aspect = width / height;
+    
+    // add viewBox and preserveAspectRatio properties,
+    // and call resize so that svg resizes on inital page load
+    svg.attr('viewBox', '0 0 ' + width + ' ' + height)
+        .attr('perserveAspectRatio', 'xMinYMid')
+        .call(resize);
+
+    // to register multiple listeners for same event type, 
+    // you need to add namespace, i.e., 'click.foo'
+    // necessary if you call invoke this function for multiple svgs
+    // api docs: https://github.com/mbostock/d3/wiki/Selections#on
+    d3.select(window).on('resize.' + container.id, resize);
+
+    // get width of container and resize svg to fit it
+    function resize() {
+        var targetWidth = parseInt(container.offsetWidth);
+        svg.attr('width', targetWidth);
+        svg.attr('height', Math.round(targetWidth / aspect));
+    }
 }
 
 function togglePoints(context, name) {

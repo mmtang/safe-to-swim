@@ -501,8 +501,6 @@ body {
 }
 
 .line {
-    fill: none;
-    stroke: #ad1111;
     shape-rendering: crispEdges;
 }
 

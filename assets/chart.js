@@ -1,6 +1,3 @@
-/*************************************************************
-*************************************************************/
-
 var Chart = function(opts) {
     this.element = opts.element;
     this.data = opts.data;
@@ -11,6 +8,8 @@ var Chart = function(opts) {
 
     this.initializeChart();
 }
+
+var chartOpacity = 0.8;
 
 Chart.prototype.initializeChart = function() {
     this.element.innerHTML = '';
@@ -98,25 +97,20 @@ Chart.prototype.brushed = function(parent) {
     var selection = d3.event.selection;
     parent.xScale.domain(selection.map(parent.xBrushScale.invert, parent.xBrushScale));
     // manage graph elements when dragged outside extent
-    if (selection[0] >= this.width) { 
-        this.focus.selectAll('.circle')
-            .style('opacity', 0);
-        this.focus.selectAll('.line')
-            .style('opacity', 0);
-        this.focus.selectAll('.x-axis')
-            .style('opacity', 0);
+    if ((selection[0] >= this.width) || (selection[1] <= 0)) { 
+        this.focus.selectAll('.circle').style('opacity', 0);
+        this.focus.selectAll('.gCircle').style('opacity', 0);
     } else {
-        this.focus.selectAll('.circle')
-            .style('opacity', 0.7);
-        this.focus.selectAll('.line')
-            .style('opacity', 0.7);
-        this.focus.selectAll('.x-axis')
-            .style('opacity', 1);
+        this.focus.selectAll('.circle').style('opacity', chartOpacity);
+        this.focus.selectAll('.gCircle').style('opacity', chartOpacity);
     }
     // redraw graph elements
     parent.focus.selectAll('.circle')
         .attr('cx', function(d) { return parent.xScale(d.sampledate); })
         .attr('cy', function(d) { return parent.yScale(d.result); });
+    parent.focus.selectAll('.gCircle')
+        .attr('cx', function(d) { return parent.xScale(d.enddate); })
+        .attr('cy', function(d) { return parent.yScale(d.geomean); });
     parent.focus.select('.x-axis').call(parent.xAxis);
 
     // update date placeholders
@@ -200,6 +194,7 @@ Chart.prototype.addLine = function(val, color, content) {
         .attr('x2', _this.width)
         .attr('y1', _this.yScale(val))
         .attr('y2', _this.yScale(val))
+        .style('opacity', chartOpacity)
         .on('mousemove', function(d) {
             var _d = d;
             _this.toggleTooltip(tooltipLine, 1);
@@ -233,7 +228,7 @@ Chart.prototype.addPoints = function(data, radius, color, content) {
         .attr('fill', color)
         .attr('cx', function(d) { return _this.xScale(d.sampledate); })
         .attr('cy', function(d) { return _this.yScale(d.result); })
-        .style('opacity', 0.7)
+        .style('opacity', chartOpacity)
         .on('mouseover', function(d) {
             var _d = d;
             _this.toggleTooltip(tooltipPoint, 1);
@@ -256,7 +251,7 @@ Chart.prototype.addGPoints = function(data, radius, color, content) {
     var points = this.focus.append('g');
     points.attr('clip-path', 'url(#clip)');
     points.selectAll('circle')
-        .data(data)
+        .data(data, function(d) { return d; })
         .enter().append('circle')
         .filter(function(d) { return (d.geomean !== null) && (d.geomean != "NES") })
         .attr('class', 'gCircle')
@@ -264,7 +259,7 @@ Chart.prototype.addGPoints = function(data, radius, color, content) {
         .attr('fill', color)
         .attr('cx', function(d) { return _this.xScale(d.enddate); })
         .attr('cy', function(d) { return _this.yScale(d.geomean); })
-        .style('opacity', 0.9)
+        .style('opacity', chartOpacity)
         .on('mouseover', function(d) {
             var _d = d;
             _this.toggleTooltip(tooltipPoint, 1);

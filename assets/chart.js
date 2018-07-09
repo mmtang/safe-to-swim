@@ -292,9 +292,9 @@ Chart.prototype.addGPoints = function(data, radius, color, content) {
         .attr('class', 'gCircle')
         .attr('r', radius)
         .attr('fill', color)
-        .attr('cx', function(d) { return _this.xScale(d.endDate); })
+        .attr('cx', function(d) { return _this.xScale(d.enddate); })
         .attr('cy', function(d) { return _this.yScale(d.geomean); })
-        .style('opacity', 0.8)
+        .style('opacity', 0.9)
         .on('mouseover', function(d) {
             var _d = d;
             _this.toggleTooltip(tooltipPoint, 1);

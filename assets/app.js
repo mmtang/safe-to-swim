@@ -156,10 +156,10 @@ function onMarkerClick(e) {
         chart.addGPoints(geomeanData, 5, red, tooltipGM);
         chart.drawBrush();
 
+
         // add chart filter listeners
         d3.select('#filter-result').on('change', function() { togglePoints(this, '.circle'); });
-
-        		
+        d3.select('#filter-geomean').on('change', function() { togglePoints(this, '.gCircle'); });
 
     }
 
@@ -170,178 +170,11 @@ function onMarkerClick(e) {
 
         function addChartOld(data, analyte) {
               
-    
-            
-    
-
-            
-            
-
-            
-
-            
-            function getGeomeans(data, startDate, endDate, days) {
-                var geomeansArray = [];
-                var offsetValue = oneDay * days; 
-                var refDate = convertDate(startDate);
-                var stopDate = convertDate(endDate);
-                while(refDate >= stopDate) {
-                    var newDate = convertUNIX(refDate);
-                    geomeansArray.push(createGeomeanObject(data, newDate, days));
-                    refDate -= oneDay * 7;  // offset is one week
-                }
-                return geomeansArray;
-
-            // calculates the geometric mean for a single 6-week date range
-            function createGeomeanObject(data, startDate, offsetDays) {
-
-                    function getCutoffDate(date, offsetDays) {
-                        var offsetDate = date.getTime() - (oneDay * offsetDays);
-                        return convertUNIX(offsetDate);
-                    }
-
-                    function getSampleArray(data, startDate, cutoffDate) {
-                        if (data.length === 0) {
-                            return null;
-                        }
-                        var dateArray = [];
-                        for (var i = 0; i < data.length; i++) {
-                            var d = data[i];
-                            if ((convertDate(d.sampleDate) <= convertDate(startDate)) && (convertDate(d.sampleDate) >= convertDate(cutoffDate))) {
-                                    dateArray.push(d); 
-                            }
-                        };
-                        return dateArray;
-                    }
-
-                    function gmean(data) {
-                        if (!(data)) { 
-                            throw new TypeError('gmean()::empty input argument');
-                        }
-                        if (!(data.length)) {
-                            return null; 
-                        } else {
-                            var product = 1;
-                            data.forEach(function(d) {
-                                // check for NDs and substitue with half of MDL
-                                if (checkND(d)) {
-                                    var sub = d.mdl / 2;
-                                    d.result = sub;
-                                    product *= sub;
-                                } else {
-                                    product *= d.result;    
-                                }
-                            });
-                            var geomean = Math.pow(product, (1 / data.length)); // nth root
-                            return geomean;  
-                        }
-                    }
-
-                    var cutoffDate = getCutoffDate(startDate, offsetDays);
-                    var geomeanData = getSampleArray(data, startDate, cutoffDate);
-
-                    // Assemble geomean object for single 6-week range
-                    if (geomeanData.length < 1) { 
-                        var geomeanObject = {beginDate: cutoffDate, endDate: startDate, geomean: null}; // no data
-                    } else if (geomeanData.length < 5) {
-                        var geomeanObject = {beginDate: cutoffDate, endDate: startDate, geomean: "NES"}; // not enough samples
-                    } else {
-                        var geomean = decimalRound(gmean(geomeanData), 2);
-                        var geomeanObject = {beginDate: cutoffDate, endDate: startDate, geomean: geomean};
-                    }
-                    return geomeanObject;
-            
-                } // getGeomeanObject()
-            }
-            
-            // Compile array of geomean objects
-            geomeanObjects = getGeomeans(graphData, lastSampleDate, earliestDate, SIX_WEEKS); 
-            endPoint = geomeanObjects[geomeanObjects.length - 1];
-
-            // Create endpoint geomean object
-            geomeanObjects.push({beginDate: null, endDate: earliestDate, geomean: endPoint.geomean});
-
-
-
-
-            
-            
-
             
             // x-axis grid
             focus.append("g")
                 .attr("class", "axis grid")
                 .call(ygAxis);
-
-            focus.append("g")
-                .attr("class", "xAxis")
-                .attr("transform", "translate(0," + height + ")")
-                .call(xAxis);
-                
-            focus.append("g")
-                .attr("class", "yAxis")
-                .call(yAxis);
-
-            var gColor = "#ED6874"; 
-            var gCircleOpacity = 1;
-            var circleOpacity = 0.7;
-            var tooltipOpacity = 1;
-            var lineOpacity = 1;
-
-
-            // add geomean to main chart
-            var geomeans = focus.append("g");
-                geomeans.attr("clip-path", "url(#clip)");
-                geomeans.selectAll("circle")
-                    .data(geomeanObjects)
-                    .enter().append("circle")
-                    .filter(function(d) { return (d.geomean !== null) && (d.geomean != "NES") })  // strict not version for null
-                    .attr('class', 'gCircles')
-                    .attr("r", 4)
-                    .attr("fill", gColor)
-                    .attr("cx", function(d) { return xScale(d.endDate); })
-                    .attr("cy", function(d) { return yScale(d.geomean); })
-                    .style("opacity", gCircleOpacity)
-                    .on("mouseover", function(d) {
-                        var tooltipDate = d3.timeFormat("%b %e, %Y");  // format date value for tooltip
-                        tooltipG.transition()
-                            .duration(50)
-                            .style("opacity", tooltipOpacity);
-                        tooltipG.html("Date: " + tooltipDate(d.endDate) + "<br/ >Geometric Mean: " + d.geomean)
-                            .style("left", function() {
-                                var windowWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-                                var widthThreshold = windowWidth * 0.75;
-                                var tooltipWidth = document.getElementById("tooltipG").offsetWidth;
-                                // checks for points positioned in second half of graph and moves the tooltip left
-                                if (d3.event.pageX > widthThreshold) {
-                                    return d3.event.pageX - tooltipWidth + "px";
-                                } else {
-                                    return d3.event.pageX + "px";
-                                }
-                            })
-                            .style("top", function() {
-                                var divOffset = document.getElementById("site-graph").offsetHeight;
-                                var relativePos = divOffset - d3.event.pageY;
-                                var tooltipHeight = document.getElementById("tooltipG").offsetHeight;
-                                // checks for points positioned in lower half of graph and moves the tooltip up
-                                if (relativePos < 0) {
-                                    return d3.event.pageY - tooltipHeight + "px";
-                                } else {
-                                    return d3.event.pageY + "px";
-                                }
-                            });
-                        d3.select(this)
-                            .attr("fill", "#f2afa4");
-                    })
-                    .on("mouseout", function(d) {
-                        tooltipG.transition()
-                            .duration(50)
-                            .style("opacity", 0);
-                        d3.select(this)
-                            .attr("fill", gColor)
-                            .style("opacity", gCircleOpacity);
-                    });
-
 
             context.append("g")
                 .attr("class", "xAxis2")
@@ -753,7 +586,7 @@ function togglePoints(context, name) {
 
 function tooltipGM(d) {
     var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var content = "Date: " + tooltipDate(d.endDate) + "<br/ >Geometric Mean: " + d.geomean;
+    var content = "Date: " + tooltipDate(d.enddate) + "<br/ >Geometric Mean: " + d.geomean;
     return content;
 }
 

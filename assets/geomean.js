@@ -16,7 +16,7 @@ function getGeomeans(data) {
     function compileGeomeans() {
         var geomeans = [],
             refDate = lastDateUNIX;
-        while(refDate >= firstDateUNIX) {
+        while (refDate >= firstDateUNIX) {
             var cutoffDate = refDate - one_day * gm_length;
             var object = createGeomeanObject(refDate, cutoffDate);
             geomeans.push(object);
@@ -30,15 +30,13 @@ function getGeomeans(data) {
     function createGeomeanObject(refDate, cutoffDate) {
         var rangeData = getRangeData(refDate, cutoffDate); 
         if (rangeData.length < 1) {
-            // no data
-            return {endDate: convertUNIX(refDate), startDate: convertUNIX(cutoffDate), geomean: null}; 
+            var geomean = null; // no data
         } else if (rangeData.length < 5) {
-            // fewer than 5 data points
-            return {endDate: convertUNIX(refDate), startDate: convertUNIX(cutoffDate), geomean: 'NES'}; 
+            var geomean = 'NES'; // fewer than 5 data points
         } else {
             var geomean = calculateGeomean(rangeData).toFixed(2);
-            return {endDate: convertUNIX(refDate), startDate: convertUNIX(cutoffDate), geomean: geomean};
         }
+        return {enddate: convertUNIX(refDate), startdate: convertUNIX(cutoffDate), geomean: geomean};
     }
 
     // get all data points within a given date range

@@ -66,7 +66,7 @@ function onMarkerClick(e) {
         */
         if (data.length > 0) {
             hideLoading();
-            var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
+            var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
             var analyteSet = new Set(); 
             var chartData = [];
             for(var i = 0; i < data.length; i++) {
@@ -243,12 +243,14 @@ function createURL(resource, site) {
     }
 }
 
-function getData(url, callback) {
+function getData(url, callback, exData) {
+    console.log(url);
+    var data = {};
     $.ajax({
-        type: "GET",
+        type: 'GET',
         url: url,
         jsonpCallback: callback.name,
-        dataType: "jsonp",
+        dataType: 'jsonp',
         success: function(res) {
             var records = res.result.records;
             callback(records);
@@ -256,7 +258,7 @@ function getData(url, callback) {
         error: function(e) {
             console.log(e);
         }
-    }); 
+    });
 }
 
 function getWidth() {
@@ -398,7 +400,7 @@ function addSiteLayer() {
         onEachFeature: function(feature, layer) {
             // add site name tooltip
             if (feature.properties.StationName) {
-                layer.bindPopup(feature.properties.StationName, {closeButton: false, offset: L.point(0, 0)});
+                layer.bindPopup(feature.properties.StationName + " " + feature.SampleDate, {closeButton: false, offset: L.point(0, 0)});
                 layer.on('mouseover', function() { layer.openPopup(); });
                 layer.on('mouseout', function() { layer.closePopup(); });
             }
@@ -409,8 +411,11 @@ function addSiteLayer() {
     }).addTo(map);
 
     // request sites from API and process data
-    var sites = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
-    getData(sites, processSites); 
+    var sitesPath = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
+    // request 1000 most recent samples from API
+    var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=7cccabb0-560a-4ec2-af70-5b6b4206ce00&limit=1000&sort=SampleDate';
+
+    getData(sitesPath, processSites);
 
     // add listeners
     document.getElementById('sites-box').addEventListener('click', function() { toggleLayer(siteLayer); });
@@ -425,6 +430,13 @@ function addSiteLayer() {
         onMarkerClick(e);
     });
 
+    function addSites(data) {
+        siteLayer.addData(data);
+        setTimeout(function() {
+            $(".background-mask").hide();  
+        }, 1000);
+    }
+
     function processSites(data, callback) {
         features = [];
         for (var i = 0; i < data.length; i++) {
@@ -437,17 +449,85 @@ function addSiteLayer() {
                 if (data[i].SiteCode === '304-LEONA-21') {
                     continue
                 } else {
+                    /*
                     site.type = "Feature";
                     site.geometry = {"type": "Point", "coordinates": [data[i].Longitude, data[i].Latitude]};
                     site.properties = { "StationName": data[i].StationName, "StationCode": data[i].SiteCode };
                     features.push(site);
+                    */
+                    site.StationName = data[i].StationName;
+                    site.StationCode = data[i].SiteCode;
+                    site.Latitude = +data[i].Latitude;
+                    site.Longitude = +data[i].Longitude;
+                    features.push(site);
                 }
             }
         }
-        siteLayer.addData(features);
-        setTimeout(function() {
-            $(".background-mask").hide();  
-        }, 1000);
+        console.log('features:', features);
+        getData(siteDataPath, processSiteData, features)
+    }
+
+    function joinSiteData(data) {
+        var db = new alasql.Database();
+        db.exec('CREATE TABLE feature');
+        db.exec('CREATE TABLE att');
+        db.exec('SELECT * INTO feature FROM ?', [features]);
+        db.exec('SELECT * INTO att FROM ?', [data]);
+        /*
+        var feature = db.exec('SELECT * FROM feature');
+        var att = db.exec('SELECT * FROM att');
+        console.log(feature);
+        console.log(att);
+        */
+        var date = db.exec('SELECT stationcode, max(sampledate) as sampledate FROM att GROUP BY stationcode');
+        db.exec('CREATE TABLE date');
+        db.exec('SELECT * INTO date FROM ?', [date]);
+        var joined = db.exec('SELECT feature.*, date.sampledate FROM feature LEFT JOIN date ON feature.StationCode = date.stationcode ORDER BY date.sampledate DESC');
+        console.log('joined:', joined);
+        return joined;
+    }
+
+    function processSiteData(data) {
+        var parseDate = d3.timeParse('%m/%d/%Y %H:%M');
+        var siteData = [];
+        for (var i = 0; i < data.length; i++) {
+            var record = {};
+            // check for missing properties needed for join
+            if (!(data[i].StationCode) || !(data[i].SampleDate)) {
+                continue;
+            } else {
+                // pick out station code and sample date for join
+                record.stationcode = data[i].StationCode;
+                // convert date to UTC timestamp for max function
+                record.sampledate = parseDate(data[i].SampleDate).getTime();
+                siteData.push(record); 
+            }
+        }
+        // 
+        var joined = joinSiteData(siteData);
+        // reformat objects to geojson
+        var mapSites = [];
+        var today = new Date();
+        var date = null;
+        var dateDiff = null;
+        for (var i = 0; i < joined.length; i++) {
+            var site = {};
+            if (joined[i].sampledate) {
+                // convert UTC timestamp
+                // calculate date difference with today's date
+                date = convertUNIX(joined[i].sampledate);
+                dateDiff = daysBetween(date, today);
+            } else {
+                date = null;
+                dateDiff = null;
+            }
+            site.type = 'Feature';
+            site.geometry = {'type': 'Point', 'coordinates': [joined[i].Longitude, joined[i].Latitude]};
+            site.properties = {'StationName': joined[i].StationName, 'StationCode': joined[i].StationCode, 'LastSampleDate': date, 'DateDifference': dateDiff};
+            mapSites.push(site);
+        }
+        console.log('mapsites:', mapSites);
+        addSites(mapSites);
     }
 }
 
@@ -532,6 +612,13 @@ function roundHundred(value) {
 
 function caller(callback, param) {
     return callback(param);
+}
+
+function daysBetween(a, b) {
+    var MS_PER_DAY = 1000 * 60 * 60 * 24;
+    var utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+    var utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+    return Math.floor((utc2 - utc1) / MS_PER_DAY);
 }
 
 function responsive() {

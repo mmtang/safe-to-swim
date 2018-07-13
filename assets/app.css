@@ -433,7 +433,7 @@ body {
 }
 
 .tooltip {
-    max-width: 1147px;
+    max-width: 325px;
     height: auto;
     position: absolute;
     text-align: left;

@@ -93,7 +93,7 @@ Chart.prototype.createBrushScales = function() {
     this.xBrushScale = d3.scaleTime()
         .domain(this.xScale.domain())
         .range([0, this.width]);
-    this.yBrushScale = d3.scaleLinear()
+    this.yBrushScale = d3.scaleLog()
         .domain(this.yScale.domain())
         .range([this.brushHeight, 0]);
 }
@@ -147,9 +147,6 @@ Chart.prototype.createTooltip = function(name) {
 
 Chart.prototype.drawChart = function() {
     this.createScales();
-    // this.addAxes();
-    // var stvLine = this.addLine(9320, '#ed3935', tooltipSTV);
-    // var results = this.addPoints(this.data, 6, 'rgb(51, 91, 150)', tooltipResult);
 }
 
 Chart.prototype.createScales = function(threshold) {
@@ -166,11 +163,8 @@ Chart.prototype.createScales = function(threshold) {
     this.xScale = d3.scaleTime()
         .domain(xBuffered)
         .range([0, this.width]);
-    this.yScale = d3.scaleLinear()
-        .domain([0, yBuffered])
-        .range([this.height, 0]);
-    this.logScale = d3.scaleLog()
-        .domain([0.1, yBuffered])
+    this.yScale = d3.scaleLog()
+        .domain([1, yBuffered])
         .range([this.height, 0]);
 
     function bufferX(extent, days) {
@@ -188,7 +182,8 @@ Chart.prototype.addAxes = function() {
     this.xAxis = d3.axisBottom()
         .scale(this.xScale);
     this.yAxis = d3.axisLeft()
-        .scale(this.yScale);
+        .scale(this.yScale)
+        .ticks(10);
     this.focus.append('g')
         .attr('class', 'x-axis')
         .attr('transform', 'translate(0,' + this.height + ')')

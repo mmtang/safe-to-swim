@@ -28,7 +28,7 @@ var siteMarker = {
     color: "#fff",
     weight: 1,
     opacity: 1,
-    fillOpacity: 0.8
+    fillOpacity: 1
 };
 
 // limit the number of records from the API
@@ -42,15 +42,41 @@ addSiteLayer();
 
 function onMarkerClick(e) {
     var siteClicked = e.layer.feature.properties.StationCode;
-    var path = createURL('23a59a2c-4a95-456f-b39e-41446bdc5724', siteClicked);
-    highlightMarker(e);
+    var path2010 = createURL('7cccabb0-560a-4ec2-af70-5b6b4206ce00', siteClicked);
+    // highlightMarker(e);
     showLoading(); 
     initializeSidebar(); 
-    getData(path, processData);
 
-    function processData(data) {
-        /*  
-        // data quality column names
+    // make consecutive calls to API for data
+    var portalData = [];
+    getData(path2010, collectData2010); // fetch #1
+
+    /* callbacks */ 
+    function collectData2010(data) {
+        var path2005 = createURL('7c217af2-e3a1-4f8b-9580-90b51f14b36e', siteClicked);
+        for (var i = 0; i < data.length; i++) {
+            portalData.push(data[i]);
+        }
+        getData(path2005, collectData2005); // fetch #2
+    }
+
+    function collectData2005(data) {
+        var path2000 = createURL('62db8765-ea09-4b78-b47b-5f7b30902972', siteClicked);
+        for (var i = 0; i < data.length; i++) {
+            portalData.push(data[i]);
+        }
+        getData(path2000, collectData2000); // fetch #3
+    }
+
+    function collectData2000(data) {
+        for (var i = 0; i < data.length; i++) {
+            portalData.push(data[i]);
+        }
+        processData(portalData);
+    }
+
+    function processData(response) {
+        // data quality classes
         var dataQuality0 = "MetaData, QC record",
             dataQuality1 = "Passed QC"
             dataQuality2 = "Some review needed",
@@ -60,13 +86,14 @@ function onMarkerClick(e) {
             dataQuality6 = "Reject record",
             dataQuality7 = "Error";
 
-        var qualityData = initialData.filter(d => {
-            return (d.DataQuality === dataQuality1) || (d.DataQuality === dataQuality2) || (d.DataQuality === dataQuality3);
+        var data = response.filter(d => {
+            return (d.DataQuality != dataQuality0);
         });
-        */
+
         if (data.length > 0) {
             hideLoading();
-            var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
+            // before API format change: '%Y-%m-%d %H:%M:%S'
+            var parseDate = d3.timeParse('%m/%d/%Y %H:%M');
             var analyteSet = new Set(); 
             var chartData = [];
             for(var i = 0; i < data.length; i++) {
@@ -85,6 +112,7 @@ function onMarkerClick(e) {
                 } else {
                     d.result = +data[i].Result;
                 }
+                if (d.result <= 0) { continue; }
                 d.ResultQualCode = data[i].ResultQualCode;
                 d.sampledate = parseDate(data[i].SampleDate);
                 d.StationCode = data[i].StationCode;
@@ -92,6 +120,7 @@ function onMarkerClick(e) {
                 d.Unit = data[i].Unit;
                 chartData.push(d);
             }
+            console.log('chartData', chartData);
             var analytes = [];
             analyteSet.forEach(function(i) { analytes.push(i); }); 
             // sort descending so that Enteroccocus and E. coli appear first 
@@ -117,8 +146,6 @@ function onMarkerClick(e) {
         var chartData = data.filter(function(d) {
             return d.Analyte === analyte;
         });
-        var geomeanData = getGeomeans(chartData);
-        console.log(geomeanData);
         
         var blue = '#335b96', red = '#ED6874';
         var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
@@ -151,9 +178,14 @@ function onMarkerClick(e) {
             chart.addLine(enterococcus.stv, blue, tooltipThresholdSTV);
             chart.addLine(enterococcus.geomean, red, tooltipThresholdGM);
         }
-        
         chart.addPoints(chartData, 6, blue, tooltipResult);
-        chart.addGPoints(geomeanData, 5, red, tooltipGM);
+
+        if ((analyte === ecoli.name) || (analyte === enterococcus.name)) {
+            var geomeanData = getGeomeans(chartData);
+            console.log('geomeanData', geomeanData);
+            chart.addGPoints(geomeanData, 5, red, tooltipGM);
+        }
+        
         chart.drawBrush();
         chart.addBrushPoints(chartData, 3, blue);
 
@@ -395,25 +427,34 @@ function addRefLayers() {
 }
 
 function addSiteLayer() {
+    // initialize variable for keeping track of clicked sites
+    var selected = null;
     // initialize layer
     var siteLayer = L.geoJson([], {
         onEachFeature: function(feature, layer) {
             // add site name tooltip
             if (feature.properties.StationName) {
-                layer.bindPopup(feature.properties.StationName + " " + feature.SampleDate, {closeButton: false, offset: L.point(0, 0)});
+                layer.bindPopup(feature.properties.StationName, {closeButton: false, offset: L.point(0, 0)});
                 layer.on('mouseover', function() { layer.openPopup(); });
                 layer.on('mouseout', function() { layer.closePopup(); });
             }
         },
         pointToLayer: function (feature, latlng) {
-            return L.circleMarker(latlng, siteMarker);
+            return L.circleMarker(latlng, {
+                radius: 5,
+                fillColor: getColor(feature.properties.DateDifference),
+                color: '#000',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 1
+            });
         }
     }).addTo(map);
 
     // request sites from API and process data
     var sitesPath = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
     // request 1000 most recent samples from API
-    var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=7cccabb0-560a-4ec2-af70-5b6b4206ce00&limit=1000&sort=SampleDate';
+    var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=7cccabb0-560a-4ec2-af70-5b6b4206ce00&limit=5000&sort=SampleDate';
 
     getData(sitesPath, processSites);
 
@@ -426,7 +467,7 @@ function addSiteLayer() {
             hideSidebarControl();
         }, 400);
         // reset layer style to clear site selection
-        siteLayer.setStyle(siteMarker);
+        //
         onMarkerClick(e);
     });
 
@@ -463,7 +504,6 @@ function addSiteLayer() {
                 }
             }
         }
-        console.log('features:', features);
         getData(siteDataPath, processSiteData, features)
     }
 
@@ -482,8 +522,7 @@ function addSiteLayer() {
         var date = db.exec('SELECT stationcode, max(sampledate) as sampledate FROM att GROUP BY stationcode');
         db.exec('CREATE TABLE date');
         db.exec('SELECT * INTO date FROM ?', [date]);
-        var joined = db.exec('SELECT feature.*, date.sampledate FROM feature LEFT JOIN date ON feature.StationCode = date.stationcode ORDER BY date.sampledate DESC');
-        console.log('joined:', joined);
+        var joined = db.exec('SELECT feature.*, date.sampledate FROM feature LEFT JOIN date ON feature.StationCode = date.stationcode ORDER BY date.sampledate');
         return joined;
     }
 
@@ -526,7 +565,6 @@ function addSiteLayer() {
             site.properties = {'StationName': joined[i].StationName, 'StationCode': joined[i].StationCode, 'LastSampleDate': date, 'DateDifference': dateDiff};
             mapSites.push(site);
         }
-        console.log('mapsites:', mapSites);
         addSites(mapSites);
     }
 }
@@ -555,10 +593,28 @@ function addTileLayers() {
     });
 }
 
+function getColor(d) {
+    if (d === null) {
+        return '#50cfe9'; // null date
+    } else if (d <= 30) {
+        return '#fefb47' // 1 month
+    } else if (d <= 360) {
+        return '#82ff83'; // 1 year
+    } else {
+        return '#50cfe9'; // older than 1 year, same as null
+    } 
+}
+
 function highlightMarker(e) {
-    e.layer.options.color = "#00e5ee";
-    e.layer.options.fillColor = "#00e5ee";
+    e.layer.options.color = '#00e5ee';
+    e.layer.options.fillColor = '#00e5ee';
     e.layer.options.weight = 3;
+}
+
+function resetMarker(e) {
+    e.layer.options.color = '#000';
+    e.layer.options.fillcolor = '#000';
+    e.layer.weight = 1;
 }
 
 function toggleLayer(layer, customPane) { 

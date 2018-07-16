@@ -257,6 +257,29 @@ body {
     margin: 2px;
 }
 
+.legend {
+    padding: 6px 8px;
+    line-height: 18px;
+    color: rgba(0, 0, 0, 0.8);
+    background: rgba(255, 255, 255, 0.8);
+    border: 2px solid rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+}
+.legend i {
+    width: 18px;
+    height: 18px;
+    float: left;
+    margin-right: 8px;
+    opacity: 0.9;
+}
+
+.legend .circle {
+    border-radius: 50%;
+    width: 10px;
+    height: 10px;
+    margin-top: 5px;
+  }
+
 .table {
     margin-bottom: 0px;
 }

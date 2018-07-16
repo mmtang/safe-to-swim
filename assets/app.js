@@ -391,7 +391,29 @@ function addMapControls() {
         }
     });
     map.addControl(new sidebarControl());
-    var zoomControl = L.control.zoom({ position:'bottomleft' }).addTo(map);
+    var zoomControl = L.control.zoom({ position:'topleft' }).addTo(map);
+    addMapLegend();
+}
+
+function addMapLegend() {
+    var legend = L.control({ position: 'bottomleft' });
+
+    legend.onAdd = function(map) {
+        var div = L.DomUtil.create('div', 'info legend'),
+            labels = ['<strong>Most Recent Data Recorded</strong>'],
+            categories = ['Within last month', 'Within last year', 'Older than a year'],
+            colors = ['#fefb47', '#82ff83', '#50cfe9'];
+
+        for (var i = 0; i < categories.length; i++ ) {
+            div.innerHTML += labels.push(
+                '<i class="circle" style="background:' + colors[i] + '"></i> ' + (categories[i] ? categories[i] : '+')
+            );
+        };
+        div.innerHTML = labels.join('<br>');
+        return div;
+    };
+
+    legend.addTo(map);
 }
 
 function addRefLayers() {

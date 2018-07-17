@@ -9,7 +9,7 @@ body {
     font-family: 'Roboto', sans-serif;
 }
 
-.panel-heading{
+.panel-heading {
     width: inherit;
 }
 
@@ -19,7 +19,6 @@ body {
 }
 
 .date-panel {
-    margin: 15px 0px 0px 0px;
     padding: 5px; 
     text-align: center;
     font-size: 12px;
@@ -545,13 +544,59 @@ rect.pane {
     display: none;
 }
 
+#chart-container {
+    display: none;
+    position: absolute;
+    width: auto;
+    top: 66px;
+    right: 15px;
+    z-index: 1000;
+}
+
+#chart-space {
+    padding: 5px 0px 20px 0px;
+}
+
+
+.row {
+    margin-top:40px;
+    padding: 0 10px;
+}
+
+.clickable {
+    cursor: pointer;   
+}
+
+.panel-primary {
+    border-color: #787d7f;
+}
+
+.panel-primary .panel-heading {
+    background-color: #787d7f;
+    border-color: #787d7f;
+}
+
+.panel-heading span {
+	margin-top: -20px;
+	font-size: 15px;
+}
+
+.panel-title {
+    color: #fff;
+    font-size: 14px;
+}
+
+.panel-text {
+    padding: 0px 20px 0px 0px;
+}
+
 /* wide layout */
 @media only screen and (min-width: 992px) {
     #sidebar {
         position: relative;
         float: right;
         display: none;
-        width: 55%;
+        /* width: 45%; */
         height: 100%;
         max-width: 100%;
     }

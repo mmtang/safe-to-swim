@@ -304,8 +304,8 @@ Chart.prototype.positionTooltip = function(axis, tooltipID) {
     // axis is 'x' or 'y'
     if (axis === 'x') {
         var eventPos = d3.event.pageX; // get mouse position
-        var divExtent = document.getElementById('chart-container').offsetWidth; // get width of container holding chart
-        var divOffset = document.getElementById('sidebar').offsetLeft; // get offset of chart container from left (parent container)
+        var divExtent = document.getElementById('chart-space').offsetWidth; // get width of container holding chart
+        var divOffset = document.getElementById('chart-container').offsetLeft; // get offset of chart container from left (parent container)
         var tooltipExtent = document.getElementById(tooltipID).offsetWidth; // get tooltip div width
     } else if (axis === 'y') {
         var eventPos = d3.event.pageY;

@@ -34,6 +34,7 @@ var siteMarker = {
 // limit the number of records from the API
 var recordLimit = 5000;
 
+closePanel();
 resetLayerMenu(); 
 addTileLayers();
 addRefLayers(); 
@@ -44,8 +45,9 @@ function onMarkerClick(e) {
     var siteClicked = e.layer.feature.properties.StationCode;
     var path2010 = createURL('7cccabb0-560a-4ec2-af70-5b6b4206ce00', siteClicked);
     // highlightMarker(e);
-    showLoading(); 
-    initializeSidebar(); 
+    $('#chart-container').css('display', 'inline-block');
+    openPanel();
+    showPanelLoading(); 
 
     // make consecutive calls to API for data
     var portalData = [];
@@ -75,7 +77,9 @@ function onMarkerClick(e) {
         processData(portalData);
     }
 
-    function processData(response) {
+    function processData(response) { 
+        $('#chart-panel').html('');
+        initializeSidebar();
         // data quality classes
         var dataQuality0 = "MetaData, QC record",
             dataQuality1 = "Passed QC"
@@ -91,7 +95,6 @@ function onMarkerClick(e) {
         });
 
         if (data.length > 0) {
-            hideLoading();
             // before API format change: '%Y-%m-%d %H:%M:%S'
             var parseDate = d3.timeParse('%m/%d/%Y %H:%M');
             var analyteSet = new Set(); 
@@ -135,7 +138,6 @@ function onMarkerClick(e) {
                 addChart(chartData, this.value);
             });
         } else {
-            hideLoading();
             alert("No data for selected site.");
         }
     }  
@@ -150,7 +152,7 @@ function onMarkerClick(e) {
         var blue = '#335b96', red = '#ED6874';
         var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
         var chart = new Chart({
-            element: document.getElementById('chart-container'),
+            element: document.getElementById('chart-space'),
             margin: chartMargin,
             data: chartData,
             width: 862 - chartMargin.left - chartMargin.right,
@@ -195,7 +197,7 @@ function onMarkerClick(e) {
         d3.select('#filter-geomean').on('change', function() { togglePoints(this, '.gCircle'); });
     }
 
-showSidebar();
+// showSidebar();
 setTimeout(function() {
     map.invalidateSize(true);
 }, 100); 
@@ -206,6 +208,15 @@ setTimeout(function() {
 /*
 / Global Listeners
 */
+
+$(document).on('click', '.panel-heading span.clickable', function(e) {
+    var $this = $(this);
+	if ($this.hasClass('panel-collapsed')) {
+		openPanel();
+	} else {
+		closePanel();
+	}
+})
 
 $("#about-btn").click(function() {
     $("#aboutModal").modal("show");
@@ -265,6 +276,18 @@ function Analyte(name, stv, geomean) {
     this.geomean = geomean;
 }
 
+function openPanel() {
+    $('#chart-panel').css('display', 'block');
+    $('.panel-heading span.clickable').removeClass('panel-collapsed');
+    $('.panel-heading span.clickable').find('i').removeClass('fa fa-caret-down').addClass('fa fa-caret-up');
+}
+
+function closePanel() {
+    $('#chart-panel').css('display', 'none');
+    $('.panel-heading span.clickable').addClass('panel-collapsed');
+    $('.panel-heading span.clickable').find('i').removeClass('fa fa-caret-up').addClass('fa fa-caret-down');
+}
+
 function createURL(resource, site) {
     var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
     if (typeof site === 'undefined') {
@@ -303,10 +326,6 @@ function getWidth() {
     );
 }
 
-function hideLoading() {
-    $(".background-mask").hide();
-}
-
 function hideSidebar() {
     isSidebarOpen = false;
     var windowWidth = getWidth();
@@ -335,8 +354,8 @@ function initializeDatePanel() {
 }
 
 function initializeSidebar() {
-    var featureContent = '<div id="popup-menu"><div id="analyte-container"></div><div id="filter-container"></div></div>' + '<div id="chart-container"></div><div class="date-panel"></div><div id="scale-container"></div>';
-    $("#feature-info").html(featureContent);
+    var featureContent = '<div id="popup-menu"><div id="analyte-container"></div><div id="filter-container"></div></div>' + '<div id="chart-space"></div><div class="date-panel"></div><div id="scale-container"></div>';
+    $('#chart-panel').html(featureContent);
 }
 
 function resetFilters() {
@@ -351,8 +370,8 @@ function resetLayerMenu() {
     document.getElementById("rb-boundaries-box").checked="";
 }
 
-function showLoading() {
-    $(".background-mask").show();
+function showPanelLoading() {
+    $('#chart-panel').html('<strong>Loading Data</strong><div id="loading"><div class="loading-indicator"><div class="progress progress-striped active"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%"></div></div></div></div>');
 }
 
 function showSidebar() {
@@ -400,7 +419,7 @@ function addMapLegend() {
 
     legend.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'info legend'),
-            labels = ['<strong>Most Recent Data Recorded</strong>'],
+            labels = ['<strong>Last Sample Date</strong>'],
             categories = ['Within last month', 'Within last year', 'Older than a year'],
             colors = ['#fefb47', '#82ff83', '#50cfe9'];
 
@@ -484,7 +503,7 @@ function addSiteLayer() {
     document.getElementById('sites-box').addEventListener('click', function() { toggleLayer(siteLayer); });
     // leaflet event
     siteLayer.on('click', function(e) {
-        $("#feature-title").html(e.layer.feature.properties.StationName + "<p>Station Code: " + e.layer.feature.properties.StationCode + "</p>");
+        $('.panel-text').html('<h3 class="panel-title">' + e.layer.feature.properties.StationName + ' (' + e.layer.feature.properties.StationCode + ')</h3>');
         setTimeout(function() {
             hideSidebarControl();
         }, 400);

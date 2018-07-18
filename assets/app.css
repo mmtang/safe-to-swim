@@ -591,38 +591,34 @@ rect.pane {
 }
 
 /* wide layout */
-@media only screen and (min-width: 992px) {
-    #sidebar {
-        position: relative;
-        float: right;
-        display: none;
-        /* width: 45%; */
-        height: 100%;
-        max-width: 100%;
-    }
-}
-
-/* tablet layout */
-@media (max-width: 992px) {
-    .navbar .navbar-brand {
-        font-size: 18px;
-        display: none;
-    }
-    #sidebar {
-        width: 55%;
+@media only screen and (min-width: 1007px) {
+    #chart-space {
+        width: 862px;
     }
 }
 
 /* base mobile layout */
-@media (max-width: 767px) {
-    #map {
+@media (max-width: 953px) {
+    .navbar .navbar-brand {
+        font-size: 18px;
+        display: none;
+    }
+    .panel {
+        border-radius: 0px;
+    }
+    .panel-heading {
+        border-radius: 0px;
+    }
+    #chart-container {
+        width: 100%;
+        top: 51px;
+        right: 0px;
+    }
+    #chart-panel {
         width: 100%;
         height: 100%;
-        float: left;
     }
-
-    #sidebar {
-        width: 100%;
-        float: left;
+    .leaflet-control-zoom {
+        display: none;
     }
 }

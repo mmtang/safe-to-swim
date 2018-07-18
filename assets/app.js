@@ -209,7 +209,7 @@ function onMarkerClick(e) {
 $(document).on('click', '.panel-heading span.clickable', function(e) {
     var $this = $(this);
 	if ($this.hasClass('panel-collapsed')) {
-		openPanel();
+        openPanel();
 	} else {
 		closePanel();
 	}
@@ -745,6 +745,7 @@ function daysBetween(a, b) {
 }
 
 function responsive() {
+    console.log('test');
     // get container + svg aspect ratio
     var svg = d3.select('#graph'),
         container = svg.node().parentNode,
@@ -763,6 +764,7 @@ function responsive() {
     // necessary if you call invoke this function for multiple svgs
     // api docs: https://github.com/mbostock/d3/wiki/Selections#on
     d3.select(window).on('resize.' + container.id, resize);
+    d3.select('.panel-heading span.clickable').on('click.' + container.id, resize);
 
     // get width of container and resize svg to fit it
     function resize() {

@@ -31,8 +31,10 @@ var siteMarker = {
     fillOpacity: 1
 };
 
+// initialize request tracker
+var requestCount = 0; 
 // limit the number of records from the API
-var recordLimit = 5000;
+var recordLimit = 500;
 
 closePanel();
 resetLayerMenu(); 
@@ -51,7 +53,7 @@ function onMarkerClick(e) {
 
     // make consecutive calls to API for data
     var portalData = [];
-    getData(path2010, collectData2010); // fetch #1
+    getDataRecur(path2010, collectData2010); // fetch #1
 
     /* callbacks */ 
     function collectData2010(data) {
@@ -59,7 +61,7 @@ function onMarkerClick(e) {
         for (var i = 0; i < data.length; i++) {
             portalData.push(data[i]);
         }
-        getData(path2005, collectData2005); // fetch #2
+        getDataRecur(path2005, collectData2005); // fetch #2
     }
 
     function collectData2005(data) {
@@ -67,7 +69,7 @@ function onMarkerClick(e) {
         for (var i = 0; i < data.length; i++) {
             portalData.push(data[i]);
         }
-        getData(path2000, collectData2000); // fetch #3
+        getDataRecur(path2000, collectData2000); // fetch #3
     }
 
     function collectData2000(data) {
@@ -138,6 +140,7 @@ function onMarkerClick(e) {
                 addChart(chartData, this.value);
             });
         } else {
+            closePanel();
             alert("No data for selected site.");
         }
     }  
@@ -196,12 +199,6 @@ function onMarkerClick(e) {
         d3.select('#filter-result').on('change', function() { togglePoints(this, '.circle'); });
         d3.select('#filter-geomean').on('change', function() { togglePoints(this, '.gCircle'); });
     }
-
-// showSidebar();
-setTimeout(function() {
-    map.invalidateSize(true);
-}, 100); 
-
 } // onMarkerClick
 
 
@@ -294,13 +291,48 @@ function createURL(resource, site) {
         return url;
     } else {
         // optional site parameter
-        return url + '&filters[StationCode]=' + site;
+        var fullPath = url + '&filters[StationCode]=' + site;
+        var cleanPath = fullPath.replace(/\#/, '%23');
+        return cleanPath;
     }
 }
 
-function getData(url, callback, exData) {
+function getDataRecur(url, callback, offset, data) {
+    if (typeof offset === 'undefined') { offset = 0; }
+    if (typeof data === 'undefined') { data = []; }
     console.log(url);
-    var data = {};
+
+    $.ajax({
+        type: 'GET',
+        url: url,
+        data: {offset: offset},
+        jsonpCallback: callback.name,
+        dataType: 'jsonp',
+        requestCount: ++requestCount,
+        success: function(res) {
+            if (requestCount == this.requestCount) {
+                var records = res.result.records;
+                console.log(records);
+                data = data.concat(records);
+                if (records.length < recordLimit) {
+                    callback(data);
+                } else {
+                    getDataRecur(url, callback, offset + recordLimit, data);
+                }
+            } else {
+                console.log('Ignore request');
+            }
+        },
+        error: function(e) {
+            console.log(e);
+            closePanel();
+            alert('Error!');
+        }
+    });
+}
+
+function getData(url, callback) {
+    console.log(url);
     $.ajax({
         type: 'GET',
         url: url,
@@ -308,6 +340,7 @@ function getData(url, callback, exData) {
         dataType: 'jsonp',
         success: function(res) {
             var records = res.result.records;
+            console.log(records);
             callback(records);
         },
         error: function(e) {
@@ -494,10 +527,10 @@ function addSiteLayer() {
 
     // request sites from API and process data
     var sitesPath = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
-    // request 1000 most recent samples from API
+    // most recent samples from API for join
     var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=7cccabb0-560a-4ec2-af70-5b6b4206ce00&limit=5000&sort=SampleDate';
 
-    getData(sitesPath, processSites);
+    getDataRecur(sitesPath, processSites);
 
     // add listeners
     document.getElementById('sites-box').addEventListener('click', function() { toggleLayer(siteLayer); });
@@ -507,8 +540,6 @@ function addSiteLayer() {
         setTimeout(function() {
             hideSidebarControl();
         }, 400);
-        // reset layer style to clear site selection
-        //
         onMarkerClick(e);
     });
 
@@ -545,7 +576,7 @@ function addSiteLayer() {
                 }
             }
         }
-        getData(siteDataPath, processSiteData, features)
+        getData(siteDataPath, processSiteData);
     }
 
     function joinSiteData(data) {
@@ -554,12 +585,6 @@ function addSiteLayer() {
         db.exec('CREATE TABLE att');
         db.exec('SELECT * INTO feature FROM ?', [features]);
         db.exec('SELECT * INTO att FROM ?', [data]);
-        /*
-        var feature = db.exec('SELECT * FROM feature');
-        var att = db.exec('SELECT * FROM att');
-        console.log(feature);
-        console.log(att);
-        */
         var date = db.exec('SELECT stationcode, max(sampledate) as sampledate FROM att GROUP BY stationcode');
         db.exec('CREATE TABLE date');
         db.exec('SELECT * INTO date FROM ?', [date]);
@@ -646,17 +671,18 @@ function getColor(d) {
     } 
 }
 
+/*
 function highlightMarker(e) {
     e.layer.options.color = '#00e5ee';
     e.layer.options.fillColor = '#00e5ee';
     e.layer.options.weight = 3;
 }
-
 function resetMarker(e) {
     e.layer.options.color = '#000';
     e.layer.options.fillcolor = '#000';
     e.layer.weight = 1;
 }
+*/
 
 function toggleLayer(layer, customPane) { 
     if (map.hasLayer(layer)) {

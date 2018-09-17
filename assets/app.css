@@ -406,7 +406,7 @@ body {
 }
 
 .gm-dot {
-    color: #ED6874;
+    color: #68c182;
 }
 
 .graphLabel, .gmLineLabel, .stvLineLabel {
@@ -599,12 +599,16 @@ rect.pane {
 
 /* base mobile layout */
 @media (max-width: 953px) {
+
     .navbar .navbar-brand {
         font-size: 18px;
         display: none;
     }
     .panel {
         border-radius: 0px;
+    }
+    .panel-body {
+        overflow-y: visible;
     }
     .panel-heading {
         border-radius: 0px;

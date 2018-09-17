@@ -34,7 +34,7 @@ var siteMarker = {
 // initialize request tracker
 var requestCount = 0; 
 // limit the number of records from the API
-var recordLimit = 500;
+var recordLimit = 5000;
 
 closePanel();
 resetLayerMenu(); 
@@ -45,7 +45,8 @@ addSiteLayer();
 
 function onMarkerClick(e) {
     var siteClicked = e.layer.feature.properties.StationCode;
-    var path2010 = createURL('7cccabb0-560a-4ec2-af70-5b6b4206ce00', siteClicked);
+    // var path2010 = createURL('7cccabb0-560a-4ec2-af70-5b6b4206ce00', siteClicked);
+    var path = createURL('6e99b457-0719-47d6-9191-8f5e7cd8866f', siteClicked);
     // highlightMarker(e);
     $('#chart-container').css('display', 'inline-block');
     openPanel();
@@ -53,9 +54,10 @@ function onMarkerClick(e) {
 
     // make consecutive calls to API for data
     var portalData = [];
-    getDataRecur(path2010, collectData2010); // fetch #1
 
-    /* callbacks */ 
+    getDataRecur(path, processData); // fetch #1
+
+    /* callbacks
     function collectData2010(data) {
         var path2005 = createURL('7c217af2-e3a1-4f8b-9580-90b51f14b36e', siteClicked);
         for (var i = 0; i < data.length; i++) {
@@ -78,8 +80,9 @@ function onMarkerClick(e) {
         }
         processData(portalData);
     }
+    */
 
-    function processData(response) { 
+    function processData(data) { 
         $('#chart-panel').html('');
         initializeSidebar();
         // data quality classes
@@ -92,13 +95,9 @@ function onMarkerClick(e) {
             dataQuality6 = "Reject record",
             dataQuality7 = "Error";
 
-        var data = response.filter(d => {
-            return (d.DataQuality != dataQuality0);
-        });
-
-        if (data.length > 0) {
-            // before API format change: '%Y-%m-%d %H:%M:%S'
-            var parseDate = d3.timeParse('%m/%d/%Y %H:%M');
+        if (data.length > 0) { 
+            // before API format change: '%m/%d/%Y %H:%M'
+            var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
             var analyteSet = new Set(); 
             var chartData = [];
             for(var i = 0; i < data.length; i++) {
@@ -152,7 +151,7 @@ function onMarkerClick(e) {
             return d.Analyte === analyte;
         });
         
-        var blue = '#335b96', red = '#ED6874';
+        var blue = '#1f78b4', green = '#68c182';
         var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
         var chart = new Chart({
             element: document.getElementById('chart-space'),
@@ -178,17 +177,17 @@ function onMarkerClick(e) {
         // add threshold lines based on analyte selected
         if (analyte === ecoli.name) {
             chart.addLine(ecoli.stv, blue, tooltipThresholdSTV);
-            chart.addLine(ecoli.geomean, red, tooltipThresholdGM);
+            chart.addLine(ecoli.geomean, green, tooltipThresholdGM);
         } else if (analyte === enterococcus.name) {
             chart.addLine(enterococcus.stv, blue, tooltipThresholdSTV);
-            chart.addLine(enterococcus.geomean, red, tooltipThresholdGM);
+            chart.addLine(enterococcus.geomean, green, tooltipThresholdGM);
         }
         chart.addPoints(chartData, 6, blue, tooltipResult);
 
         if ((analyte === ecoli.name) || (analyte === enterococcus.name)) {
             var geomeanData = getGeomeans(chartData);
             console.log('geomeanData', geomeanData);
-            chart.addGPoints(geomeanData, 5, red, tooltipGM);
+            chart.addGPoints(geomeanData, 5, green, tooltipGM);
         }
         
         chart.drawBrush();
@@ -259,7 +258,7 @@ function addAnalyteMenu(analytes) {
 
 function addFilterMenu() {
     var filterContainer = document.getElementById("filter-container");
-    var filterMenu = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Sample data&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
+    var filterMenu = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Observations&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
     filterContainer.innerHTML += filterMenu;
 }
 
@@ -528,7 +527,7 @@ function addSiteLayer() {
     // request sites from API and process data
     var sitesPath = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
     // most recent samples from API for join
-    var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=7cccabb0-560a-4ec2-af70-5b6b4206ce00&limit=5000&sort=SampleDate';
+    var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=6e99b457-0719-47d6-9191-8f5e7cd8866f&limit=5000&sort[SampleDate]=desc';
 
     getDataRecur(sitesPath, processSites);
 
@@ -593,7 +592,8 @@ function addSiteLayer() {
     }
 
     function processSiteData(data) {
-        var parseDate = d3.timeParse('%m/%d/%Y %H:%M');
+        // before API change: %m/%d/%Y %H:%M
+        var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
         var siteData = [];
         for (var i = 0; i < data.length; i++) {
             var record = {};
@@ -745,7 +745,6 @@ function daysBetween(a, b) {
 }
 
 function responsive() {
-    console.log('test');
     // get container + svg aspect ratio
     var svg = d3.select('#graph'),
         container = svg.node().parentNode,
@@ -764,7 +763,6 @@ function responsive() {
     // necessary if you call invoke this function for multiple svgs
     // api docs: https://github.com/mbostock/d3/wiki/Selections#on
     d3.select(window).on('resize.' + container.id, resize);
-    d3.select('.panel-heading span.clickable').on('click.' + container.id, resize);
 
     // get width of container and resize svg to fit it
     function resize() {

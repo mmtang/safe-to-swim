@@ -242,7 +242,9 @@ Chart.prototype.addPoints = function(data, radius, color, content) {
         .on('mouseover', function(d) {
             var _d = d;
             _this.toggleTooltip(tooltipPoint, 1);
-            d3.select(this).attr('fill', '#56f6ff');
+            d3.select(this)
+                .attr('fill', '#56f6ff')
+                .attr('r', radius + 1);
             d3.select(tooltipPoint)
                 .html(function() { return content.call(this, _d); })
                 .style('left', function() { return _this.positionTooltip('x', 'tooltipPoint'); })

@@ -543,7 +543,7 @@ function addSiteLayer() {
     // request sites from API and process data
     var sitesPath = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
     // most recent samples from API for join
-    var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=6e99b457-0719-47d6-9191-8f5e7cd8866f&limit=5000&sort[SampleDate]=desc';
+    var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=6e99b457-0719-47d6-9191-8f5e7cd8866f&fields[t]=StationCode,SampleDate&limit=5000&sort[SampleDate]=desc';
 
     getDataRecur(sitesPath, processSites);
 
@@ -570,7 +570,7 @@ function addSiteLayer() {
         for (var i = 0; i < data.length; i++) {
             var site = {};
             // check for missing essential properties
-            if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode)) { 
+            if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].StationCode)) { 
                 continue; 
             } else {
                 // filter out site name 'Leona Creek at Brommer Trailer Park' for inaccurate coordinates
@@ -598,6 +598,7 @@ function addSiteLayer() {
         var db = new alasql.Database();
         db.exec('CREATE TABLE feature');
         db.exec('CREATE TABLE att');
+        // 'features' is from processSites
         db.exec('SELECT * INTO feature FROM ?', [features]);
         db.exec('SELECT * INTO att FROM ?', [data]);
         var date = db.exec('SELECT stationcode, max(sampledate) as sampledate FROM att GROUP BY stationcode');
@@ -624,7 +625,6 @@ function addSiteLayer() {
                 siteData.push(record); 
             }
         }
-        // 
         var joined = joinSiteData(siteData);
         // reformat objects to geojson
         var mapSites = [];

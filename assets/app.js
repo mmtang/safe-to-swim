@@ -31,6 +31,8 @@ var siteMarker = {
     fillOpacity: 1
 };
 
+var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
+
 // initialize request tracker
 var requestCount = 0; 
 // limit the number of records from the API
@@ -56,31 +58,6 @@ function onMarkerClick(e) {
     var portalData = [];
 
     getDataRecur(path, processData); // fetch #1
-
-    /* callbacks
-    function collectData2010(data) {
-        var path2005 = createURL('7c217af2-e3a1-4f8b-9580-90b51f14b36e', siteClicked);
-        for (var i = 0; i < data.length; i++) {
-            portalData.push(data[i]);
-        }
-        getDataRecur(path2005, collectData2005); // fetch #2
-    }
-
-    function collectData2005(data) {
-        var path2000 = createURL('62db8765-ea09-4b78-b47b-5f7b30902972', siteClicked);
-        for (var i = 0; i < data.length; i++) {
-            portalData.push(data[i]);
-        }
-        getDataRecur(path2000, collectData2000); // fetch #3
-    }
-
-    function collectData2000(data) {
-        for (var i = 0; i < data.length; i++) {
-            portalData.push(data[i]);
-        }
-        processData(portalData);
-    }
-    */
 
     function processData(data) { 
         $('#chart-panel').html('');
@@ -314,6 +291,45 @@ function getDataRecur(url, callback, offset, data) {
                 console.log(records);
                 data = data.concat(records);
                 if (records.length < recordLimit) {
+                    callback(data);
+                } else {
+                    getDataRecur(url, callback, offset + recordLimit, data);
+                }
+            } else {
+                console.log('Ignore request');
+            }
+        },
+        error: function(e) {
+            console.log(e);
+            closePanel();
+            alert('Error!');
+        }
+    });
+}
+
+function getSiteData(url, callback, offset, data) {
+    if (typeof offset === 'undefined') { offset = 0; }
+    if (typeof data === 'undefined') { data = []; }
+    console.log(url);
+
+    $.ajax({
+        type: 'GET',
+        url: url,
+        data: {offset: offset},
+        jsonpCallback: callback.name,
+        dataType: 'jsonp',
+        requestCount: ++requestCount,
+        success: function(res) {
+            if (requestCount == this.requestCount) {
+                var records = res.result.records;
+                console.log(records);
+                data = data.concat(records);
+                var dataLen = records.length,
+                    lastRec = records[dataLen - 1],
+                    lastDate = parseDate(lastRec.SampleDate);
+                var today = new Date();
+                var dateDiff = daysBetween(lastDate, today);
+                if (dateDiff > 365) {
                     callback(data);
                 } else {
                     getDataRecur(url, callback, offset + recordLimit, data);
@@ -575,7 +591,7 @@ function addSiteLayer() {
                 }
             }
         }
-        getData(siteDataPath, processSiteData);
+        getSiteData(siteDataPath, processSiteData);
     }
 
     function joinSiteData(data) {

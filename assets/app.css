@@ -598,8 +598,11 @@ rect.pane {
 }
 
 /* base mobile layout */
-@media (max-width: 953px) {
+@media (max-width: 1007px) {
 
+    .navbar-nav .open .dropdown-menu {
+        background-color: #fff;
+    }
     .navbar .navbar-brand {
         font-size: 18px;
         display: none;
@@ -623,6 +626,9 @@ rect.pane {
         height: 100%;
     }
     .leaflet-control-zoom {
+        display: none;
+    }
+    .navbar-right {
         display: none;
     }
 }

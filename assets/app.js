@@ -21,18 +21,8 @@ var map = L.map('map',{
     zoomControl: false
 }); 
 
-// default style for map markers
-var siteMarker = {
-    radius: 5,
-    fillColor: "#008080",
-    color: "#fff",
-    weight: 1,
-    opacity: 1,
-    fillOpacity: 1
-};
-
+// before API format change: '%m/%d/%Y %H:%M'
 var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
-
 // initialize request tracker
 var requestCount = 0; 
 // limit the number of records from the API
@@ -69,8 +59,6 @@ function onMarkerClick(e) {
             dataQuality7 = "Error";
 
         if (data.length > 0) { 
-            // before API format change: '%m/%d/%Y %H:%M'
-            var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
             var analyteSet = new Set(); 
             var chartData = [];
             for(var i = 0; i < data.length; i++) {
@@ -157,7 +145,6 @@ function onMarkerClick(e) {
 
         if ((analyte === ecoli.name) || (analyte === enterococcus.name)) {
             var geomeanData = getGeomeans(chartData);
-            console.log('geomeanData', geomeanData);
             chart.addGPoints(geomeanData, 5, green, tooltipGM);
         }
         
@@ -460,7 +447,7 @@ function addMapLegend() {
     legend.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'info legend'),
             labels = ['<strong>Last Sample Date</strong>'],
-            categories = ['Within last month', 'Within last year', 'Older than a year'],
+            categories = ['Within last 30 days', 'Within last year', 'Older than a year'],
             colors = ['#fefb47', '#82ff83', '#50cfe9'];
 
         for (var i = 0; i < categories.length; i++ ) {
@@ -603,8 +590,6 @@ function addSiteLayer() {
     }
 
     function processSiteData(data) {
-        // before API change: %m/%d/%Y %H:%M
-        var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
         var siteData = [];
         for (var i = 0; i < data.length; i++) {
             var record = {};

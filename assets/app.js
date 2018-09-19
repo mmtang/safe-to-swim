@@ -47,17 +47,13 @@ addSiteLayer();
 
 function onMarkerClick(e) {
     var siteClicked = e.layer.feature.properties.StationCode;
-    // var path2010 = createURL('7cccabb0-560a-4ec2-af70-5b6b4206ce00', siteClicked);
     var path = createURL('6e99b457-0719-47d6-9191-8f5e7cd8866f', siteClicked);
     // highlightMarker(e);
     $('#chart-container').css('display', 'inline-block');
     openPanel();
     showPanelLoading(); 
 
-    // make consecutive calls to API for data
-    var portalData = [];
-
-    getDataRecur(path, processData); // fetch #1
+    getDataRecur(path, processData); 
 
     function processData(data) { 
         $('#chart-panel').html('');
@@ -82,7 +78,6 @@ function onMarkerClick(e) {
                 d.Analyte = data[i].Analyte;
                 analyteSet.add(data[i].Analyte);
                 d.DataQuality = data[i].DataQuality;
-                d.DataQualityIndicator = data[i].DataQualityIndicator;
                 d.mdl = +data[i].MDL;
                 d.Program = data[i].Program;
                 // change all non-detects before charting and calculating the geomean
@@ -101,7 +96,6 @@ function onMarkerClick(e) {
                 d.Unit = data[i].Unit;
                 chartData.push(d);
             }
-            console.log('chartData', chartData);
             var analytes = [];
             analyteSet.forEach(function(i) { analytes.push(i); }); 
             // sort descending so that Enteroccocus and E. coli appear first 
@@ -267,7 +261,8 @@ function createURL(resource, site) {
         return url;
     } else {
         // optional site parameter
-        var fullPath = url + '&filters[StationCode]=' + site;
+        var fullPath = url + '&fields[t]=Analyte,DataQuality,MDL,Program,Result,ResultQualCode,SampleDate,StationCode,StationName,Unit'
+        fullPath += '&filters[StationCode]=' + site;
         var cleanPath = fullPath.replace(/\#/, '%23');
         return cleanPath;
     }
@@ -310,7 +305,6 @@ function getDataRecur(url, callback, offset, data) {
 function getSiteData(url, callback, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
-    console.log(url);
 
     $.ajax({
         type: 'GET',
@@ -322,7 +316,6 @@ function getSiteData(url, callback, offset, data) {
         success: function(res) {
             if (requestCount == this.requestCount) {
                 var records = res.result.records;
-                console.log(records);
                 data = data.concat(records);
                 var dataLen = records.length,
                     lastRec = records[dataLen - 1],
@@ -355,7 +348,6 @@ function getData(url, callback) {
         dataType: 'jsonp',
         success: function(res) {
             var records = res.result.records;
-            console.log(records);
             callback(records);
         },
         error: function(e) {
@@ -570,7 +562,7 @@ function addSiteLayer() {
         for (var i = 0; i < data.length; i++) {
             var site = {};
             // check for missing essential properties
-            if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].StationCode)) { 
+            if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode)) { 
                 continue; 
             } else {
                 // filter out site name 'Leona Creek at Brommer Trailer Park' for inaccurate coordinates
@@ -601,9 +593,11 @@ function addSiteLayer() {
         // 'features' is from processSites
         db.exec('SELECT * INTO feature FROM ?', [features]);
         db.exec('SELECT * INTO att FROM ?', [data]);
+        // will output only those sites with matches
         var date = db.exec('SELECT stationcode, max(sampledate) as sampledate FROM att GROUP BY stationcode');
         db.exec('CREATE TABLE date');
         db.exec('SELECT * INTO date FROM ?', [date]);
+        // join data back to full site list
         var joined = db.exec('SELECT feature.*, date.sampledate FROM feature LEFT JOIN date ON feature.StationCode = date.stationcode ORDER BY date.sampledate');
         return joined;
     }

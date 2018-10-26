@@ -298,6 +298,7 @@ function getDataRecur(url, callback, offset, data) {
 function getSiteData(url, callback, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
+    console.log(url);
 
     $.ajax({
         type: 'GET',
@@ -404,7 +405,7 @@ function resetLayerMenu() {
 }
 
 function showPanelLoading() {
-    $('#chart-panel').html('<strong>Loading Data</strong><div id="loading"><div class="loading-indicator"><div class="progress progress-striped active"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%"></div></div></div></div>');
+    $('#chart-panel').html('Loading Data<div id="loading"><div class="loading-indicator"><div class="progress progress-striped active"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%"></div></div></div></div>');
 }
 
 function showSidebar() {

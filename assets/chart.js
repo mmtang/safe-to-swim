@@ -41,10 +41,10 @@ Chart.prototype.initializeBrush = function() {
         .attr('transform', 'translate(' + this.brushMargin.left + ',' + (this.brushMargin.top + 10) + ')');
     // add geometry for clipping brush elements
     this.context.append('defs').append('clipPath')
-            .attr('id', 'clip')
+            .attr('id', 'bClip')
         .append('rect')
             .attr('width', this.width)
-            .attr('height', this.height);
+            .attr('height', this.brushHeight);
 }
 
 Chart.prototype.createBrushAxis = function() {
@@ -69,11 +69,11 @@ Chart.prototype.addBrushAxis = function() {
 Chart.prototype.addBrushPoints = function(data, radius, color) {
     var _this = this;
     var points = this.context.append('g');
-    points.attr('clip-path', 'url(#clip)');
+    points.attr('clip-path', 'url("#bClip")');
     points.selectAll('circle')
         .data(data)
         .enter().append('circle')
-        .attr('class', 'bCircle')
+        .attr('class', 'bCircle brush')
         .attr('r', radius)
         .attr('fill', color)
         .attr('cx', function(d) { return _this.xBrushScale(d.sampledate); })

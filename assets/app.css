@@ -289,7 +289,6 @@ body {
 
 .warning {
     color: red;
-    background-color: rgba(229,229,229,0.3);
 }
 
 .navbar-inverse {
@@ -518,16 +517,30 @@ rect.pane {
 }
 
 .panel-primary {
-    border-color: #787d7f;
+    border-color: #6c757d;
 }
 
 .panel-primary .panel-heading {
-    background-color: #787d7f;
-    border-color: #787d7f;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.panel-warning {
+    border-color: #dc3545;
+}
+
+.panel-warning .panel-heading {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+/* color the caret white when changing panel classes */
+.panel-warning .panel-heading {
+    color: #FFFFFF;
 }
 
 .panel-title {
-    color: #fff;
+    color: #FFFFFF;
     font-size: 14px;
 }
 

@@ -27,23 +27,31 @@ var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
 var requestCount = 0; 
 // limit the number of records from the API
 var recordLimit = 5000;
+var lastStation = new Object();
 
-closePanel();
+//closePanel();
+sendInitialRequest();
 resetLayerMenu(); 
 addTileLayers();
 addRefLayers(); 
 addMapControls(); 
 addSiteLayer(); 
+/* FOR TESTING
+$('#chart-container').css('display', 'inline-block');
+openPanel();
+showPanelError();
+*/
+
 
 function onMarkerClick(e) {
-    var siteClicked = e.layer.feature.properties.StationCode;
-    var path = createURL('6e99b457-0719-47d6-9191-8f5e7cd8866f', siteClicked);
+    var path = createURL('6e99b457-0719-47d6-9191-8f5e7cd8866f', lastStation.code);
     // highlightMarker(e);
     $('#chart-container').css('display', 'inline-block');
+    revertPanel();
     openPanel();
     showPanelLoading(); 
 
-    getDataRecur(path, processData); 
+    getData(path, processData); 
 
     function processData(data) { 
         $('#chart-panel').html('');
@@ -261,7 +269,7 @@ function createURL(resource, site) {
     }
 }
 
-function getDataRecur(url, callback, offset, data) {
+function getData(url, callback, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
     console.log(url);
@@ -281,7 +289,7 @@ function getDataRecur(url, callback, offset, data) {
                 if (records.length < recordLimit) {
                     callback(data);
                 } else {
-                    getDataRecur(url, callback, offset + recordLimit, data);
+                    getData(url, callback, offset + recordLimit, data);
                 }
             } else {
                 console.log('Ignore request');
@@ -289,13 +297,13 @@ function getDataRecur(url, callback, offset, data) {
         },
         error: function(e) {
             console.log(e);
-            closePanel();
-            alert('Error!');
+            showPanelError();
         }
     });
 }
 
-function getSiteData(url, callback, offset, data) {
+// gets data from last year
+function getDataRecent(url, callback, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
     console.log(url);
@@ -319,7 +327,7 @@ function getSiteData(url, callback, offset, data) {
                 if (dateDiff > 365) {
                     callback(data);
                 } else {
-                    getDataRecur(url, callback, offset + recordLimit, data);
+                    getDataRecent(url, callback, offset + recordLimit, data);
                 }
             } else {
                 console.log('Ignore request');
@@ -327,25 +335,40 @@ function getSiteData(url, callback, offset, data) {
         },
         error: function(e) {
             console.log(e);
-            closePanel();
-            alert('Error!');
+            alert('getDataRecent error!');
         }
     });
 }
 
-function getData(url, callback) {
+function getDataSites(url, callback, offset, data) {
+    if (typeof offset === 'undefined') { offset = 0; }
+    if (typeof data === 'undefined') { data = []; }
     console.log(url);
+
     $.ajax({
         type: 'GET',
         url: url,
+        data: {offset: offset},
         jsonpCallback: callback.name,
         dataType: 'jsonp',
+        requestCount: ++requestCount,
         success: function(res) {
-            var records = res.result.records;
-            callback(records);
+            if (requestCount == this.requestCount) {
+                var records = res.result.records;
+                console.log(records);
+                data = data.concat(records);
+                if (records.length < recordLimit) {
+                    callback(data);
+                } else {
+                    getDataSites(url, callback, offset + recordLimit, data);
+                }
+            } else {
+                console.log('Ignore request');
+            }
         },
         error: function(e) {
             console.log(e);
+            alert('getDataSites error!');
         }
     });
 }
@@ -392,6 +415,11 @@ function initializeSidebar() {
     $('#chart-panel').html(featureContent);
 }
 
+function resendRequest() {
+    $('.panel-text').html('<h3 class="panel-title">' + lastStation.name + ' (' + lastStation.code + ')</h3>');
+    onMarkerClick(lastStation.e);
+}
+
 function resetFilters() {
     document.getElementById("filter-result").checked="true";
     document.getElementById("filter-geomean").checked="true";
@@ -404,8 +432,38 @@ function resetLayerMenu() {
     document.getElementById("rb-boundaries-box").checked="";
 }
 
+function revertPanel() {
+    $('#chart-container').removeClass('panel-warning');
+    $('#chart-container').addClass('panel-primary');
+}
+
+function sendInitialRequest() {
+    var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=6e99b457-0719-47d6-9191-8f5e7cd8866f&limit=500&fields[t]=Analyte,DataQuality,MDL,Program,Result,ResultQualCode,SampleDate,StationCode,StationName,Unit&filters[StationCode]=633WFCB02';
+    console.log('Sending initial request.');
+    $.ajax({
+        type: 'GET',
+        url: url,
+        dataType: 'jsonp',
+        success: function(res) {
+            console.log('Initial request returned.');
+            console.log(res);
+        },
+        error: function(e) {
+            console.log('Initial request error.');
+            console.log(e);
+        }
+    });
+}
+
+function showPanelError() {
+    $('#chart-container').removeClass('panel-primary');
+    $('#chart-container').addClass('panel-warning');
+    $('.panel-text').html('<h3 class="panel-title">Error!</h3>');
+    $('#chart-panel').html('<p class="warning">Error fetching the data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>');
+}
+
 function showPanelLoading() {
-    $('#chart-panel').html('Loading Data<div id="loading"><div class="loading-indicator"><div class="progress progress-striped active"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%"></div></div></div></div>');
+    $('#chart-panel').html('Fetching data<div id="loading"><div class="loading-indicator"><div class="progress progress-striped active"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%"></div></div></div></div>');
 }
 
 function showSidebar() {
@@ -531,12 +589,16 @@ function addSiteLayer() {
     // most recent samples from API for join
     var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=6e99b457-0719-47d6-9191-8f5e7cd8866f&fields[t]=StationCode,SampleDate&limit=5000&sort[SampleDate]=desc';
 
-    getDataRecur(sitesPath, processSites);
+    getDataSites(sitesPath, processSites);
 
     // add listeners
     document.getElementById('sites-box').addEventListener('click', function() { toggleLayer(siteLayer); });
     // leaflet event
     siteLayer.on('click', function(e) {
+        // record new selection
+        lastStation.e = e;
+        lastStation.code = e.layer.feature.properties.StationCode;
+        lastStation.name = e.layer.feature.properties.StationName;
         $('.panel-text').html('<h3 class="panel-title">' + e.layer.feature.properties.StationName + ' (' + e.layer.feature.properties.StationCode + ')</h3>');
         setTimeout(function() {
             hideSidebarControl();
@@ -577,7 +639,7 @@ function addSiteLayer() {
                 }
             }
         }
-        getSiteData(siteDataPath, processSiteData);
+        getDataRecent(siteDataPath, processSiteData);
     }
 
     function joinSiteData(data) {

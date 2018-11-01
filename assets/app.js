@@ -47,7 +47,7 @@ function onMarkerClick(e) {
     var path = createURL('6e99b457-0719-47d6-9191-8f5e7cd8866f', lastStation.code);
     // highlightMarker(e);
     $('#chart-container').css('display', 'inline-block');
-    revertPanel();
+    resetPanel();
     openPanel();
     showPanelLoading(); 
 
@@ -270,11 +270,13 @@ function createURL(resource, site) {
 }
 
 function getData(url, callback, offset, data) {
+    requestCount++;
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
     console.log(url);
+    console.log(callback);
 
-    $.ajax({
+    var xhr = $.ajax({
         type: 'GET',
         url: url,
         data: {offset: offset},
@@ -282,7 +284,8 @@ function getData(url, callback, offset, data) {
         dataType: 'jsonp',
         requestCount: ++requestCount,
         success: function(res) {
-            if (requestCount == this.requestCount) {
+            console.log(requestCount, this.requestCount);
+            if (requestCount === this.requestCount) {
                 var records = res.result.records;
                 console.log(records);
                 data = data.concat(records);
@@ -293,10 +296,14 @@ function getData(url, callback, offset, data) {
                 }
             } else {
                 console.log('Ignore request');
+                console.log('Ignored data: ', res.result.records)
+                xhr.abort();
             }
         },
-        error: function(e) {
-            console.log(e);
+        error: function(xhr, status, errorThrown) {
+            console.log(xhr);
+            console.log(status);
+            console.log(errorThrown);
             showPanelError();
         }
     });
@@ -333,9 +340,11 @@ function getDataRecent(url, callback, offset, data) {
                 console.log('Ignore request');
             }
         },
-        error: function(e) {
-            console.log(e);
-            alert('getDataRecent error!');
+        error: function(xhr, status, errorThrown) {
+            console.log(xhr);
+            console.log(status);
+            console.log(errorThrown);
+            showInitialError();
         }
     });
 }
@@ -353,6 +362,7 @@ function getDataSites(url, callback, offset, data) {
         dataType: 'jsonp',
         requestCount: ++requestCount,
         success: function(res) {
+            console.log(requestCount, this.requestCount);
             if (requestCount == this.requestCount) {
                 var records = res.result.records;
                 console.log(records);
@@ -368,7 +378,7 @@ function getDataSites(url, callback, offset, data) {
         },
         error: function(e) {
             console.log(e);
-            alert('getDataSites error!');
+            showInitialError();
         }
     });
 }
@@ -432,7 +442,7 @@ function resetLayerMenu() {
     document.getElementById("rb-boundaries-box").checked="";
 }
 
-function revertPanel() {
+function resetPanel() {
     $('#chart-container').removeClass('panel-warning');
     $('#chart-container').addClass('panel-primary');
 }
@@ -455,11 +465,20 @@ function sendInitialRequest() {
     });
 }
 
+function showInitialError() {
+    $('#chart-container').css('display', 'inline-block');
+    openPanel();
+    $('#chart-container').removeClass('panel-primary');
+    $('#chart-container').addClass('panel-warning');
+    $('.panel-text').html('<h3 class="panel-title">Error!</h3>');
+    $('#chart-panel').html('<p class="warning">Error fetching the map data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="window.location.reload()">Retry</button></div>');
+}
+
 function showPanelError() {
     $('#chart-container').removeClass('panel-primary');
     $('#chart-container').addClass('panel-warning');
     $('.panel-text').html('<h3 class="panel-title">Error!</h3>');
-    $('#chart-panel').html('<p class="warning">Error fetching the data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>');
+    $('#chart-panel').html('<p class="warning">Error fetching the site data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>');
 }
 
 function showPanelLoading() {
@@ -852,7 +871,7 @@ function tooltipGM(d) {
 
 function tooltipResult(d) {
     var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var resultContent = 'Program: ' + d.Program + '<br>Analyte: ' + d.Analyte + '<br>Date: ' + tooltipDate(d.sampledate) + '<br>Result: ' + d.result + ' ' + d.Unit;
+    var resultContent = 'Program: ' + d.Program + '<br>Analyte: ' + d.Analyte + '<br>Date: ' + tooltipDate(d.sampledate) + '<br>Result: ' + d.result + ' ' + d.Unit + '<br>Site: ' + d.StationName;
     return resultContent;
 }
 

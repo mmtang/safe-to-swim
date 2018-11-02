@@ -13,6 +13,15 @@ var ecoli = new Analyte('E. coli', 320, 100),
     coliformtotal = new Analyte('Coliform, Total'),
     coliformfecal = new Analyte('Coliform, Fecal');
 
+var dataQuality0 = "MetaData, QC record",
+    dataQuality1 = "Passed QC"
+    dataQuality2 = "Some review needed",
+    dataQuality3 = "Spatial Accuracy Unknown",
+    dataQuality4 = "Extensive review needed",
+    dataQuality5 = "Unknown data quality",
+    dataQuality6 = "Reject record",
+    dataQuality7 = "Error";
+
 var map = L.map('map',{ 
     center: [37.4050, -119.0179], 
     zoom: 6, 
@@ -23,28 +32,22 @@ var map = L.map('map',{
 
 // before API format change: '%m/%d/%Y %H:%M'
 var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
-// initialize request tracker
-var requestCount = 0; 
 // limit the number of records from the API
 var recordLimit = 5000;
+// variable for keeping track of map clicks
 var lastStation = new Object();
 
 //closePanel();
-sendInitialRequest();
+//sendInitialRequest();
 resetLayerMenu(); 
 addTileLayers();
 addRefLayers(); 
 addMapControls(); 
 addSiteLayer(); 
-/* FOR TESTING
-$('#chart-container').css('display', 'inline-block');
-openPanel();
-showPanelError();
-*/
-
 
 function onMarkerClick(e) {
-    var path = createURL('6e99b457-0719-47d6-9191-8f5e7cd8866f', lastStation.code);
+    var clickedSite = e.layer.feature.properties.StationCode;
+    var path = createURL('6e99b457-0719-47d6-9191-8f5e7cd8866f', clickedSite);
     // highlightMarker(e);
     $('#chart-container').css('display', 'inline-block');
     resetPanel();
@@ -54,19 +57,10 @@ function onMarkerClick(e) {
     getData(path, processData); 
 
     function processData(data) { 
-        $('#chart-panel').html('');
-        initializeSidebar();
-        // data quality classes
-        var dataQuality0 = "MetaData, QC record",
-            dataQuality1 = "Passed QC"
-            dataQuality2 = "Some review needed",
-            dataQuality3 = "Spatial Accuracy Unknown",
-            dataQuality4 = "Extensive review needed",
-            dataQuality5 = "Unknown data quality",
-            dataQuality6 = "Reject record",
-            dataQuality7 = "Error";
-
+        console.log(data);
         if (data.length > 0) { 
+            clearChartPanel();
+            initializeChartPanel();
             var analyteSet = new Set(); 
             var chartData = [];
             for(var i = 0; i < data.length; i++) {
@@ -77,9 +71,9 @@ function onMarkerClick(e) {
                 d.mdl = +data[i].MDL;
                 d.Program = data[i].Program;
                 // change all non-detects before charting and calculating the geomean
-                // result = new field, Result = original field
+                // result = new (converted) field, Result = original field
                 if (checkND(data[i])) {
-                    // use half the method detection limit for non-detects
+                    // use half the mdl for non-detects
                     d.result = d.mdl * 0.5;
                 } else {
                     d.result = +data[i].Result;
@@ -94,7 +88,7 @@ function onMarkerClick(e) {
             }
             var analytes = [];
             analyteSet.forEach(function(i) { analytes.push(i); }); 
-            // sort descending so that Enteroccocus and E. coli appear first 
+            // sort descending so that enteroccocus and e. coli appear first 
             analytes.sort(function(a,b) { return b > a; });
             var defaultAnalyte = analytes[0];
             addAnalyteMenu(analytes);
@@ -106,8 +100,8 @@ function onMarkerClick(e) {
                 addChart(chartData, this.value);
             });
         } else {
-            closePanel();
-            alert("No data for selected site.");
+            showSiteError();
+            console.log('ERROR: Dataset is empty');
         }
     }  
 
@@ -159,7 +153,6 @@ function onMarkerClick(e) {
         chart.drawBrush();
         chart.addBrushPoints(chartData, 3, blue);
 
-
         // add chart filter listeners
         d3.select('#filter-result').on('change', function() { togglePoints(this, '.circle'); });
         d3.select('#filter-geomean').on('change', function() { togglePoints(this, '.gCircle'); });
@@ -196,16 +189,6 @@ $("#nav-btn").click(function() {
     $(".navbar-collapse").collapse("toggle");
     return false;
 });
-
-$("#sidebar-hide-btn").click(function() {
-    hideSidebar();
-    return false;
-});
-
-$("#mobile-close-btn").click(function() {
-    hideSidebar();
-    return false;
-})
 
 
 /*
@@ -244,6 +227,10 @@ function Analyte(name, stv, geomean) {
     this.geomean = geomean;
 }
 
+function clearChartPanel() {
+    $('#chart-panel').html('');
+}
+
 function openPanel() {
     $('#chart-panel').css('display', 'block');
     $('.panel-heading span.clickable').removeClass('panel-collapsed');
@@ -269,47 +256,52 @@ function createURL(resource, site) {
     }
 }
 
+// recursive function for requesting site data from the CA open data portal (data.ca.gov)
 function getData(url, callback, offset, data) {
-    requestCount++;
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
     console.log(url);
-    console.log(callback);
 
-    var xhr = $.ajax({
+    $.ajax({
         type: 'GET',
         url: url,
         data: {offset: offset},
-        jsonpCallback: callback.name,
+        // this is throwing errors because the callback is not being executed, remove for now
+        // jsonpCallback: callback.name,
         dataType: 'jsonp',
-        requestCount: ++requestCount,
         success: function(res) {
-            console.log(requestCount, this.requestCount);
-            if (requestCount === this.requestCount) {
                 var records = res.result.records;
-                console.log(records);
-                data = data.concat(records);
-                if (records.length < recordLimit) {
-                    callback(data);
+                var firstRecord = records[0];
+                // check that the site matches the last site clicked in the event that the user clicks multiple sites in succession
+                if (firstRecord.StationCode === lastStation.code) {
+                    data = data.concat(records);
+                    if (records.length < recordLimit) {
+                        callback(data);
+                    } else {
+                        getData(url, callback, offset + recordLimit, data);
+                    }
                 } else {
-                    getData(url, callback, offset + recordLimit, data);
+                    console.log('Ignored request for ' + firstRecord.StationName + ' (' + firstRecord.StationCode + ')');
                 }
-            } else {
-                console.log('Ignore request');
-                console.log('Ignored data: ', res.result.records)
-                xhr.abort();
-            }
         },
-        error: function(xhr, status, errorThrown) {
-            console.log(xhr);
-            console.log(status);
-            console.log(errorThrown);
-            showPanelError();
+        error: function(xhr, textStatus, error) {
+            console.log(xhr.statusText);
+            console.log(textStatus);
+            console.log(error);
+            // if multiple sites are clicked in succession, only the last request should show an error
+            // parse the url to get the site code and check that it matches the last site clicked
+            var splitURL = url.split('=');
+            var parsedSite = splitURL[splitURL.length - 1];
+            if (parsedSite === lastStation.code) {
+                showSiteError();
+            } else {
+                console.log('ERROR: Request for ' + parsedSite);
+            }
         }
     });
 }
 
-// gets data from last year
+// recursive function for requesting the most recent records (sampled within the last year) from the CA open data portal (data.ca.gov)
 function getDataRecent(url, callback, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
@@ -319,36 +311,34 @@ function getDataRecent(url, callback, offset, data) {
         type: 'GET',
         url: url,
         data: {offset: offset},
-        jsonpCallback: callback.name,
+        // this is throwing errors because the callback is not being executed, remove for now
+        //jsonpCallback: callback.name,
         dataType: 'jsonp',
-        requestCount: ++requestCount,
         success: function(res) {
-            if (requestCount == this.requestCount) {
-                var records = res.result.records;
-                data = data.concat(records);
-                var dataLen = records.length,
-                    lastRec = records[dataLen - 1],
-                    lastDate = parseDate(lastRec.SampleDate);
-                var today = new Date();
-                var dateDiff = daysBetween(lastDate, today);
-                if (dateDiff > 365) {
-                    callback(data);
-                } else {
-                    getDataRecent(url, callback, offset + recordLimit, data);
-                }
+            var records = res.result.records;
+            data = data.concat(records);
+            var dataLen = records.length,
+                lastRec = records[dataLen - 1],
+                lastDate = parseDate(lastRec.SampleDate);
+            var today = new Date();
+            var dateDiff = daysBetween(lastDate, today);
+            if (dateDiff > 365) {
+                callback(data);
             } else {
-                console.log('Ignore request');
+                getDataRecent(url, callback, offset + recordLimit, data);
             }
         },
-        error: function(xhr, status, errorThrown) {
-            console.log(xhr);
-            console.log(status);
-            console.log(errorThrown);
-            showInitialError();
+        error: function(xhr, textStatus, error) {
+            console.log(xhr.statusText);
+            console.log(textStatus);
+            console.log(error);
+            hideLoadingMask();
+            showMapLoadError();
         }
     });
 }
 
+// recursive function for requesting the site list from the CA open data portal (data.ca.gov)
 function getDataSites(url, callback, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
@@ -360,25 +350,20 @@ function getDataSites(url, callback, offset, data) {
         data: {offset: offset},
         jsonpCallback: callback.name,
         dataType: 'jsonp',
-        requestCount: ++requestCount,
         success: function(res) {
-            console.log(requestCount, this.requestCount);
-            if (requestCount == this.requestCount) {
-                var records = res.result.records;
-                console.log(records);
-                data = data.concat(records);
-                if (records.length < recordLimit) {
-                    callback(data);
-                } else {
-                    getDataSites(url, callback, offset + recordLimit, data);
-                }
+            var records = res.result.records;
+            console.log(records);
+            data = data.concat(records);
+            if (records.length < recordLimit) {
+                callback(data);
             } else {
-                console.log('Ignore request');
+                getDataSites(url, callback, offset + recordLimit, data);
             }
         },
         error: function(e) {
             console.log(e);
-            showInitialError();
+            hideLoadingMask();
+            showMapLoadError();
         }
     });
 }
@@ -393,22 +378,8 @@ function getWidth() {
     );
 }
 
-function hideSidebar() {
-    isSidebarOpen = false;
-    var windowWidth = getWidth();
-    if (windowWidth <= 767) {  // for mobile layout
-        document.getElementById('mobile-menu-btn').style.display = 'inline';
-        document.getElementById('mobile-close-btn').style.display = 'none';
-        var animationTime = 0;
-    } else {
-        var animationTime = 0;
-    }
-    $("#sidebar").hide(animationTime, function() {
-        setTimeout(function() {
-            map.invalidateSize(true);
-        }, 200); 
-    });
-    showSidebarControl();
+function hideLoadingMask() {
+    $("#map-loading-mask").hide();  
 }
 
 function hideSidebarControl() {
@@ -420,7 +391,7 @@ function initializeDatePanel() {
     $(".date-panel").append('Drag the handles of the gray box above to change the date view.<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span></p>');
 }
 
-function initializeSidebar() {
+function initializeChartPanel() {
     var featureContent = '<div id="popup-menu"><div id="analyte-container"></div><div id="filter-container"></div></div>' + '<div id="chart-space"></div><div class="date-panel"></div><div id="scale-container"></div>';
     $('#chart-panel').html(featureContent);
 }
@@ -465,20 +436,13 @@ function sendInitialRequest() {
     });
 }
 
-function showInitialError() {
+function showMapLoadError() {
     $('#chart-container').css('display', 'inline-block');
     openPanel();
     $('#chart-container').removeClass('panel-primary');
     $('#chart-container').addClass('panel-warning');
     $('.panel-text').html('<h3 class="panel-title">Error!</h3>');
     $('#chart-panel').html('<p class="warning">Error fetching the map data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="window.location.reload()">Retry</button></div>');
-}
-
-function showPanelError() {
-    $('#chart-container').removeClass('panel-primary');
-    $('#chart-container').addClass('panel-warning');
-    $('.panel-text').html('<h3 class="panel-title">Error!</h3>');
-    $('#chart-panel').html('<p class="warning">Error fetching the site data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>');
 }
 
 function showPanelLoading() {
@@ -506,21 +470,18 @@ function showSidebarControl() {
     document.getElementById("sidebar-control").style.display = "block";
 }
 
+function showSiteError() {
+    $('#chart-container').removeClass('panel-primary');
+    $('#chart-container').addClass('panel-warning');
+    $('.panel-text').html('<h3 class="panel-title">Error!</h3>');
+    $('#chart-panel').html('<p class="warning">Error fetching the site data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>');
+}
+
 /*
 / Map Helper Functions 
 */
 
 function addMapControls() {
-    var sidebarControl = L.Control.extend({
-        options: { position: 'topright'
-        },
-        onAdd: function (map) {
-            var container = L.DomUtil.create('div', 'sidebar-control-container');
-            container.innerHTML = '<div id="sidebar-control"><a href="#" onClick="showSidebar()"><button type="button" class="btn btn-xs btn-default pull-left" id="sidebar-show-btn"><i class="fa fa-chevron-left fa"></i></button></a></div>';
-            return container;
-        }
-    });
-    map.addControl(new sidebarControl());
     var zoomControl = L.control.zoom({ position:'topleft' }).addTo(map);
     addMapLegend();
 }
@@ -614,22 +575,17 @@ function addSiteLayer() {
     document.getElementById('sites-box').addEventListener('click', function() { toggleLayer(siteLayer); });
     // leaflet event
     siteLayer.on('click', function(e) {
-        // record new selection
+        // record new selection in global variable
         lastStation.e = e;
         lastStation.code = e.layer.feature.properties.StationCode;
         lastStation.name = e.layer.feature.properties.StationName;
         $('.panel-text').html('<h3 class="panel-title">' + e.layer.feature.properties.StationName + ' (' + e.layer.feature.properties.StationCode + ')</h3>');
-        setTimeout(function() {
-            hideSidebarControl();
-        }, 400);
         onMarkerClick(e);
     });
 
     function addSites(data) {
         siteLayer.addData(data);
-        setTimeout(function() {
-            $(".background-mask").hide();  
-        }, 1000);
+        setTimeout(hideLoadingMask, 1000);
     }
 
     function processSites(data, callback) {

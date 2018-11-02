@@ -111,42 +111,6 @@ body {
     padding: 0;
 }
 
-#sidebar {
-    position: relative;
-    float: right;
-    display: none;
-    width: 55%;
-    height: 100%;
-    max-width: 100%;
-    box-shadow: 0 6px 12px rgba(0,0,0,.2);
-    border: 0px;
-    z-index: 1000;
-}
-
-#sidebar-hide-btn {
-    position: relative;
-    width: 24px;
-    height: 50px;
-    left: -54px;
-    top: -7px;
-    background: linear-gradient(to right,rgba(255,255,255,1) 90%,rgba(237,237,237,1) 100%);
-    border: 1px solid rgba(212,212,212,0.8);
-    box-shadow: -1px 2px 8px rgba(0,0,0,0.2);
-    border-radius: 0px;
-    outline: 0;
-    z-index: -1;
-}
-
-#sidebar-show-btn {
-    width: 23px;
-    height: 50px;
-    margin-right: -4px;
-    background-color: #FFF;
-    border: 0; 
-    box-shadow: -1px 2px 8px rgba(0,0,0,0.2);
-    border-radius: 0px;
-}
-
 #mobile-close-btn {
     display: none;
 }
@@ -201,31 +165,6 @@ body {
 .dropdown-menu a i {
     color: #FFFFFF;
     }
-}
-
-#sidebar-arrow {
-    display: block;
-    width: 3%;
-    height: 100%;
-    max-width: 100%;
-    float: right;
-    border: 1px solid lightgray;
-}
-
-.sidebar-arrow-container {
-    display: table;
-    margin: 0 auto;
-}
-
-#sidebar-control {
-    padding: 3px 4px 0px 0px;
-}
-
-.sidebar-wrapper {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    background-color: #fff;
 }
 
 #tile-menu {
@@ -428,24 +367,6 @@ body {
     border: 1px solid rgba(237, 104, 116, 0.8);
 }
 
-#sidebar-control {
-    display: none;
-}
-
-.sidebar-wrapper {
-    width: 100%;
-    height: 100%;
-    position: relative;
-}
-
-.sidebar-table {
-    position: absolute;
-    width: 100%;
-    top: 103px;
-    bottom: 0px;
-    overflow: auto;
-}
-
 #siteTextBox {
     background: #f7f4f9;
     padding: .5em;
@@ -484,10 +405,6 @@ rect.pane {
     cursor: move;
     fill: none;
     pointer-events: all;
-}
-
-#sidebar-close-btn {
-    display: none;
 }
 
 #chart-container {

@@ -23,7 +23,7 @@ var dataQuality0 = "MetaData, QC record",
     dataQuality7 = "Error";
 
 var map = L.map('map',{ 
-    center: [37.4050, -119.0179], 
+    center: [37.4050, -119.0159], 
     zoom: 6, 
     preferCanvas: true,
     doubleClickZoom: false, 
@@ -52,7 +52,7 @@ function onMarkerClick(e) {
     $('#chart-container').css('display', 'inline-block');
     resetPanel();
     openPanel();
-    showPanelLoading(); 
+    showSiteLoading(); 
 
     getData(path, processData); 
 
@@ -382,10 +382,6 @@ function hideLoadingMask() {
     $("#map-loading-mask").hide();  
 }
 
-function hideSidebarControl() {
-    document.getElementById("sidebar-control").style.display = "none";
-}
-
 function initializeDatePanel() {
     $(".date-panel").empty();
     $(".date-panel").append('Drag the handles of the gray box above to change the date view.<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span></p>');
@@ -407,7 +403,7 @@ function resetFilters() {
 }
 
 function resetLayerMenu() {
-    document.getElementById("topo-tile-radio").checked="true";
+    document.getElementById("carto-tile-radio").checked="true";
     document.getElementById("sites-box").checked="true";
     document.getElementById("counties-box").checked="";
     document.getElementById("rb-boundaries-box").checked="";
@@ -445,29 +441,8 @@ function showMapLoadError() {
     $('#chart-panel').html('<p class="warning">Error fetching the map data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="window.location.reload()">Retry</button></div>');
 }
 
-function showPanelLoading() {
+function showSiteLoading() {
     $('#chart-panel').html('Fetching data<div id="loading"><div class="loading-indicator"><div class="progress progress-striped active"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%"></div></div></div></div>');
-}
-
-function showSidebar() {
-    var windowWidth = getWidth();
-    if (windowWidth <= 767) {  // for mobile layout
-        document.getElementById('mobile-menu-btn').style.display = 'none';
-        document.getElementById('mobile-close-btn').style.display = 'inline';
-        var animationTime = 0;
-    } else {
-        var animationTime = 0;
-    }
-    $("#sidebar").show(animationTime, function() {
-        setTimeout(function() {
-            map.invalidateSize(true);
-        }, 200); 
-    });
-    hideSidebarControl();
-}
-
-function showSidebarControl() {
-    document.getElementById("sidebar-control").style.display = "block";
 }
 
 function showSiteError() {
@@ -675,23 +650,30 @@ function addSiteLayer() {
 }
 
 function addTileLayers() {
+    var Carto_Voyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+    }).addTo(map);
+    /*
     var Esri_WorldTopoMap = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri'}).addTo(map);
+    */
     var Esri_WorldImagery = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri'});
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'});
         
     // listener for toggling tile layers
     $('#tile-menu input').on('change', function() {
         var selectedBasemap = $('input[name=tileRadio]:checked').val(); 
-        if (selectedBasemap === "topo") {
+        if (selectedBasemap === 'carto') {
             if (map.hasLayer(Esri_WorldImagery)) {
                 map.removeLayer(Esri_WorldImagery);
-                map.addLayer(Esri_WorldTopoMap);
+                map.addLayer(Carto_Voyager);
             }
         }
-        if (selectedBasemap === "satellite") {
-            if (map.hasLayer(Esri_WorldTopoMap)) {
-                map.removeLayer(Esri_WorldTopoMap);
+        if (selectedBasemap === 'satellite') {
+            if (map.hasLayer(Carto_Voyager)) {
+                map.removeLayer(Carto_Voyager);
                 map.addLayer(Esri_WorldImagery);
             }
         }
@@ -827,7 +809,7 @@ function tooltipGM(d) {
 
 function tooltipResult(d) {
     var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var resultContent = 'Program: ' + d.Program + '<br>Analyte: ' + d.Analyte + '<br>Date: ' + tooltipDate(d.sampledate) + '<br>Result: ' + d.result + ' ' + d.Unit + '<br>Site: ' + d.StationName;
+    var resultContent = 'Program: ' + d.Program + '<br>Site: ' + d.StationName + '<br>Analyte: ' + d.Analyte + '<br>Date: ' + tooltipDate(d.sampledate) + '<br>Result: ' + d.result + ' ' + d.Unit;
     return resultContent;
 }
 

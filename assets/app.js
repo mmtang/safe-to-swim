@@ -33,12 +33,11 @@ var map = L.map('map',{
 // before API format change: '%m/%d/%Y %H:%M'
 var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
 // limit the number of records from the API
-var recordLimit = 5000;
+var recordLimit = 500;
 // variable for keeping track of map clicks
 var lastStation = new Object();
 
 //closePanel();
-//sendInitialRequest();
 resetLayerMenu(); 
 addTileLayers();
 addRefLayers(); 
@@ -244,16 +243,12 @@ function closePanel() {
 }
 
 function createURL(resource, site) {
-    var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
-    if (typeof site === 'undefined') {
-        return url;
-    } else {
-        // optional site parameter
-        var fullPath = url + '&fields[t]=Analyte,DataQuality,MDL,Program,Result,ResultQualCode,SampleDate,StationCode,StationName,Unit'
-        fullPath += '&filters[StationCode]=' + site;
-        var cleanPath = fullPath.replace(/\#/, '%23');
-        return cleanPath;
-    }
+    // var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
+    var url = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=b6f30bfc-badd-47d3-93b9-445bd90f9738';
+    url += '&fields=Analyte,DataQuality,MDL,Program,Result,ResultQualCode,SampleDate,StationCode,StationName,Unit';
+    url += '&filters={%22StationCode%22:%22' + site + '%22}';
+    url += '&limit=' + recordLimit;
+    return url;
 }
 
 // recursive function for requesting site data from the CA open data portal (data.ca.gov)
@@ -266,9 +261,7 @@ function getData(url, callback, offset, data) {
         type: 'GET',
         url: url,
         data: {offset: offset},
-        // this is throwing errors because the callback is not being executed, remove for now
-        // jsonpCallback: callback.name,
-        dataType: 'jsonp',
+        dataType: 'json',
         success: function(res) {
                 var records = res.result.records;
                 var firstRecord = records[0];
@@ -301,7 +294,7 @@ function getData(url, callback, offset, data) {
     });
 }
 
-// recursive function for requesting the most recent records (sampled within the last year) from the CA open data portal (data.ca.gov)
+// recursive function for requesting the most recent records (sampled within the last year)
 function getDataRecent(url, callback, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
@@ -311,15 +304,11 @@ function getDataRecent(url, callback, offset, data) {
         type: 'GET',
         url: url,
         data: {offset: offset},
-        // this is throwing errors because the callback is not being executed, remove for now
-        //jsonpCallback: callback.name,
-        dataType: 'jsonp',
+        dataType: 'json',
         success: function(res) {
             var records = res.result.records;
             data = data.concat(records);
-            var dataLen = records.length,
-                lastRec = records[dataLen - 1],
-                lastDate = parseDate(lastRec.SampleDate);
+            var lastDate = parseDate(records[0].SampleDate);
             var today = new Date();
             var dateDiff = daysBetween(lastDate, today);
             if (dateDiff > 365) {
@@ -348,11 +337,9 @@ function getDataSites(url, callback, offset, data) {
         type: 'GET',
         url: url,
         data: {offset: offset},
-        jsonpCallback: callback.name,
-        dataType: 'jsonp',
+        dataType: 'json',
         success: function(res) {
             var records = res.result.records;
-            console.log(records);
             data = data.concat(records);
             if (records.length < recordLimit) {
                 callback(data);
@@ -414,24 +401,6 @@ function resetPanel() {
     $('#chart-container').addClass('panel-primary');
 }
 
-function sendInitialRequest() {
-    var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=6e99b457-0719-47d6-9191-8f5e7cd8866f&limit=500&fields[t]=Analyte,DataQuality,MDL,Program,Result,ResultQualCode,SampleDate,StationCode,StationName,Unit&filters[StationCode]=633WFCB02';
-    console.log('Sending initial request.');
-    $.ajax({
-        type: 'GET',
-        url: url,
-        dataType: 'jsonp',
-        success: function(res) {
-            console.log('Initial request returned.');
-            console.log(res);
-        },
-        error: function(e) {
-            console.log('Initial request error.');
-            console.log(e);
-        }
-    });
-}
-
 function showMapLoadError() {
     $('#chart-container').css('display', 'inline-block');
     openPanel();
@@ -486,7 +455,6 @@ function addRefLayers() {
     map.createPane('refPane');
     // set z-index of reference pane under overlay pane (400) and over tile pane (200)
     map.getPane('refPane').style.zIndex = 350;
-    // initialize layers
     var countyLayer = L.esri.featureLayer({
         url: 'https://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/CountyBoundaries/MapServer/0',
         pane: 'refPane',
@@ -509,7 +477,6 @@ function addRefLayers() {
             };
         }
     });
-    // add listeners
     $("#counties-box").click( function() { toggleLayer(countyLayer); });
     $("#rb-boundaries-box").click( function() { toggleLayer(rbLayer); });
 }
@@ -539,10 +506,16 @@ function addSiteLayer() {
         }
     }).addTo(map);
 
-    // request sites from API and process data
-    var sitesPath = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
-    // most recent samples from API for join
-    var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=6e99b457-0719-47d6-9191-8f5e7cd8866f&fields[t]=StationCode,SampleDate&limit=5000&sort[SampleDate]=desc';
+    // *** request sites from API and process data
+    // data.ca.gov endpoint
+    // var sitesPath = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
+    // data.cnra.ca.gov endpoint 
+    var sitesPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=eb3e96c9-15f5-4734-9d25-f7d2eca2b883&limit=' + recordLimit;
+    // *** request most recent samples from API for join
+    // data.ca.gov endpoint, started using 11/6/18
+    // var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=6e99b457-0719-47d6-9191-8f5e7cd8866f&fields[t]=StationCode,SampleDate&limit=5000&sort[SampleDate]=desc';
+    // data.cnra.ca.gov endpoint, started using 11/6/18
+    var siteDataPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=b6f30bfc-badd-47d3-93b9-445bd90f9738&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
 
     getDataSites(sitesPath, processSites);
 
@@ -563,24 +536,18 @@ function addSiteLayer() {
         setTimeout(hideLoadingMask, 1000);
     }
 
-    function processSites(data, callback) {
+    function processSites(data) {
         features = [];
         for (var i = 0; i < data.length; i++) {
             var site = {};
-            // check for missing essential properties
+            // check for missing values
             if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode)) { 
                 continue; 
             } else {
                 // filter out site name 'Leona Creek at Brommer Trailer Park' for inaccurate coordinates
                 if (data[i].SiteCode === '304-LEONA-21') {
-                    continue
+                    continue;
                 } else {
-                    /*
-                    site.type = "Feature";
-                    site.geometry = {"type": "Point", "coordinates": [data[i].Longitude, data[i].Latitude]};
-                    site.properties = { "StationName": data[i].StationName, "StationCode": data[i].SiteCode };
-                    features.push(site);
-                    */
                     site.StationName = data[i].StationName;
                     site.StationCode = data[i].SiteCode;
                     site.Latitude = +data[i].Latitude;
@@ -596,14 +563,14 @@ function addSiteLayer() {
         var db = new alasql.Database();
         db.exec('CREATE TABLE feature');
         db.exec('CREATE TABLE att');
-        // 'features' is from processSites
+        // 'features' is the site list from processSites()
         db.exec('SELECT * INTO feature FROM ?', [features]);
         db.exec('SELECT * INTO att FROM ?', [data]);
-        // will output only those sites with matches
+        // get list of distinct sites based on most recent sample date
         var date = db.exec('SELECT stationcode, max(sampledate) as sampledate FROM att GROUP BY stationcode');
         db.exec('CREATE TABLE date');
         db.exec('SELECT * INTO date FROM ?', [date]);
-        // join data back to full site list
+        // join data back to site list
         var joined = db.exec('SELECT feature.*, date.sampledate FROM feature LEFT JOIN date ON feature.StationCode = date.stationcode ORDER BY date.sampledate');
         return joined;
     }
@@ -612,33 +579,24 @@ function addSiteLayer() {
         var siteData = [];
         for (var i = 0; i < data.length; i++) {
             var record = {};
-            // check for missing properties needed for join
-            if (!(data[i].StationCode) || !(data[i].SampleDate)) {
-                continue;
-            } else {
-                // pick out station code and sample date for join
-                record.stationcode = data[i].StationCode;
-                // convert date to UTC timestamp for max function
-                record.sampledate = parseDate(data[i].SampleDate).getTime();
-                siteData.push(record); 
-            }
+            // create new fields for join
+            // convert date to UTC timestamp for use in max function
+            record.stationcode = data[i].StationCode;
+            record.sampledate = parseDate(data[i].SampleDate).getTime();
+            siteData.push(record); 
         }
         var joined = joinSiteData(siteData);
         // reformat objects to geojson
         var mapSites = [];
         var today = new Date();
-        var date = null;
-        var dateDiff = null;
         for (var i = 0; i < joined.length; i++) {
             var site = {};
+            var date = null;
+            var dateDiff = null;
             if (joined[i].sampledate) {
-                // convert UTC timestamp
-                // calculate date difference with today's date
+                // convert UTC timestamp to date
                 date = convertUNIX(joined[i].sampledate);
                 dateDiff = daysBetween(date, today);
-            } else {
-                date = null;
-                dateDiff = null;
             }
             site.type = 'Feature';
             site.geometry = {'type': 'Point', 'coordinates': [joined[i].Longitude, joined[i].Latitude]};

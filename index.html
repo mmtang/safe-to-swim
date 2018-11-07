@@ -29,32 +29,34 @@
                 <div class="navbar-header">
                     <div class="navbar-icon-container">
                     <a href="#" class="navbar-icon pull-left visible-xs" id="nav-btn"><i class="fa fa-bars fa-lg white" id="mobile-menu-btn"></i></a>
-                    <a href="#" class="navbar-icon pull-left visible-xs" id="nav-btn"><i class="fa fa-info-circle fa-lg white" id="mobile-about-btn"></i></a>
                     <a href="#" class="navbar-icon pull-right visible-xs" id="sidebar-toggle-btn"><i class="fa fa-times-circle fa-lg white" id="mobile-close-btn"></i></a>
                     </div>
                     <a class="navbar-brand" href="#">Safe to Swim Map - In Development (Pre-Alpha)</a>
                 </div>
                 <div class="navbar-collapse collapse">
-                    <ul class="nav navbar-nav navbar-left">
+                    <ul class="nav navbar-nav left">
+                        <li><a href="#" data-toggle="collapse" data-target=".navbar-collapse.in" id="about-btn"><i class="fa fa-question-circle white"></i>&nbsp;&nbsp;About</a></li>
                         <li class="dropdown">
                             <a class="dropdown-toggle" id="downloadDrop" href="#" role="button" data-toggle="dropdown"><i class="fa fa-list white"></i>&nbsp;&nbsp;Layers <b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                                    <li class="menu-header">Map Background</li>
-                                <div id="tile-menu">
-                                    <li><input id="carto-tile-radio" name="cartoRadio" value="carto" type="radio" checked>&nbsp;&nbsp;Carto Voyager</li>
-                                    <li><input id="satellite-tile-radio" name="tileRadio" value="satellite" type="radio">&nbsp;&nbsp;ESRI Satellite</li>
-                                </div>
-                                    <li class="menu-header">Reference Layers</li>
-                                    <li><input id="counties-box" class="form-check-input" type="checkbox">&nbsp;&nbsp;County Boundaries</li>
-                                    <li><input id="rb-boundaries-box" class="form-check-input" type="checkbox">&nbsp;&nbsp;Regional Board Boundaries</li>
-                                    <li class="menu-header">Monitoring Sites</li>
-                                    <li><input id="sites-box" class="form-check-input" type="checkbox">&nbsp;&nbsp;Monitoring Sites</li>
+                                <li class="menu-header">Map Background</li>
+                                <li><input id="carto-tile-radio" name="tileRadio" value="carto" type="radio" checked>&nbsp;&nbsp;Carto Voyager</li>
+                                <li><input id="satellite-tile-radio" name="tileRadio" value="satellite" type="radio">&nbsp;&nbsp;ESRI Satellite</li>
+                                <li class="menu-header">Reference Layers</li>
+                                <li><input id="counties-box" class="form-check-input" type="checkbox">&nbsp;&nbsp;County Boundaries</li>
+                                <li><input id="rb-boundaries-box" class="form-check-input" type="checkbox">&nbsp;&nbsp;Regional Board Boundaries</li>
+                                <li class="menu-header">Monitoring Sites</li>
+                                <li><input id="sites-box" class="form-check-input" type="checkbox">&nbsp;&nbsp;Monitoring Sites</li>
                             </ul>
                         </li>
                     </ul>
-                    
                     <ul class="nav navbar-nav navbar-right">
-                    <li><a href="#" data-toggle="collapse" data-target=".navbar-collapse.in" id="about-btn"><i class="fa fa-info-circle white fa-lg"></i></a></li>
+                        <form class="navbar-form navbar-right" role="search">
+                            <div id="nav-search" class="form-group has-feedback">
+                                <input id="searchbox" type="text" placeholder="Search" class="form-control typeahead">
+                                <span id="searchicon" class="fa fa-search form-control-feedback"></span>
+                            </div>
+                        </form>
                     </ul>
                 </div><!--/.navbar-collapse -->
             </div><!--/.container-fluid -->
@@ -116,10 +118,10 @@
         <script src="https://unpkg.com/esri-leaflet@2.1.2/dist/esri-leaflet.js"
         integrity="sha512-ouokQ1RIIoqPTZKwlapdxHO5VWFoAi8wE+SwhSX89Ifac0w3p+H2da4oqHvRsBTIpNLewzAZU7gRVDFXyXcfjA=="
         crossorigin=""></script>
+        <script src='assets/typeahead.bundle.min.js'></script>
         <script src='assets/alasql.js'></script>
         <script src='assets/chart.js'></script>
         <script src='assets/geomean.js'></script>
         <script src='assets/app.js'></script>
-
     </body>
 </html>

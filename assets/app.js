@@ -36,8 +36,10 @@ var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
 var recordLimit = 500;
 // variable for keeping track of map clicks
 var lastStation = new Object();
+var mapSites = [];
 
 //closePanel();
+clearSearch();
 resetLayerMenu(); 
 addTileLayers();
 addRefLayers(); 
@@ -228,6 +230,10 @@ function Analyte(name, stv, geomean) {
 
 function clearChartPanel() {
     $('#chart-panel').html('');
+}
+
+function clearSearch() {
+    $('#searchbox').val('');
 }
 
 function openPanel() {
@@ -587,7 +593,6 @@ function addSiteLayer() {
         }
         var joined = joinSiteData(siteData);
         // reformat objects to geojson
-        var mapSites = [];
         var today = new Date();
         for (var i = 0; i < joined.length; i++) {
             var site = {};
@@ -601,10 +606,36 @@ function addSiteLayer() {
             site.type = 'Feature';
             site.geometry = {'type': 'Point', 'coordinates': [joined[i].Longitude, joined[i].Latitude]};
             site.properties = {'StationName': joined[i].StationName, 'StationCode': joined[i].StationCode, 'LastSampleDate': date, 'DateDifference': dateDiff};
+            // store in global variable
             mapSites.push(site);
         }
         addSites(mapSites);
+        initializeSearch(mapSites);
     }
+}
+
+function initializeSearch(data) {
+    var sites = data.map(function(d) { return d.properties.StationName + ' (' + d.properties.StationCode + ')'; });
+    var sitesBH = new Bloodhound({
+        datumTokenizer: Bloodhound.tokenizers.whitespace,
+        queryTokenizer: Bloodhound.tokenizers.whitespace,
+        local: sites
+    });
+
+    $('#searchbox').typeahead({
+        hint: true,
+        highlight: true,
+        minLength: 1,
+        limit: Infinity
+    }, {
+        name: 'sites',
+        source: sitesBH
+    });
+
+    $('#searchbox').on('typeahead:selected', function (e, datum) {
+        var code = datum.match(/\((.*)\)/);
+        zoomToSite(code[1]);
+    });
 }
 
 function addTileLayers() {
@@ -669,6 +700,10 @@ function toggleLayer(layer, customPane) {
     } else {
         map.addLayer(layer);
     }
+}
+
+function zoomToSite(site) {
+    
 }
 
 /*

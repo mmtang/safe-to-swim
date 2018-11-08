@@ -516,30 +516,25 @@ rect.pane {
     text-align: center;
 }
 
-.navbar-form {
-    margin-left: 0px;
-    margin-right: 0px;
+#chart-space {
+    width: 762px;
 }
 
-/* wide layout */
-@media only screen and (min-width: 1007px) {
-    #chart-space {
-        width: 862px;
-    }
-}
-
-/* base mobile layout */
 @media (max-width: 1007px) {
-
-    .navbar-nav .open .dropdown-menu {
-        background-color: #fff;
-    }
     .navbar .navbar-brand {
         font-size: 18px;
-        display: none;
+    }
+    #chart-space {
+        width: 662px;
     }
     .panel {
         border-radius: 0px;
+    }
+}
+
+@media (max-width: 767px){
+    .leaflet-control-zoom {
+        display: none;
     }
     .panel-body {
         overflow-y: visible;
@@ -555,6 +550,10 @@ rect.pane {
     #chart-panel {
         width: 100%;
         height: 100%;
+    }
+
+    #chart-space {
+        width: inherit;
     }
     #nav-search {
         width: inherit;

@@ -23,7 +23,7 @@ var dataQuality0 = "MetaData, QC record",
     dataQuality7 = "Error";
 
 var map = L.map('map',{ 
-    center: [37.4050, -119.0159], 
+    center: [37.4050, -119.365], 
     zoom: 6, 
     preferCanvas: true,
     doubleClickZoom: false, 
@@ -644,11 +644,22 @@ function initializeSearch(data) {
 
     $('#searchbox').click(function () {
         $(this).select();
-      });
+    });
 
     $('#searchbox').on('typeahead:selected', function (e, datum) {
+        closePanel();
+        $('.navbar-collapse').collapse('hide');
         map.setView([datum.lat, datum.lng], 17);
+    }).on('focus', function () {
+        $(".navbar-collapse.in").css("max-height", $(document).height() - $(".navbar-header").height());
+        $(".navbar-collapse.in").css("height", $(document).height() - $(".navbar-header").height());
+    }).on("focusout", function () {
+        $(".navbar-collapse.in").css("max-height", "");
+        $(".navbar-collapse.in").css("height", "");
     });
+
+    $(".twitter-typeahead").css("position", "static");
+    $(".twitter-typeahead").css("display", "block");
 }
 
 function addTileLayers() {

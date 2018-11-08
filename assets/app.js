@@ -615,9 +615,18 @@ function addSiteLayer() {
 }
 
 function initializeSearch(data) {
-    var sites = data.map(function(d) { return d.properties.StationName + ' (' + d.properties.StationCode + ')'; });
+    var sites = data.map(function(d) {
+        return {
+            name: d.properties.StationName + ' ' + d.properties.StationCode,
+            lat: d.geometry.coordinates[1],
+            lng: d.geometry.coordinates[0]
+        };
+    });
+    console.log(sites);
     var sitesBH = new Bloodhound({
-        datumTokenizer: Bloodhound.tokenizers.whitespace,
+        datumTokenizer: function(d) {
+            return Bloodhound.tokenizers.whitespace(d.name);
+        },
         queryTokenizer: Bloodhound.tokenizers.whitespace,
         local: sites
     });
@@ -629,12 +638,16 @@ function initializeSearch(data) {
         limit: Infinity
     }, {
         name: 'sites',
+        displayKey: 'name',
         source: sitesBH
     });
 
+    $('#searchbox').click(function () {
+        $(this).select();
+      });
+
     $('#searchbox').on('typeahead:selected', function (e, datum) {
-        var code = datum.match(/\((.*)\)/);
-        zoomToSite(code[1]);
+        map.setView([datum.lat, datum.lng], 17);
     });
 }
 

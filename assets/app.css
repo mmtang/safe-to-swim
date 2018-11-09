@@ -527,7 +527,7 @@ rect.pane {
     #chart-space {
         width: 662px;
     }
-    .panel {
+    .panel-heading {
         border-radius: 0px;
     }
 }
@@ -539,7 +539,7 @@ rect.pane {
     .panel-body {
         overflow-y: visible;
     }
-    .panel-heading {
+    .panel {
         border-radius: 0px;
     }
     #chart-container {
@@ -551,7 +551,6 @@ rect.pane {
         width: 100%;
         height: 100%;
     }
-
     #chart-space {
         width: inherit;
     }

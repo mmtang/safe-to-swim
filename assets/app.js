@@ -33,10 +33,11 @@ var map = L.map('map',{
 // before API format change: '%m/%d/%Y %H:%M'
 var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
 // limit the number of records from the API
-var recordLimit = 500;
+var recordLimit = 1000;
 // variable for keeping track of map clicks
 var lastStation = new Object();
-var mapSites = [];
+var sitesList = [];
+var countiesList = [];
 
 //closePanel();
 clearSearch();
@@ -398,7 +399,7 @@ function resetFilters() {
 function resetLayerMenu() {
     document.getElementById("carto-tile-radio").checked="true";
     document.getElementById("sites-box").checked="true";
-    document.getElementById("counties-box").checked="";
+    document.getElementById("counties-box").checked="true";
     document.getElementById("rb-boundaries-box").checked="";
 }
 
@@ -468,10 +469,17 @@ function addRefLayers() {
             return {
                 color: '#30A5E7',
                 weight: 3,
-                fillOpacity: 0.1
+                fillOpacity: 0
             };
+        },
+        onEachFeature: function(feature, layer) {
+            countiesList.push({
+                name: layer.feature.properties.CNTY_NAME,
+                bounds: layer.getBounds()
+            })
         }
-    });
+    }).addTo(map);
+    /*
     var rbLayer = L.esri.featureLayer({
         url: 'https://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/rbbound/MapServer/0',
         pane: 'refPane',
@@ -479,10 +487,11 @@ function addRefLayers() {
             return {
                 color: '#732B8D', 
                 weight: 3,
-                fillOpacity: 0.1
+                fillOpacity: 0
             };
         }
     });
+    */
     $("#counties-box").click( function() { toggleLayer(countyLayer); });
     $("#rb-boundaries-box").click( function() { toggleLayer(rbLayer); });
 }
@@ -607,15 +616,15 @@ function addSiteLayer() {
             site.geometry = {'type': 'Point', 'coordinates': [joined[i].Longitude, joined[i].Latitude]};
             site.properties = {'StationName': joined[i].StationName, 'StationCode': joined[i].StationCode, 'LastSampleDate': date, 'DateDifference': dateDiff};
             // store in global variable
-            mapSites.push(site);
+            sitesList.push(site);
         }
-        addSites(mapSites);
-        initializeSearch(mapSites);
+        addSites(sitesList);
+        initializeSearch();
     }
 }
 
-function initializeSearch(data) {
-    var sites = data.map(function(d) {
+function initializeSearch() {
+    var sites = sitesList.map(function(d) {
         return {
             name: d.properties.StationName + ' ' + d.properties.StationCode,
             lat: d.geometry.coordinates[1],
@@ -724,10 +733,6 @@ function toggleLayer(layer, customPane) {
     } else {
         map.addLayer(layer);
     }
-}
-
-function zoomToSite(site) {
-    
 }
 
 /*

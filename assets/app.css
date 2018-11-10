@@ -520,6 +520,10 @@ rect.pane {
     width: 762px;
 }
 
+.center {
+    content-align: center;
+}
+
 @media (max-width: 1007px) {
     .navbar .navbar-brand {
         font-size: 18px;

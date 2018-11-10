@@ -35,7 +35,7 @@
                 <div class="navbar-collapse collapse">
                     <form class="navbar-form navbar-right" role="search">
                         <div id="nav-search" class="form-group has-feedback">
-                            <input id="searchbox" type="text" placeholder="Search" class="form-control typeahead">
+                            <input id="searchbox" type="text" placeholder="Search monitoring sites" class="form-control typeahead">
                             <span id="searchicon" class="fa fa-search form-control-feedback"></span>
                         </div>
                     </form>
@@ -94,15 +94,32 @@
                 </div>
                 <div class="modal-body">
                     <div class="tab-pane fade active in" id="about">
-                    <p class="warning">This application is in active development. It is a DRAFT and not final. Please send all comments and questions to Michelle Tang at <a href="mailto:michelle.tang@waterboards.ca.gov">michelle.tang@waterboards.ca.gov</a>.</p>
-                    <p>---</p>
-                    <p><img style="float: right; padding-left: 10px;" src="assets\cwqmc-logo.jpg">Understanding trends allows decision makers to determine whether pollution sources are increasing in magnitude and/or frequency and the effectiveness of control measures.</p>
-                    <p>The interactive map provides sampling results for coastal and inland monitoring locations over time.</p>
-                    <ul>
-                        <li>To find bacterial sample results for a particular site, click on a site location. The results will appear to the right of the map. Results may take time to appear.</li>
-                        <li>Place your mouse cursor over a point on the chart to see the date, monitoring program, and sample result for a particular sample event. </li>
-                    </ul>
-                    </p>
+                        <img style="float: right; padding-bottom: 10px; padding-left: 10px;" src="assets\cwqmc-logo.jpg">
+                        <p><strong>What are the long-term trends of bacteria at my coastal or inland beach?</strong></p>
+                        <p>This interactive map displays the bacterial sampling results (E. coli, enterococci, fecal coliforms, and total coliforms) for coastal and inland monitoring locations over time. Understanding trends allows decision makers to determine whether pollution sources are increasing in magnitude and/or frequency and the effectiveness of control measures.</p>
+                        <p>The data is sourced from the <a href="http://www.ceden.org" target="_blank">California Environmental Data Exchange Network</a> (CEDEN) and accessed using the public API on the California Natural Resources Agency (CNRA) Open Data Platform. The <a href="https://data.cnra.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results" target="_blank">dataset</a> on the CNRA Open Data Platform is updated monthly.</p>
+                        <div class="well well-sm">
+                            <p><strong>Using the interactive map</strong></p>
+                            <ul>
+                                <li>To find sample results for a particular site, locate a site on the map or search for a site using the search bar located at the upper right of the application.</li>
+                                <li>Click on a site location. The sample results will appear on a chart to the right. Results may take time to appear depending on the network connection and the amount of data being loaded. </li>
+                            </ul>
+                            <p><strong>Using the interactive chart</strong></p>
+                            <ul>
+                                <li>Use the dropdown menu located at the upper left of the panel to view sample results for E. coli, enterococci, fecal coliforms, or total coliforms. Not all sites have results for all indicators.</li>
+                                <li>Place the mouse cursor over a blue point (<i class="fa fa-circle data-dot" aria-hidden="true"></i>) on the chart to see the agency, date, and result associated with a particular sample event.</li>
+                                <li>Place the mouse cursor over a green point (<i class="fa fa-circle gm-dot" aria-hidden="true"></i>) on the chart to see the date and six-week rolling geometric mean. The geometric mean is calculated on a weekly rolling basis and on a minimum of five samples within the six week interval.</li>
+                                <li>Horizontal lines on the chart represent the State Water Resources Control Board statewide bacteria water quality objectives outlined in the <a href="https://www.waterboards.ca.gov/bacterialobjectives/" target="_blank">Water Quality Control Plan for Inland Surface Waters, Enclosed Bays, and Estuaries of California</a>.</li>
+                                    <ul>
+                                        <li>The blue dashed line is the statistical threshold value for single samples. Sample points (<i class="fa fa-circle data-dot" aria-hidden="true"></i>) above this line represent violations of the objective.</li>
+                                        <li>The green dashed line is the six-week geometric mean objective. Geometric mean points (<i class="fa fa-circle gm-dot" aria-hidden="true"></i>) above this line represent violations of the objective. </li>
+                                    </ul>
+                                <li>Use the timeline at the bottom to change the date view of the chart. Click and hold the left or right-most side of the gray box and drag it towards the center of the timeline.</li>
+                            </ul>
+                        </div>
+                        <div class="text-center">
+                            <img style="padding: 5px;" src="assets\ceden-logo.jpg" height="64"><img style="padding: 5px;" src="assets\cnra-logo.png" height="64">
+                        </div>
                     </div>
                 </div>
             </div><!-- /.modal-content -->

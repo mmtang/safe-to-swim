@@ -399,7 +399,7 @@ function resetFilters() {
 function resetLayerMenu() {
     document.getElementById("carto-tile-radio").checked="true";
     document.getElementById("sites-box").checked="true";
-    document.getElementById("counties-box").checked="true";
+    document.getElementById("counties-box").checked="";
     document.getElementById("rb-boundaries-box").checked="";
 }
 
@@ -454,7 +454,6 @@ function addMapLegend() {
         div.innerHTML = labels.join('<br>');
         return div;
     };
-
     legend.addTo(map);
 }
 
@@ -478,7 +477,7 @@ function addRefLayers() {
                 bounds: layer.getBounds()
             })
         }
-    }).addTo(map);
+    });
     /*
     var rbLayer = L.esri.featureLayer({
         url: 'https://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/rbbound/MapServer/0',

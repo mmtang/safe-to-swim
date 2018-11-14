@@ -30,7 +30,6 @@ body {
 }
 
 #scale-container {
-    display: none;
     margin: 5px;
     padding: 5px; 
     text-align: center;
@@ -517,7 +516,7 @@ rect.pane {
 }
 
 #chart-space {
-    width: 762px;
+    width: 767px;
 }
 
 .center {
@@ -528,11 +527,11 @@ rect.pane {
     .navbar .navbar-brand {
         font-size: 18px;
     }
-    #chart-space {
-        width: 662px;
-    }
     .panel-heading {
         border-radius: 0px;
+    }
+    #chart-space {
+        width: 767px;
     }
 }
 

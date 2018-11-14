@@ -93,7 +93,7 @@ Chart.prototype.createBrushScales = function() {
     this.xBrushScale = d3.scaleTime()
         .domain(this.xScale.domain())
         .range([0, this.width]);
-    this.yBrushScale = d3.scaleLog()
+    this.yBrushScale = d3.scaleLinear()
         .domain(this.yScale.domain())
         .range([this.brushHeight, 0]);
 }
@@ -163,9 +163,13 @@ Chart.prototype.createScales = function(threshold) {
     this.xScale = d3.scaleTime()
         .domain(xBuffered)
         .range([0, this.width]);
-    this.yScale = d3.scaleLog()
-        .domain([1, yBuffered])
+    this.linearScale = d3.scaleLinear()
+        .domain([0, yBuffered])
         .range([this.height, 0]);
+    this.logScale = d3.scaleLog() 
+        .domain([0.1, yBuffered])
+        .range([this.height, 0]);
+    this.yScale = this.linearScale;
 
     function bufferX(extent, days) {
         var extentMin = convertDate(extent[0]);
@@ -176,6 +180,34 @@ Chart.prototype.createScales = function(threshold) {
         newMax = convertUNIX(newMax);
         return [newMin, newMax];
     }
+}
+
+Chart.prototype.updateScale = function() {
+    if (currentScale === 'linear') {
+        this.yScale = this.linearScale;
+    } else if (currentScale === 'log') {
+        this.yScale = this.logScale;
+    }
+    this.yAxis = d3.axisLeft()
+        .scale(this.yScale)
+        .ticks(10);
+    d3.selectAll(".y-axis")
+        .transition()
+        .duration(1000)
+        .call(this.yAxis.scale(this.yScale));
+    d3.selectAll(".circle")
+        .data(this.data)
+        .transition()
+        .duration(1000)
+        
+}
+
+Chart.prototype.redraw = function() {
+    console.log(this.yAxis);
+    this.updateScale();
+    this.svg.select('#y-axis')
+        .transition()
+        .call(this.yAxis);
 }
 
 Chart.prototype.addAxes = function() {

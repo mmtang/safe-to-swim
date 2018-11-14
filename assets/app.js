@@ -36,6 +36,7 @@ var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
 var recordLimit = 1000;
 // variable for keeping track of map clicks
 var lastStation = new Object();
+var currentScale = 'linear';
 var sitesList = [];
 var countiesList = [];
 
@@ -158,6 +159,9 @@ function onMarkerClick(e) {
         // add chart filter listeners
         d3.select('#filter-result').on('change', function() { togglePoints(this, '.circle'); });
         d3.select('#filter-geomean').on('change', function() { togglePoints(this, '.gCircle'); });
+        // add scale listeners
+        d3.select('#linearButton').on('click', function() { clickLinear(chart); });
+        d3.select('#logButton').on('click', function() { clickLog(chart); });
     }
 } // onMarkerClick
 
@@ -220,7 +224,7 @@ function addFilterMenu() {
 }
 
 function addScaleMenu() {
-    $('#scale-container').append('<div class="btn-group btn-group-sm" role="group"><button type="button" class="btn btn-default">Linear Scale</button><button type="button" class="btn btn-default">Log Scale</button></div>');
+    $('#scale-container').append('<div class="btn-group btn-group-sm" role="group"><button type="button" id="linearButton" class="btn btn-default active">Linear Scale</button><button type="button" id="logButton" class="btn btn-default">Log Scale</button></div>');
 }
 
 function Analyte(name, stv, geomean) {
@@ -235,6 +239,20 @@ function clearChartPanel() {
 
 function clearSearch() {
     $('#searchbox').val('');
+}
+
+function clickLinear(chart) {
+    $('#logButton').removeClass('active');
+    $('#linearButton').addClass('active');
+    currentScale = 'linear';
+    chart.redraw();
+}
+
+function clickLog(chart) {
+    $('#linearButton').removeClass('active');
+    $('#logButton').addClass('active');
+    currentScale = 'log';
+    chart.redraw();
 }
 
 function openPanel() {

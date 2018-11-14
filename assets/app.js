@@ -40,8 +40,9 @@ var currentScale = 'linear';
 var sitesList = [];
 var countiesList = [];
 var geomeanData = [];
+var lineData = [];
 
-var primColor = '#1f78b4', secColor = '#68c182';
+var primColor = '#1f78b4', secColor = '#ff7f0e';
 
 //closePanel();
 clearSearch();
@@ -113,12 +114,14 @@ function onMarkerClick(e) {
 
     function addChart(data, analyte) {
         resetFilters();
+        resetScaleMenu();
         initializeDatePanel();
+        currentScale = 'linear';
+        lineData = [];
         var chartData = data.filter(function(d) {
             return d.Analyte === analyte;
         });
         
-        var blue = '#1f78b4', green = '#68c182';
         var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
         var chart = new Chart({
             element: document.getElementById('chart-space'),
@@ -143,23 +146,27 @@ function onMarkerClick(e) {
 
         // add threshold lines based on analyte selected
         if (analyte === ecoli.name) {
-            chart.addLine(ecoli.stv, blue, tooltipThresholdSTV);
-            chart.addLine(ecoli.geomean, green, tooltipThresholdGM);
+            chart.addLine(ecoli.stv, primColor, tooltipThresholdSTV);
+            chart.addLine(ecoli.geomean, secColor, tooltipThresholdGM);
+            lineData.push(ecoli.stv);
+            lineData.push(ecoli.geomean);
         } else if (analyte === enterococcus.name) {
-            chart.addLine(enterococcus.stv, blue, tooltipThresholdSTV);
-            chart.addLine(enterococcus.geomean, green, tooltipThresholdGM);
+            chart.addLine(enterococcus.stv, primColor, tooltipThresholdSTV);
+            chart.addLine(enterococcus.geomean, secColor, tooltipThresholdGM);
+            lineData.push(enterococcus.stv);
+            lineData.push(enterococcus.geomean);
         }
-        chart.addPoints(chartData, 6, blue, tooltipResult);
+        chart.addPoints(chartData, 6, primColor, tooltipResult);
 
         if ((analyte === ecoli.name) || (analyte === enterococcus.name)) {
             geomeanData = getGeomeans(chartData).filter(function(d) { 
                 if ((d.geomean) && (d.geomean != 'NES')) { return d; }
             });
-            chart.addGPoints(geomeanData, 5, green, tooltipGM);
+            chart.addGPoints(geomeanData, 5, secColor, tooltipGM);
         }
         
         chart.drawBrush();
-        chart.addBrushPoints(chartData, 3, blue);
+        chart.addBrushPoints(chartData, 3, primColor);
 
         // add chart filter listeners
         d3.select('#filter-result').on('change', function() { togglePoints(this, '.circle'); });
@@ -247,16 +254,20 @@ function clearSearch() {
 }
 
 function clickLinear(chart) {
-    resetScaleMenu();
-    currentScale = 'linear';
-    chart.redraw();
+    if (currentScale === 'log') {
+        resetScaleMenu();
+        currentScale = 'linear';
+        chart.redraw();
+    }
 }
 
 function clickLog(chart) {
-    $('#linearButton').removeClass('active');
-    $('#logButton').addClass('active');
-    currentScale = 'log';
-    chart.redraw();
+    if (currentScale === 'linear') {
+        $('#linearButton').removeClass('active');
+        $('#logButton').addClass('active');
+        currentScale = 'log';
+        chart.redraw();
+    }
 }
 
 function openPanel() {

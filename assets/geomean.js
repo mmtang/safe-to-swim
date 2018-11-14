@@ -4,47 +4,45 @@ var one_day = (24 * 60 * 60 * 1000),
 
 function getGeomeans(data) {
     // sort array descending by sample date
-    var orderedData = data.sort(function(a, b) { return a.sampledate - b.sampledate });
+    var orderedData = data.sort(function(a, b) { return b.sampledate - a.sampledate });
     // reference dates
-    var firstDate = orderedData[0].sampledate,
-        firstDateUNIX = convertDate(firstDate),
-        lastDate = orderedData[orderedData.length - 1].sampledate,
-        lastDateUNIX = convertDate(lastDate);
+    var lastDate = orderedData[0].sampledate,
+        lastDateUNIX = convertDate(lastDate),
+        firstDate = orderedData[orderedData.length - 1].sampledate,
+        firstDateUNIX = convertDate(firstDate);
     return compileGeomeans();
     
     // compile objects for all date ranges
     function compileGeomeans() {
         var geomeans = [],
-            startDate = firstDateUNIX,
-            endDate = startDate + one_day * gm_length;
-        while (endDate <= lastDateUNIX) {
-            var object = createGeomeanObject(startDate, endDate);
+            refDate = lastDateUNIX;
+        while (refDate >= firstDateUNIX) {
+            var cutoffDate = refDate - one_day * gm_length;
+            var object = createGeomeanObject(refDate, cutoffDate);
             geomeans.push(object);
-            startDate += one_day * 7;
-            endDate += one_day * 7;
+            refDate -= one_day * 7;
         }
+        console.log(geomeans);
         return geomeans;
     }
 
     // create an object for the given date range
     // 6-week geomean requires at least 5 data points
-    function createGeomeanObject(startDate, cutoffDate) {
-        var rangeData = getRangeData(startDate, cutoffDate); 
-        if (rangeData.length < 1) {
+    function createGeomeanObject(refDate, cutoffDate) {
+        var rangeData = getRangeData(refDate, cutoffDate); 
+        if (rangeData.length < 2) {
             var geomean = null; // no data
-        } else if (rangeData.length < 5) {
-            var geomean = 'NES'; // fewer than 5 data points
         } else {
             var geomean = calculateGeomean(rangeData).toFixed(2);
         }
-        return {startdate: convertUNIX(startDate), enddate: convertUNIX(cutoffDate), geomean: geomean};
+        return {enddate: convertUNIX(refDate), startdate: convertUNIX(cutoffDate), geomean: geomean, count: rangeData.length};
     }
 
     // get all data points within a given date range
-    function getRangeData(startDate, cutoffDate) {
+    function getRangeData(refDate, cutoffDate) {
         var rangeData = [];
         for (var i = 0; i < orderedData.length; i++) {
-            if ((orderedData[i].sampledate >= startDate) && (orderedData[i].sampledate <= cutoffDate)) {
+            if ((orderedData[i].sampledate <= refDate) && (orderedData[i].sampledate >= cutoffDate)) {
                 rangeData.push(orderedData[i]);
             }
         }

@@ -160,7 +160,7 @@ function onMarkerClick(e) {
 
         if ((analyte === ecoli.name) || (analyte === enterococcus.name)) {
             geomeanData = getGeomeans(chartData).filter(function(d) { 
-                if ((d.geomean) && (d.geomean != 'NES')) { return d; }
+                if (d.geomean) { return d; }
             });
             chart.addGPoints(geomeanData, 5, secColor, tooltipGM);
         }
@@ -862,7 +862,7 @@ function togglePoints(context, name) {
 
 function tooltipGM(d) {
     var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var content = "Date: " + tooltipDate(d.enddate) + "<br/ >Geometric Mean: " + d.geomean;
+    var content = "Date: " + tooltipDate(d.enddate) + "<br/ >Geometric Mean: " + d.geomean + "<br/ >Sample Count: " + d.count;
     return content;
 }
 

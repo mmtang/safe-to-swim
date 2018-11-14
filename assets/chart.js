@@ -5,7 +5,6 @@ var Chart = function(opts) {
     this.margin = opts.margin;
     this.width = opts.width;
     this.height = opts.height;
-    console.log('initial data:', this.data);
 
     this.initializeChart();
 }

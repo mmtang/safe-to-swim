@@ -5,11 +5,13 @@ var Chart = function(opts) {
     this.margin = opts.margin;
     this.width = opts.width;
     this.height = opts.height;
+    console.log('initial data:', this.data);
 
     this.initializeChart();
 }
 
 var chartOpacity = 0.8;
+var primColor = '#1f78b4', secColor = '#68c182';
 
 Chart.prototype.initializeChart = function() {
     this.element.innerHTML = '';
@@ -183,31 +185,40 @@ Chart.prototype.createScales = function(threshold) {
 }
 
 Chart.prototype.updateScale = function() {
+    var _this = this;
     if (currentScale === 'linear') {
         this.yScale = this.linearScale;
     } else if (currentScale === 'log') {
         this.yScale = this.logScale;
     }
+
     this.yAxis = d3.axisLeft()
         .scale(this.yScale)
-        .ticks(10);
-    d3.selectAll(".y-axis")
-        .transition()
-        .duration(1000)
-        .call(this.yAxis.scale(this.yScale));
-    d3.selectAll(".circle")
-        .data(this.data)
-        .transition()
-        .duration(1000)
-        
+        .ticks(10)
+        .tickFormat(function(d) {
+            return _this.yScale.tickFormat(10, d3.format(",d"))(d);
+        });
 }
 
 Chart.prototype.redraw = function() {
-    console.log(this.yAxis);
+    var _this = this;
     this.updateScale();
-    this.svg.select('#y-axis')
+    d3.selectAll('.y-axis')
         .transition()
-        .call(this.yAxis);
+        .duration(1000)
+        .call(this.yAxis.scale(this.yScale));
+    d3.selectAll('circle')
+        .data(this.data)
+        .transition()
+        .duration(1000)
+        .attr('cx', function(d) { return _this.xScale(d.sampledate); })
+        .attr('cy', function(d) { return _this.yScale(d.result); });
+    d3.selectAll('.gCircle')
+        .data(geomeanData)
+        .transition()
+        .duration(1000)
+        .attr('cx', function(d) { return _this.xScale(d.enddate); })
+        .attr('cy', function(d) { return _this.yScale(d.geomean); });
 }
 
 Chart.prototype.addAxes = function() {
@@ -228,6 +239,7 @@ Chart.prototype.addAxes = function() {
 Chart.prototype.addLine = function(val, color, content) {
     var _this = this;
     var line = _this.focus.append('line')
+        .datum(val)
         .attr('class', 'line')
         .style('stroke', color)
         .style('stroke-width', 3)

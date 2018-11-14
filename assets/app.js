@@ -39,6 +39,9 @@ var lastStation = new Object();
 var currentScale = 'linear';
 var sitesList = [];
 var countiesList = [];
+var geomeanData = [];
+
+var primColor = '#1f78b4', secColor = '#68c182';
 
 //closePanel();
 clearSearch();
@@ -149,7 +152,9 @@ function onMarkerClick(e) {
         chart.addPoints(chartData, 6, blue, tooltipResult);
 
         if ((analyte === ecoli.name) || (analyte === enterococcus.name)) {
-            var geomeanData = getGeomeans(chartData);
+            geomeanData = getGeomeans(chartData).filter(function(d) { 
+                if ((d.geomean) && (d.geomean != 'NES')) { return d; }
+            });
             chart.addGPoints(geomeanData, 5, green, tooltipGM);
         }
         
@@ -242,8 +247,7 @@ function clearSearch() {
 }
 
 function clickLinear(chart) {
-    $('#logButton').removeClass('active');
-    $('#linearButton').addClass('active');
+    resetScaleMenu();
     currentScale = 'linear';
     chart.redraw();
 }
@@ -424,6 +428,11 @@ function resetLayerMenu() {
 function resetPanel() {
     $('#chart-container').removeClass('panel-warning');
     $('#chart-container').addClass('panel-primary');
+}
+
+function resetScaleMenu() {
+    $('#logButton').removeClass('active');
+    $('#linearButton').addClass('active');
 }
 
 function showMapLoadError() {

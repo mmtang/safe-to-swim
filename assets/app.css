@@ -29,9 +29,16 @@ body {
     font-size: 12px;
 }
 
+/*
 #scale-container {
     margin: 5px;
     padding: 5px; 
+    text-align: center;
+    font-size: 12px;
+}
+*/
+
+#scale-container {
     text-align: center;
     font-size: 12px;
 }

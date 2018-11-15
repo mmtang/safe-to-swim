@@ -415,7 +415,7 @@ function initializeDatePanel() {
 }
 
 function initializeChartPanel() {
-    var featureContent = '<div id="popup-menu"><div id="analyte-container"></div><div id="filter-container"></div></div>' + '<div id="chart-space"></div><div class="date-panel"></div><div id="scale-container"></div>';
+    var featureContent = '<div id="popup-menu"><div id="analyte-container"></div><div id="scale-container"></div><div id="filter-container"></div></div>' + '<div id="chart-space"></div><div class="date-panel"></div>';
     $('#chart-panel').html(featureContent);
 }
 

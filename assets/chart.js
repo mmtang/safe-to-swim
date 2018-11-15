@@ -5,6 +5,7 @@ var Chart = function(opts) {
     this.margin = opts.margin;
     this.width = opts.width;
     this.height = opts.height;
+    console.log('initial data:', this.data);
 
     this.initializeChart();
 }
@@ -218,12 +219,14 @@ Chart.prototype.redraw = function() {
         .duration(1000)
         .attr('cx', function(d) { return _this.xScale(d.enddate); })
         .attr('cy', function(d) { return _this.yScale(d.geomean); });
-    d3.selectAll('.line')
+    var lines = d3.selectAll('.line')
         .data(lineData)
         .transition()
         .duration(1000)
         .attr('y1', function(d) { return _this.yScale(d); })
         .attr('y2', function(d) { return _this.yScale(d); });
+    
+
 }
 
 Chart.prototype.addAxes = function() {

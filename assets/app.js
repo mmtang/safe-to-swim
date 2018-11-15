@@ -156,10 +156,10 @@ function onMarkerClick(e) {
         chart.drawPoints();
 
         if ((analyte === ecoli.name) || (analyte === enterococcus.name)) {
-            geomeanData = getGeomeans(chartData).filter(function(d) { 
+            chart.gData = getGeomeans(chartData).filter(function(d) { 
                 if (d.geomean) { return d; }
             });
-            chart.addGPoints(geomeanData, 5, secColor, tooltipGM);
+            chart.drawGPoints(tooltipGM);
         }
         
         chart.drawBrush();
@@ -228,7 +228,7 @@ function addAnalyteMenu(analytes) {
 
 function addFilterMenu() {
     var filterContainer = document.getElementById("filter-container");
-    var filterMenu = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Observations&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-circle gm-dot" aria-hidden="true"></i></label></div></div>';
+    var filterMenu = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Observations&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<img src="assets/triangle.gif"></label></div></div>';
     filterContainer.innerHTML += filterMenu;
 }
 

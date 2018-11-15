@@ -1,6 +1,7 @@
 var Chart = function(opts) {
     this.element = opts.element;
     this.data = opts.data;
+    this.gData = [];
     // margin = {top: ?, right: ?, bottom: ?, left: ?}
     this.margin = opts.margin;
     this.width = opts.width;
@@ -123,18 +124,17 @@ Chart.prototype.brushed = function(parent) {
     // manage graph elements when dragged outside extent
     if ((selection[0] >= this.width) || (selection[1] <= 0)) { 
         this.focus.selectAll('.circle').style('opacity', 0);
-        this.focus.selectAll('.gCircle').style('opacity', 0);
+        this.focus.selectAll('.triangle').style('opacity', 0);
     } else {
         this.focus.selectAll('.circle').style('opacity', chartOpacity);
-        this.focus.selectAll('.gCircle').style('opacity', chartOpacity);
+        this.focus.selectAll('.triangle').style('opacity', chartOpacity);
     }
     // redraw graph elements
     parent.focus.selectAll('.circle')
         .attr('cx', function(d) { return parent.xScale(d.sampledate); })
         .attr('cy', function(d) { return parent.yScale(d.result); });
-    parent.focus.selectAll('.gCircle')
-        .attr('cx', function(d) { return parent.xScale(d.enddate); })
-        .attr('cy', function(d) { return parent.yScale(d.geomean); });
+    parent.focus.selectAll('.triangle')
+        .attr('transform', function(d) { return 'translate(' + parent.xScale(d.enddate) + ',' + parent.yScale(d.geomean) + ')'; })
     parent.focus.select('.x-axis').call(parent.xAxis);
 
     // update date placeholders
@@ -215,12 +215,7 @@ Chart.prototype.redraw = function() {
         .duration(1000)
         .call(this.yAxis.scale(this.yScale));
     this.updatePoints();
-    d3.selectAll('.gCircle')
-        .data(geomeanData)
-        .transition()
-        .duration(1000)
-        .attr('cx', function(d) { return _this.xScale(d.enddate); })
-        .attr('cy', function(d) { return _this.yScale(d.geomean); });
+    this.updateGPoints();
     var lines = d3.selectAll('.line')
         .data(lineData)
         .transition()
@@ -315,35 +310,46 @@ Chart.prototype.updatePoints = function() {
         .remove();
 }
 
-Chart.prototype.addGPoints = function(data, radius, color, content) {
+Chart.prototype.drawGPoints = function(content) {
     var _this = this;
-    var points = this.focus.append('g');
-    points.attr('clip-path', 'url(#clip)');
-    points.selectAll('circle')
-        .data(data, function(d) { return d; })
-        .enter().append('circle')
+    var gPoints = this.focus.append('g');
+    gPoints.attr('clip-path', 'url(#clip)');
+    gPoints.selectAll('.triangle')
+        .data(this.gData, function(d) { return d; })
+        .enter().append('path')
         .filter(function(d) { return (d.geomean !== null) && (d.geomean != "NES") })
-        .attr('class', 'gCircle')
-        .attr('r', radius)
-        .attr('fill', color)
-        .attr('cx', function(d) { return _this.xScale(d.enddate); })
-        .attr('cy', function(d) { return _this.yScale(d.geomean); })
+        .attr('class', 'triangle')
+        .attr('d', d3.symbol().type(d3.symbolTriangle))
+        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.geomean) + ')'; })
+        .style('fill', secColor)
         .style('opacity', chartOpacity)
         .on('mouseover', function(d) {
             var _d = d;
             _this.toggleTooltip(tooltipPoint, 1);
-            d3.select(this).attr('fill', '#56f6ff');
+            d3.select(this).style('fill', '#56f6ff');
             d3.select(tooltipPoint)
                 .html(function() { return content.call(this, _d); })
                 .style('left', function() { return _this.positionTooltip('x', 'tooltipPoint'); })
                 .style('top', function() { return _this.positionTooltip('y', 'tooltipPoint'); })
-                .style('border-color', color);
+                .style('border-color', secColor);
         })
         .on('mouseout', function() {
             _this.toggleTooltip(tooltipPoint, 0);
             d3.select(this)
-                .attr('fill', color);
+                .style('fill', secColor);
         });
+}
+
+Chart.prototype.updateGPoints = function() {
+    var _this = this;
+    var gPoints = this.svg.selectAll('.triangle');
+    gPoints.enter()
+        .merge(gPoints)
+        .transition()
+        .duration(1000)
+        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.geomean) + ')'; });
+    gPoints.exit()
+        .remove();
 }
 
 Chart.prototype.positionLineTooltip = function(axis, tooltipID) {

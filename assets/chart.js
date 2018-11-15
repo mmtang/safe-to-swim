@@ -207,21 +207,30 @@ Chart.prototype.updateScales = function() {
         });
 }
 
-Chart.prototype.redraw = function() {
-    var _this = this;
-    this.updateScales();
+Chart.prototype.updateAxis = function() {
     d3.selectAll('.y-axis')
         .transition()
         .duration(1000)
         .call(this.yAxis.scale(this.yScale));
-    this.updatePoints();
-    this.updateGPoints();
-    var lines = d3.selectAll('.line')
-        .data(lineData)
+}
+
+Chart.prototype.updateObjectives = function() {
+    var _this = this;
+    var lines = d3.selectAll('.line');
+    lines.enter()
+        .merge(lines)
         .transition()
         .duration(1000)
         .attr('y1', function(d) { return _this.yScale(d); })
         .attr('y2', function(d) { return _this.yScale(d); });
+}
+
+Chart.prototype.redraw = function() {
+    this.updateScales();
+    this.updateAxis();
+    this.updatePoints();
+    this.updateGPoints();
+    this.updateObjectives();
 }
 
 Chart.prototype.addAxes = function() {
@@ -241,7 +250,7 @@ Chart.prototype.addAxes = function() {
 
 Chart.prototype.addLine = function(val, color, content) {
     var _this = this;
-    var line = _this.focus.append('line')
+    var line = this.focus.append('line')
         .datum(val)
         .attr('class', 'line')
         .style('stroke', color)
@@ -264,6 +273,16 @@ Chart.prototype.addLine = function(val, color, content) {
         .on('mouseout', function(d) {
             _this.toggleTooltip(tooltipLine, 0);
         });
+}
+
+Chart.prototype.drawObjectives = function(analyte) {
+    if (analyte === ecoli.name) {
+        this.addLine(ecoli.stv, primColor, tooltipThresholdSTV);
+        this.addLine(ecoli.geomean, secColor, tooltipThresholdGM);
+    } else if (analyte === enterococcus.name) {
+        this.addLine(enterococcus.stv, primColor, tooltipThresholdSTV);
+        this.addLine(enterococcus.geomean, secColor, tooltipThresholdGM);
+    }
 }
 
 Chart.prototype.drawPoints = function() {
@@ -294,7 +313,12 @@ Chart.prototype.drawPoints = function() {
             _this.toggleTooltip(tooltipPoint, 0);
             d3.select(this)
                 .attr('fill', primColor);
-        });
+        })
+        .merge(points)
+        .attr('cx', function(d) { return _this.xScale(d.sampledate); })
+        .attr('cy', function(d) { return _this.yScale(d.result); })
+    points.exit()
+        .remove();
 }
 
 Chart.prototype.updatePoints = function() {
@@ -337,7 +361,11 @@ Chart.prototype.drawGPoints = function(content) {
             _this.toggleTooltip(tooltipPoint, 0);
             d3.select(this)
                 .style('fill', secColor);
-        });
+        })
+        .merge(gPoints)
+        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.geomean) + ')'; });
+    gPoints.exit()
+        .remove();
 }
 
 Chart.prototype.updateGPoints = function() {

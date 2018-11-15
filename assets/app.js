@@ -40,7 +40,6 @@ var currentScale = 'linear';
 var sitesList = [];
 var countiesList = [];
 var geomeanData = [];
-var lineData = [];
 
 var primColor = '#1f78b4', secColor = '#ff7f0e';
 
@@ -141,18 +140,7 @@ function onMarkerClick(e) {
         }
         chart.addAxes();
 
-        // add threshold lines based on analyte selected
-        if (analyte === ecoli.name) {
-            chart.addLine(ecoli.stv, primColor, tooltipThresholdSTV);
-            chart.addLine(ecoli.geomean, secColor, tooltipThresholdGM);
-            lineData.push(ecoli.stv);
-            lineData.push(ecoli.geomean);
-        } else if (analyte === enterococcus.name) {
-            chart.addLine(enterococcus.stv, primColor, tooltipThresholdSTV);
-            chart.addLine(enterococcus.geomean, secColor, tooltipThresholdGM);
-            lineData.push(enterococcus.stv);
-            lineData.push(enterococcus.geomean);
-        }
+        chart.drawObjectives(analyte);
         chart.drawPoints();
 
         if ((analyte === ecoli.name) || (analyte === enterococcus.name)) {

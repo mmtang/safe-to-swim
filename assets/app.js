@@ -139,10 +139,7 @@ function onMarkerClick(e) {
         } else {
             chart.createScales(null);
         }
-        
         chart.addAxes();
-        chart.createTooltip('tooltipLine');
-        chart.createTooltip('tooltipPoint');
 
         // add threshold lines based on analyte selected
         if (analyte === ecoli.name) {
@@ -156,7 +153,7 @@ function onMarkerClick(e) {
             lineData.push(enterococcus.stv);
             lineData.push(enterococcus.geomean);
         }
-        chart.addPoints(chartData, 6, primColor, tooltipResult);
+        chart.drawPoints();
 
         if ((analyte === ecoli.name) || (analyte === enterococcus.name)) {
             geomeanData = getGeomeans(chartData).filter(function(d) { 
@@ -166,7 +163,7 @@ function onMarkerClick(e) {
         }
         
         chart.drawBrush();
-        chart.addBrushPoints(chartData, 3, primColor);
+        chart.drawBrushPoints();
 
         // add chart filter listeners
         d3.select('#filter-result').on('change', function() { togglePoints(this, '.circle'); });
@@ -864,12 +861,6 @@ function tooltipGM(d) {
     var tooltipDate = d3.timeFormat('%b %e, %Y');
     var content = "Date: " + tooltipDate(d.enddate) + "<br/ >Geometric Mean: " + d.geomean + "<br/ >Sample Count: " + d.count;
     return content;
-}
-
-function tooltipResult(d) {
-    var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var resultContent = 'Program: ' + d.Program + '<br>Site: ' + d.StationName + '<br>Analyte: ' + d.Analyte + '<br>Date: ' + tooltipDate(d.sampledate) + '<br>Result: ' + d.result + ' ' + d.Unit;
-    return resultContent;
 }
 
 function tooltipThresholdSTV(val) {

@@ -14,7 +14,8 @@ var chartOpacity = 0.8;
 var primColor = '#1f78b4', secColor = '#68c182';
 
 Chart.prototype.initializeChart = function() {
-    this.element.innerHTML = '';
+    this.clearChart();
+    // initialize chart space
     this.svg = d3.select(this.element).append('svg')
         .attr('id', 'graph')
         .attr('width', this.width + this.margin.left + this.margin.right)
@@ -29,7 +30,9 @@ Chart.prototype.initializeChart = function() {
         .append('rect')
             .attr('width', this.width)
             .attr('height', this.height);
-    this.clearChart();
+    // initialize tooltips
+    this.createTooltip('tooltipLine');
+    this.createTooltip('tooltipPoint');
 }
 
 Chart.prototype.initializeBrush = function() {
@@ -68,16 +71,16 @@ Chart.prototype.addBrushAxis = function() {
         .call(this.xBrushAxis);
 }
 
-Chart.prototype.addBrushPoints = function(data, radius, color) {
+Chart.prototype.drawBrushPoints = function() {
     var _this = this;
     var points = this.context.append('g');
     points.attr('clip-path', 'url("#bClip")');
     points.selectAll('circle')
-        .data(data)
+        .data(this.data)
         .enter().append('circle')
         .attr('class', 'bCircle brush')
-        .attr('r', radius)
-        .attr('fill', color)
+        .attr('r', 3)
+        .attr('fill', primColor)
         .attr('cx', function(d) { return _this.xBrushScale(d.sampledate); })
         .attr('cy', function(d) { return _this.yBrushScale(d.result); })
         .style('opacity', chartOpacity);
@@ -95,9 +98,13 @@ Chart.prototype.createBrushScales = function() {
     this.xBrushScale = d3.scaleTime()
         .domain(this.xScale.domain())
         .range([0, this.width]);
-    this.yBrushScale = d3.scaleLinear()
+    this.linearBrushScale = d3.scaleLinear()
         .domain(this.yScale.domain())
         .range([this.brushHeight, 0]);
+    this.logBrushScale = d3.scaleLog()
+        .domain(this.yScale.domain())
+        .range([this.brushHeight, 0]);
+    this.yBrushScale = this.linearBrushScale;
 }
 
 Chart.prototype.drawBrush = function() {
@@ -137,6 +144,7 @@ Chart.prototype.brushed = function(parent) {
 }
 
 Chart.prototype.clearChart = function() {
+    this.element.innerHTML = '';
     d3.selectAll('.tooltip').remove();
 }
 
@@ -148,7 +156,7 @@ Chart.prototype.createTooltip = function(name) {
 }
 
 Chart.prototype.drawChart = function() {
-    this.createScales();
+
 }
 
 Chart.prototype.createScales = function(threshold) {
@@ -175,23 +183,22 @@ Chart.prototype.createScales = function(threshold) {
 
     function bufferX(extent, days) {
         var extentMin = convertDate(extent[0]);
-        var newMin = extentMin - ((24 * 60 * 60 * 1000) * days); 
-        newMin = convertUNIX(newMin);
         var extentMax = convertDate(extent[1]);
+        var newMin = extentMin - ((24 * 60 * 60 * 1000) * days); 
         var newMax = extentMax + ((24 * 60 * 60 * 1000) * days);
-        newMax = convertUNIX(newMax);
-        return [newMin, newMax];
+        return [convertUNIX(newMin), convertUNIX(newMax)];
     }
 }
 
-Chart.prototype.updateScale = function() {
+Chart.prototype.updateScales = function() {
     var _this = this;
     if (currentScale === 'linear') {
         this.yScale = this.linearScale;
+        this.yBrushScale = this.linearBrushScale;
     } else if (currentScale === 'log') {
         this.yScale = this.logScale;
+        this.yBrushScale = this.logBrushScale;
     }
-
     this.yAxis = d3.axisLeft()
         .scale(this.yScale)
         .ticks(10)
@@ -202,17 +209,12 @@ Chart.prototype.updateScale = function() {
 
 Chart.prototype.redraw = function() {
     var _this = this;
-    this.updateScale();
+    this.updateScales();
     d3.selectAll('.y-axis')
         .transition()
         .duration(1000)
         .call(this.yAxis.scale(this.yScale));
-    d3.selectAll('circle')
-        .data(this.data)
-        .transition()
-        .duration(1000)
-        .attr('cx', function(d) { return _this.xScale(d.sampledate); })
-        .attr('cy', function(d) { return _this.yScale(d.result); });
+    this.updatePoints();
     d3.selectAll('.gCircle')
         .data(geomeanData)
         .transition()
@@ -225,8 +227,6 @@ Chart.prototype.redraw = function() {
         .duration(1000)
         .attr('y1', function(d) { return _this.yScale(d); })
         .attr('y2', function(d) { return _this.yScale(d); });
-    
-
 }
 
 Chart.prototype.addAxes = function() {
@@ -271,25 +271,18 @@ Chart.prototype.addLine = function(val, color, content) {
         });
 }
 
-Chart.prototype.createTooltip = function(name) {
-    d3.select('body').append('div')
-        .attr('id', name)
-        .attr('class', 'tooltip')
-        .style('opacity', 0);
-}
-
-Chart.prototype.addPoints = function(data, radius, color, content) {
+Chart.prototype.drawPoints = function() {
     var _this = this;
     var points = this.focus.append('g');
     points.attr('clip-path', 'url(#clip)');
-    points.selectAll('circle')
-        .data(data)
+    points.selectAll('.circle')
+        .data(this.data)
         .enter().append('circle')
         .attr('class', 'circle')
-        .attr('r', radius)
-        .attr('fill', color)
+        .attr('r', 6)
         .attr('cx', function(d) { return _this.xScale(d.sampledate); })
         .attr('cy', function(d) { return _this.yScale(d.result); })
+        .attr('fill', primColor)
         .style('opacity', chartOpacity)
         .on('mouseover', function(d) {
             var _d = d;
@@ -297,16 +290,29 @@ Chart.prototype.addPoints = function(data, radius, color, content) {
             d3.select(this)
                 .attr('fill', '#56f6ff');
             d3.select(tooltipPoint)
-                .html(function() { return content.call(this, _d); })
+                .html(function() { return tooltipResult(_d); })
                 .style('left', function() { return _this.positionTooltip('x', 'tooltipPoint'); })
                 .style('top', function() { return _this.positionTooltip('y', 'tooltipPoint'); })
-                .style('border-color', color);
+                .style('border-color', primColor);
         })
         .on('mouseout', function() {
             _this.toggleTooltip(tooltipPoint, 0);
             d3.select(this)
-                .attr('fill', color);
+                .attr('fill', primColor);
         });
+}
+
+Chart.prototype.updatePoints = function() {
+    var _this = this;
+    var points = this.svg.selectAll('.circle');
+    points.enter()
+        .merge(points)
+        .transition()
+        .duration(1000)
+        .attr('cx', function(d) { return _this.xScale(d.sampledate); })
+        .attr('cy', function(d) { return _this.yScale(d.result); });
+    points.exit()
+        .remove();
 }
 
 Chart.prototype.addGPoints = function(data, radius, color, content) {
@@ -383,4 +389,10 @@ Chart.prototype.toggleTooltip = function(id, opacity) {
             .transition()
                 .duration(200)
                 .style('opacity', opacity);
+}
+
+function tooltipResult(d) {
+    var tooltipDate = d3.timeFormat('%b %e, %Y');
+    var resultContent = 'Program: ' + d.Program + '<br>Site: ' + d.StationName + '<br>Analyte: ' + d.Analyte + '<br>Date: ' + tooltipDate(d.sampledate) + '<br>Result: ' + d.result + ' ' + d.Unit;
+    return resultContent;
 }

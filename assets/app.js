@@ -63,7 +63,7 @@ function onMarkerClick(e) {
     getData(path, processData); 
 
     function processData(data) { 
-        console.log(data);
+        console.log('data: ', data);
         if (data.length > 0) { 
             clearChartPanel();
             initializeChartPanel();
@@ -138,24 +138,30 @@ function onMarkerClick(e) {
         } else {
             chart.createScales(null);
         }
-        chart.addAxes();
 
-        chart.drawObjectives(analyte);
-        chart.drawPoints();
-
+        // calculate geomeans
         if ((analyte === ecoli.name) || (analyte === enterococcus.name)) {
             chart.gData = getGeomeans(chartData).filter(function(d) { 
                 if (d.geomean) { return d; }
             });
-            chart.drawGPoints();
         }
-        
+
+        chart.addAxes();
+        chart.drawGPoints();
+        chart.drawObjectives(analyte);
+        chart.drawPoints();
         chart.drawBrush();
         chart.drawBrushPoints();
 
         // add chart filter listeners
-        d3.select('#filter-result').on('change', function() { togglePoints(this, '.circle'); });
-        d3.select('#filter-geomean').on('change', function() { togglePoints(this, '.gCircle'); });
+        d3.select('#filter-result').on('change', function() { 
+            toggleElement(this, '.circle'); 
+            toggleElement(this, '.line.stv');
+        });
+        d3.select('#filter-geomean').on('change', function() { 
+            toggleElement(this, '.triangle'); 
+            toggleElement(this, '.line.gm');
+        });
         // add scale listeners
         d3.select('#linearButton').on('click', function() { clickLinear(chart); });
         d3.select('#logButton').on('click', function() { clickLog(chart); });
@@ -653,7 +659,6 @@ function initializeSearch() {
             lng: d.geometry.coordinates[0]
         };
     });
-    console.log(sites);
     var sitesBH = new Bloodhound({
         datumTokenizer: function(d) {
             return Bloodhound.tokenizers.whitespace(d.name);
@@ -837,10 +842,10 @@ function responsive() {
     }
 }
 
-function togglePoints(context, name) {
-    if (d3.select(context).property('checked')){
+function toggleElement(context, name) {
+    if (d3.select(context).property('checked')) {
         d3.selectAll(name).attr('visibility', 'visible');
     } else {
         d3.selectAll(name).attr('visibility', 'hidden');
     }
-}	
+}

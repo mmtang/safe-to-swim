@@ -296,10 +296,6 @@ body {
     shape-rendering: auto;
 }
 
-.gm-dot {
-    color: #ff7f0e;
-}
-
 .graphLabel, .gmLineLabel, .stvLineLabel {
     font-family: 'Roboto Condensed', sans-serif;
     font-size: 0.85em; 

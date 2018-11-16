@@ -6,8 +6,6 @@ var Chart = function(opts) {
     this.margin = opts.margin;
     this.width = opts.width;
     this.height = opts.height;
-    console.log('initial data:', this.data);
-
     this.initializeChart();
 }
 
@@ -155,10 +153,6 @@ Chart.prototype.createTooltip = function(name) {
         .style('opacity', 0);
 }
 
-Chart.prototype.drawChart = function() {
-
-}
-
 Chart.prototype.createScales = function(threshold) {
     // calculate min and max for data
     var xExtent = d3.extent(this.data, function(d,i) { return d.sampledate; });
@@ -248,15 +242,13 @@ Chart.prototype.addAxes = function() {
         .call(this.yAxis);
 }
 
-Chart.prototype.addLine = function(val, color, content) {
+Chart.prototype.addLine = function(val, type, color) {
     var _this = this;
-    var line = this.focus.append('line')
+    this.focus.append('line')
         .datum(val)
-        .attr('class', function(d) {
-            return 'line ' 
-        })
+        .attr('class', 'line ' + type)
         .style('stroke', color)
-        .style('stroke-width', 3)
+        .style('stroke-width', 4)
         .style('stroke-dasharray', ('9, 3'))
         .attr('x1', 0)
         .attr('x2', _this.width)
@@ -264,10 +256,15 @@ Chart.prototype.addLine = function(val, color, content) {
         .attr('y2', _this.yScale(val))
         .style('opacity', chartOpacity)
         .on('mousemove', function(d) {
-            var _d = d;
             _this.toggleTooltip(tooltipLine, 1);
             d3.select(tooltipLine)
-                .html(function() { return caller(content, val); })
+                .html(function() { 
+                    if (type === 'stv') {
+                        return tooltipThresholdSTV(val); 
+                    } else if (type === 'gm') {
+                        return tooltipThresholdGM(val);
+                    }
+                })
                 .style('left', function() { return _this.positionLineTooltip('x', 'tooltipLine'); })
                 .style('top', function() { return _this.positionLineTooltip('y', 'tooltipLine'); })
                 .style('border-color', color);
@@ -279,11 +276,11 @@ Chart.prototype.addLine = function(val, color, content) {
 
 Chart.prototype.drawObjectives = function(analyte) {
     if (analyte === ecoli.name) {
-        this.addLine(ecoli.stv, primColor, tooltipThresholdSTV);
-        this.addLine(ecoli.geomean, secColor, tooltipThresholdGM);
+        this.addLine(ecoli.stv, 'stv', primColor);
+        this.addLine(ecoli.geomean, 'gm', secColor);
     } else if (analyte === enterococcus.name) {
-        this.addLine(enterococcus.stv, primColor, tooltipThresholdSTV);
-        this.addLine(enterococcus.geomean, secColor, tooltipThresholdGM);
+        this.addLine(enterococcus.stv, 'stv', primColor);
+        this.addLine(enterococcus.geomean, 'gm', secColor);
     }
 }
 
@@ -336,14 +333,30 @@ Chart.prototype.updatePoints = function() {
         .remove();
 }
 
+Chart.prototype.drawGRects = function() {
+    var _this = this;
+    var bgRects = this.focus.append('g')
+    bgRects.selectAll('.gm-rect')
+        .data(this.gData)
+        .enter().append('rect')
+        .attr('class', 'gm-rect')
+        .attr('x', function(d) { return _this.xScale(d.startdate); })
+        .attr('y', 0)
+        .attr('width', function(d) { return _this.xScale(d.enddate) - _this.xScale(d.startdate); })
+        .attr('height', this.height)
+        .attr('fill', 'gray');
+}
+
 Chart.prototype.drawGPoints = function() {
     var _this = this;
-    var gPoints = this.focus.append('g');
-    gPoints.attr('clip-path', 'url(#clip)');
+    var gmRect = this.focus.append('rect')
+        .attr('clip-path', 'url(#clip)')
+        .attr('class', 'gm-rect');
+    var gPoints = this.focus.append('g')
+        .attr('clip-path', 'url(#clip)');
     gPoints.selectAll('.triangle')
         .data(this.gData, function(d) { return d; })
         .enter().append('path')
-        .filter(function(d) { return (d.geomean !== null) && (d.geomean != "NES") })
         .attr('class', 'triangle')
         .attr('d', d3.symbol().type(d3.symbolTriangle))
         .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.geomean) + ')'; })
@@ -358,16 +371,38 @@ Chart.prototype.drawGPoints = function() {
                 .style('left', function() { return _this.positionTooltip('x', 'tooltipPoint'); })
                 .style('top', function() { return _this.positionTooltip('y', 'tooltipPoint'); })
                 .style('border-color', secColor);
+            drawRect(_d);
         })
         .on('mouseout', function() {
             _this.toggleTooltip(tooltipPoint, 0);
             d3.select(this)
                 .style('fill', secColor);
+            hideRect();
         })
         .merge(gPoints)
         .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.geomean) + ')'; });
     gPoints.exit()
         .remove();
+
+    function drawRect(d) {
+        var _d = d;
+        gmRect
+            .attr('visibility', 'visible')
+            .attr('x', function() { 
+                return _this.xScale(_d.startdate); 
+            })
+            .attr('y', 0)
+            .attr('width', function() { 
+                return _this.xScale(_d.enddate) - _this.xScale(_d.startdate); 
+            })
+            .attr('height', _this.height)
+            .attr('fill', '#d6d6d6')
+            .style('opacity', 0.5);
+    }
+
+    function hideRect() {
+        if (gmRect) { gmRect.attr('visibility', 'hidden'); }
+    }
 }
 
 Chart.prototype.updateGPoints = function() {
@@ -437,7 +472,7 @@ function tooltipResult(d) {
 function tooltipGM(d) {
     var tooltipNumber = d3.format(",d");
     var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var content = "Date: " + tooltipDate(d.enddate) + "<br/ >Geometric Mean: " + tooltipNumber(d.geomean) + "<br/ >Sample Count: " + d.count;
+    var content = "Date Range: " + tooltipDate(d.startdate) + ' - ' + tooltipDate(d.enddate) + "<br/ >Geometric Mean: " + tooltipNumber(d.geomean) + "<br/ >Sample Count: " + d.count;
     return content;
 }
 

@@ -252,7 +252,9 @@ Chart.prototype.addLine = function(val, color, content) {
     var _this = this;
     var line = this.focus.append('line')
         .datum(val)
-        .attr('class', 'line')
+        .attr('class', function(d) {
+            return 'line ' 
+        })
         .style('stroke', color)
         .style('stroke-width', 3)
         .style('stroke-dasharray', ('9, 3'))
@@ -334,7 +336,7 @@ Chart.prototype.updatePoints = function() {
         .remove();
 }
 
-Chart.prototype.drawGPoints = function(content) {
+Chart.prototype.drawGPoints = function() {
     var _this = this;
     var gPoints = this.focus.append('g');
     gPoints.attr('clip-path', 'url(#clip)');
@@ -352,7 +354,7 @@ Chart.prototype.drawGPoints = function(content) {
             _this.toggleTooltip(tooltipPoint, 1);
             d3.select(this).style('fill', '#56f6ff');
             d3.select(tooltipPoint)
-                .html(function() { return content.call(this, _d); })
+                .html(function() { return tooltipGM(_d); })
                 .style('left', function() { return _this.positionTooltip('x', 'tooltipPoint'); })
                 .style('top', function() { return _this.positionTooltip('y', 'tooltipPoint'); })
                 .style('border-color', secColor);
@@ -426,7 +428,25 @@ Chart.prototype.toggleTooltip = function(id, opacity) {
 }
 
 function tooltipResult(d) {
+    var tooltipNumber = d3.format(",d");
     var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var resultContent = 'Program: ' + d.Program + '<br>Site: ' + d.StationName + '<br>Analyte: ' + d.Analyte + '<br>Date: ' + tooltipDate(d.sampledate) + '<br>Result: ' + d.result + ' ' + d.Unit;
+    var resultContent = 'Program: ' + d.Program + '<br>Site: ' + d.StationName + '<br>Analyte: ' + d.Analyte + '<br>Date: ' + tooltipDate(d.sampledate) + '<br>Result: ' + tooltipNumber(d.result) + ' ' + d.Unit;
     return resultContent;
+}
+
+function tooltipGM(d) {
+    var tooltipNumber = d3.format(",d");
+    var tooltipDate = d3.timeFormat('%b %e, %Y');
+    var content = "Date: " + tooltipDate(d.enddate) + "<br/ >Geometric Mean: " + tooltipNumber(d.geomean) + "<br/ >Sample Count: " + d.count;
+    return content;
+}
+
+function tooltipThresholdSTV(val) {
+    var content = 'Statistical Threshold Value (STV):<br/>' + val + ' cfu/100 mL';
+    return content;
+}
+
+function tooltipThresholdGM(val) {
+    var content = 'Geomean Threshold:<br/>' + val + ' cfu/100 mL';
+    return content;
 }

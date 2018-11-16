@@ -147,7 +147,7 @@ function onMarkerClick(e) {
             chart.gData = getGeomeans(chartData).filter(function(d) { 
                 if (d.geomean) { return d; }
             });
-            chart.drawGPoints(tooltipGM);
+            chart.drawGPoints();
         }
         
         chart.drawBrush();
@@ -844,19 +844,3 @@ function togglePoints(context, name) {
         d3.selectAll(name).attr('visibility', 'hidden');
     }
 }	
-
-function tooltipGM(d) {
-    var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var content = "Date: " + tooltipDate(d.enddate) + "<br/ >Geometric Mean: " + d.geomean + "<br/ >Sample Count: " + d.count;
-    return content;
-}
-
-function tooltipThresholdSTV(val) {
-    var content = 'Statistical Threshold Value (STV):<br/>' + val + ' cfu/100 mL';
-    return content;
-}
-
-function tooltipThresholdGM(val) {
-    var content = 'Geomean Threshold:<br/>' + val + ' cfu/100 mL';
-    return content;
-}

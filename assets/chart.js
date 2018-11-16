@@ -32,6 +32,11 @@ Chart.prototype.initializeChart = function() {
     // initialize tooltips
     this.createTooltip('tooltipLine');
     this.createTooltip('tooltipPoint');
+    // initialize gm rectangle
+    // draw this first, under the other elements
+    this.gmRect = this.focus.append('rect')
+    .attr('clip-path', 'url(#clip)')
+    .attr('class', 'gm-rect');
 }
 
 Chart.prototype.initializeBrush = function() {
@@ -349,9 +354,6 @@ Chart.prototype.drawGRects = function() {
 
 Chart.prototype.drawGPoints = function() {
     var _this = this;
-    var gmRect = this.focus.append('rect')
-        .attr('clip-path', 'url(#clip)')
-        .attr('class', 'gm-rect');
     var gPoints = this.focus.append('g')
         .attr('clip-path', 'url(#clip)');
     gPoints.selectAll('.triangle')
@@ -386,7 +388,7 @@ Chart.prototype.drawGPoints = function() {
 
     function drawRect(d) {
         var _d = d;
-        gmRect
+        _this.gmRect
             .attr('visibility', 'visible')
             .attr('x', function() { 
                 return _this.xScale(_d.startdate); 
@@ -401,7 +403,7 @@ Chart.prototype.drawGPoints = function() {
     }
 
     function hideRect() {
-        if (gmRect) { gmRect.attr('visibility', 'hidden'); }
+        if (_this.gmRect) { _this.gmRect.attr('visibility', 'hidden'); }
     }
 }
 
@@ -465,14 +467,14 @@ Chart.prototype.toggleTooltip = function(id, opacity) {
 function tooltipResult(d) {
     var tooltipNumber = d3.format(",d");
     var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var resultContent = 'Program: ' + d.Program + '<br>Site: ' + d.StationName + '<br>Analyte: ' + d.Analyte + '<br>Date: ' + tooltipDate(d.sampledate) + '<br>Result: ' + tooltipNumber(d.result) + ' ' + d.Unit;
+    var resultContent = '<strong>' + tooltipDate(d.sampledate) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + tooltipNumber(d.result) + ' ' + d.Unit;
     return resultContent;
 }
 
 function tooltipGM(d) {
     var tooltipNumber = d3.format(",d");
     var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var content = "Date Range: " + tooltipDate(d.startdate) + ' - ' + tooltipDate(d.enddate) + "<br/ >Geometric Mean: " + tooltipNumber(d.geomean) + "<br/ >Sample Count: " + d.count;
+    var content = "<strong>" + tooltipDate(d.startdate) + ' - ' + tooltipDate(d.enddate) + "</strong><br>Geometric Mean: " + tooltipNumber(d.geomean) + " MPN/100 mL<br>Sample Count: " + d.count;
     return content;
 }
 

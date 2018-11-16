@@ -413,6 +413,7 @@ rect.pane {
     display: none;
     position: absolute;
     width: auto;
+    height: auto;
     top: 66px;
     right: 15px;
     z-index: 1000;
@@ -518,10 +519,6 @@ rect.pane {
     text-align: center;
 }
 
-#chart-space {
-    width: 767px;
-}
-
 .center {
     content-align: center;
 }
@@ -532,9 +529,6 @@ rect.pane {
     }
     .panel-heading {
         border-radius: 0px;
-    }
-    #chart-space {
-        width: 767px;
     }
 }
 

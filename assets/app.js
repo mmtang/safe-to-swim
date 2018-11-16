@@ -39,11 +39,9 @@ var lastStation = new Object();
 var currentScale = 'linear';
 var sitesList = [];
 var countiesList = [];
-var geomeanData = [];
 
 var primColor = '#1f78b4', secColor = '#ff7f0e';
 
-//closePanel();
 clearSearch();
 resetLayerMenu(); 
 addTileLayers();
@@ -116,18 +114,17 @@ function onMarkerClick(e) {
         resetScaleMenu();
         initializeDatePanel();
         currentScale = 'linear';
-        lineData = [];
         var chartData = data.filter(function(d) {
             return d.Analyte === analyte;
         });
-        
+
         var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
         var chart = new Chart({
             element: document.getElementById('chart-space'),
             margin: chartMargin,
             data: chartData,
-            width: 862 - chartMargin.left - chartMargin.right,
-            height: 490 - chartMargin.top - chartMargin.bottom
+            width: 787 - chartMargin.left - chartMargin.right,
+            height: 390 - chartMargin.top - chartMargin.bottom
         })
 
         // calculate axis buffers based on analyte selected
@@ -141,15 +138,13 @@ function onMarkerClick(e) {
 
         // calculate geomeans
         if ((analyte === ecoli.name) || (analyte === enterococcus.name)) {
-            chart.gData = getGeomeans(chartData).filter(function(d) { 
-                if (d.geomean) { return d; }
-            });
+            chart.gData = getGeomeans(chartData);
         }
 
         chart.addAxes();
-        chart.drawGPoints();
         chart.drawObjectives(analyte);
         chart.drawPoints();
+        chart.drawGPoints();
         chart.drawBrush();
         chart.drawBrushPoints();
 
@@ -282,7 +277,7 @@ function createURL(resource, site) {
     return url;
 }
 
-// recursive function for requesting site data from the CA open data portal (data.ca.gov)
+// recursive function for requesting site data
 function getData(url, callback, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
@@ -358,7 +353,7 @@ function getDataRecent(url, callback, offset, data) {
     });
 }
 
-// recursive function for requesting the site list from the CA open data portal (data.ca.gov)
+// recursive function for requesting the site list
 function getDataSites(url, callback, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
@@ -402,11 +397,11 @@ function hideLoadingMask() {
 
 function initializeDatePanel() {
     $(".date-panel").empty();
-    $(".date-panel").append('Drag the handles of the gray box above to change the date view.<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span></p>');
+    $(".date-panel").append('Use the timeline above to change the date view of the chart.<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span></p>');
 }
 
 function initializeChartPanel() {
-    var featureContent = '<div id="popup-menu"><div id="analyte-container"></div><div id="scale-container"></div><div id="filter-container"></div></div>' + '<div id="chart-space"></div><div class="date-panel"></div>';
+    var featureContent = '<div id="popup-menu"><div id="analyte-container"></div><div id="scale-container"></div></div>' + '<div id="chart-space"></div><div class="date-panel"></div><div id="filter-container"></div>';
     $('#chart-panel').html(featureContent);
 }
 

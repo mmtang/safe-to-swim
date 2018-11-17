@@ -58,6 +58,7 @@ Chart.prototype.initializeBrush = function() {
 
 Chart.prototype.createBrushAxis = function() {
     this.xBrushAxis = d3.axisBottom(this.xBrushScale)
+        .ticks(5)
         .tickSizeOuter(0);
 }
 
@@ -200,7 +201,7 @@ Chart.prototype.updateScales = function() {
     }
     this.yAxis = d3.axisLeft()
         .scale(this.yScale)
-        .ticks(10)
+        .ticks(5)
         .tickFormat(function(d) {
             return _this.yScale.tickFormat(10, d3.format(",d"))(d);
         });
@@ -234,10 +235,11 @@ Chart.prototype.redraw = function() {
 
 Chart.prototype.addAxes = function() {
     this.xAxis = d3.axisBottom()
-        .scale(this.xScale);
+        .scale(this.xScale)
+        .ticks(5);
     this.yAxis = d3.axisLeft()
         .scale(this.yScale)
-        .ticks(10);
+        .ticks(5);
     this.focus.append('g')
         .attr('class', 'x-axis')
         .attr('transform', 'translate(0,' + this.height + ')')

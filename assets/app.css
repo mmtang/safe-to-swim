@@ -29,20 +29,6 @@ body {
     font-size: 12px;
 }
 
-/*
-#scale-container {
-    margin: 5px;
-    padding: 5px; 
-    text-align: center;
-    font-size: 12px;
-}
-*/
-
-#scale-container {
-    text-align: center;
-    font-size: 12px;
-}
-
 .js-start-date,
 .js-end-date {
     font-weight: bold;
@@ -112,8 +98,9 @@ body {
 
 #popup-menu {
     display: flex;
-    font-size: 12px;
+    flex-wrap: wrap;
     justify-content: space-between;
+    font-size: 12px;
     padding: 0;
 }
 
@@ -386,8 +373,12 @@ body {
     flex-basis: 25%;
 }
 
+#scale-container {
+    text-align: center;
+    font-size: 12px;
+}
+
 #filter-menu {
-    order: 1;
     flex-basis: auto;
 }
 
@@ -413,7 +404,6 @@ rect.pane {
     display: none;
     position: absolute;
     width: auto;
-    height: auto;
     top: 66px;
     right: 15px;
     z-index: 1000;
@@ -523,6 +513,10 @@ rect.pane {
     content-align: center;
 }
 
+.popup-container {
+    padding: 5px;
+}
+
 @media (max-width: 1007px) {
     .navbar .navbar-brand {
         font-size: 18px;
@@ -546,6 +540,7 @@ rect.pane {
         width: 100%;
         top: 51px;
         right: 0px;
+        overflow-y: auto;
     }
     #chart-panel {
         width: 100%;

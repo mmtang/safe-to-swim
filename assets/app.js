@@ -39,7 +39,6 @@ var lastStation = new Object();
 var currentScale = 'linear';
 var sitesList = [];
 var countiesList = [];
-
 var primColor = '#1f78b4', secColor = '#ff7f0e';
 
 clearSearch();
@@ -118,13 +117,16 @@ function onMarkerClick(e) {
             return d.Analyte === analyte;
         });
 
+        var windowSize = getWindowSize(),
+            panelHeight = (windowSize[1] - 50) * 0.55
+
         var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
         var chart = new Chart({
             element: document.getElementById('chart-space'),
             margin: chartMargin,
             data: chartData,
-            width: 787 - chartMargin.left - chartMargin.right,
-            height: 390 - chartMargin.top - chartMargin.bottom
+            width: 747 - chartMargin.left - chartMargin.right,
+            height: panelHeight - chartMargin.top - chartMargin.bottom
         })
 
         // calculate axis buffers based on analyte selected
@@ -217,7 +219,7 @@ function addAnalyteMenu(analytes) {
 
 function addFilterMenu() {
     var filterContainer = document.getElementById("filter-container");
-    var filterMenu = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;Observations&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i></label></div><div class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;Geometric mean&nbsp;&nbsp;<img src="assets/triangle.gif"></label></div></div>';
+    var filterMenu = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;Observations&nbsp;&nbsp;<i class="fa fa-info-circle"></i></label></div><div class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-info-circle"></i></label></div></div>';
     filterContainer.innerHTML += filterMenu;
 }
 
@@ -381,14 +383,20 @@ function getDataSites(url, callback, offset, data) {
     });
 }
 
-function getWidth() {
-    return Math.max(
+function getWindowSize() {
+    return [Math.max(
       document.body.scrollWidth,
       document.documentElement.scrollWidth,
       document.body.offsetWidth,
       document.documentElement.offsetWidth,
       document.documentElement.clientWidth
-    );
+    ), Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+        document.body.offsetHeight,
+        document.documentElement.offsetHeight,
+        document.documentElement.clientHeight
+    )];
 }
 
 function hideLoadingMask() {
@@ -401,7 +409,7 @@ function initializeDatePanel() {
 }
 
 function initializeChartPanel() {
-    var featureContent = '<div id="popup-menu"><div id="analyte-container"></div><div id="scale-container"></div></div>' + '<div id="chart-space"></div><div class="date-panel"></div><div id="filter-container"></div>';
+    var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"></div></div>' + '<div id="chart-space"></div><div class="date-panel"></div>';
     $('#chart-panel').html(featureContent);
 }
 

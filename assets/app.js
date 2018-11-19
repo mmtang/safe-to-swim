@@ -704,8 +704,7 @@ function getColor(d) {
 
 function highlightMarker(e) {
     var layer = e.target;
-    console.log(layer);
-
+    
     layer.setStyle({
         fillcolor: '#00e5ee',
         color: '#00e5ee',

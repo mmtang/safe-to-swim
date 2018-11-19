@@ -38,7 +38,7 @@ var recordLimit = 1000;
 var lastStation = new Object();
 var currentScale = 'linear';
 var sitesList = [];
-var countiesList = [];
+var siteLayer;
 var primColor = '#1f78b4', secColor = '#ff7f0e';
 
 clearSearch();
@@ -49,7 +49,6 @@ addSiteLayer();
 function onMarkerClick(e) {
     var clickedSite = e.layer.feature.properties.StationCode;
     var path = createURL('6e99b457-0719-47d6-9191-8f5e7cd8866f', clickedSite);
-    // highlightMarker(e);
     $('#chart-container').css('display', 'inline-block');
     resetPanel();
     openPanel();
@@ -509,13 +508,19 @@ function addSiteLayer() {
     // initialize variable for keeping track of clicked sites
     var selected = null;
     // initialize layer
-    var siteLayer = L.geoJson([], {
+    siteLayer = L.geoJson([], {
         onEachFeature: function(feature, layer) {
             // add site name tooltip
             if (feature.properties.StationName) {
                 layer.bindPopup(feature.properties.StationName, {closeButton: false, offset: L.point(0, 0)});
-                layer.on('mouseover', function() { layer.openPopup(); });
-                layer.on('mouseout', function() { layer.closePopup(); });
+                layer.on('mouseover', function(e) { 
+                    highlightMarker(e);
+                    layer.openPopup(); 
+                });
+                layer.on('mouseout', function(e) { 
+                    resetHighlight(e);
+                    layer.closePopup(); 
+                });
             }
         },
         pointToLayer: function (feature, latlng) {
@@ -697,18 +702,25 @@ function getColor(d) {
     } 
 }
 
-/*
 function highlightMarker(e) {
-    e.layer.options.color = '#00e5ee';
-    e.layer.options.fillColor = '#00e5ee';
-    e.layer.options.weight = 3;
+    var layer = e.target;
+    console.log(layer);
+
+    layer.setStyle({
+        fillcolor: '#00e5ee',
+        color: '#00e5ee',
+        weight: 3,
+        opacity: 1,
+        fillOpacity: 0.9
+    })
+
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+        layer.bringToFront();
+    }
 }
-function resetMarker(e) {
-    e.layer.options.color = '#000';
-    e.layer.options.fillcolor = '#000';
-    e.layer.weight = 1;
+function resetHighlight(e) {
+    siteLayer.resetStyle(e.target);
 }
-*/
 
 function toggleLayer(layer, customPane) { 
     if (map.hasLayer(layer)) {

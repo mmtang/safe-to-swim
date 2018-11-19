@@ -32,7 +32,6 @@ body {
 .js-start-date,
 .js-end-date {
     font-weight: bold;
-    color: 
 }
 
 .white {
@@ -515,6 +514,19 @@ rect.pane {
 
 .popup-container {
     padding: 5px;
+}
+
+.popover-content {
+    font-size: 12px;
+    color: #000;
+}
+
+.date-panel a {
+    color: dimgray;
+}
+
+#gm-form-container a {
+    color: dimgray;
 }
 
 @media (max-width: 1007px) {

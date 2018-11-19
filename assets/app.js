@@ -41,6 +41,10 @@ var sitesList = [];
 var countiesList = [];
 var primColor = '#1f78b4', secColor = '#ff7f0e';
 
+
+
+
+
 clearSearch();
 resetLayerMenu(); 
 addTileLayers();
@@ -162,6 +166,20 @@ function onMarkerClick(e) {
         // add scale listeners
         d3.select('#linearButton').on('click', function() { clickLinear(chart); });
         d3.select('#logButton').on('click', function() { clickLog(chart); });
+
+        $(document).ready(function() {
+            $(".pop-top").popover({ 
+                trigger: 'hover', 
+                placement: 'top',
+                template: '<div class="popover"><div class="arrow"></div><div class="popover-content"></div></div>'
+            });
+            $(".pop-left").popover({ 
+                trigger: 'hover', 
+                placement : 'left',
+                template: '<div class="popover"><div class="arrow"></div><div class="popover-content"></div></div>' 
+            });
+        
+        });
     }
 } // onMarkerClick
 
@@ -219,7 +237,7 @@ function addAnalyteMenu(analytes) {
 
 function addFilterMenu() {
     var filterContainer = document.getElementById("filter-container");
-    var filterMenu = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;Observations&nbsp;&nbsp;<i class="fa fa-info-circle"></i></label></div><div class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<i class="fa fa-info-circle"></i></label></div></div>';
+    var filterMenu = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;Observations</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><span class="glyphicon glyphicon-question-sign pop-left" data-toggle="popover" title="Geometric Mean" data-content="The six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. Hover your mouse cursor over a geometric mean element to highlight the date range used in the calculation."></span></a></label></div></div>';
     filterContainer.innerHTML += filterMenu;
 }
 
@@ -405,7 +423,7 @@ function hideLoadingMask() {
 
 function initializeDatePanel() {
     $(".date-panel").empty();
-    $(".date-panel").append('Use the timeline above to change the date view of the chart.<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span></p>');
+    $(".date-panel").append('<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span>&nbsp;&nbsp;<a href="#"><span class="glyphicon glyphicon-question-sign pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold the left or right side of the gray box and drag it towards the center of the timeline."></span></a></p>');
 }
 
 function initializeChartPanel() {

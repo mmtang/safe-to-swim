@@ -14,7 +14,7 @@ var ecoli = new Analyte('E. coli', 320, 100),
     coliformfecal = new Analyte('Coliform, Fecal');
 
 var dataQuality0 = "MetaData, QC record",
-    dataQuality1 = "Passed QC"
+    dataQuality1 = "Passed"
     dataQuality2 = "Some review needed",
     dataQuality3 = "Spatial Accuracy Unknown",
     dataQuality4 = "Extensive review needed",
@@ -41,14 +41,8 @@ var sitesList = [];
 var countiesList = [];
 var primColor = '#1f78b4', secColor = '#ff7f0e';
 
-
-
-
-
 clearSearch();
-resetLayerMenu(); 
 addTileLayers();
-addRefLayers(); 
 addMapControls(); 
 addSiteLayer(); 
 
@@ -71,32 +65,43 @@ function onMarkerClick(e) {
             var analyteSet = new Set(); 
             var chartData = [];
             for(var i = 0; i < data.length; i++) {
-                var d = {};
-                d.Analyte = data[i].Analyte;
-                analyteSet.add(data[i].Analyte);
-                d.DataQuality = data[i].DataQuality;
-                d.mdl = +data[i].MDL;
-                d.Program = data[i].Program;
-                // change all non-detects before charting and calculating the geomean
-                // result = new (converted) field, Result = original field
-                if (checkND(data[i])) {
-                    // use half the mdl for non-detects
-                    d.result = d.mdl * 0.5;
+                // filter out records based on data quality code
+                if ((data[i].DataQuality === dataQuality0) || (data[i].DataQuality === dataQuality6) || (data[i].DataQuality === dataQuality7)) {
+                    console.log(data[i].DataQuality);
+                    continue;
                 } else {
-                    d.result = +data[i].Result;
+                    var d = {};
+                    d.Analyte = data[i].Analyte;
+                    analyteSet.add(data[i].Analyte);
+                    d.DataQuality = data[i].DataQuality;
+                    d.mdl = +data[i].MDL;
+                    d.Program = data[i].Program;
+                    // change all non-detects before charting and calculating the geomean
+                    // result = new (converted) field, Result = original field
+                    if (checkND(data[i])) {
+                        d.result = d.mdl * 0.5; // use half the mdl for non-detects
+                    } else {
+                        d.result = +data[i].Result;
+                    }
+                    if (d.result <= 0) { continue; }
+                    d.ResultQualCode = data[i].ResultQualCode;
+                    d.sampledate = parseDate(data[i].SampleDate);
+                    d.StationCode = data[i].StationCode;
+                    d.StationName = data[i].StationName;
+                    d.Unit = data[i].Unit;
+                    chartData.push(d);
                 }
-                if (d.result <= 0) { continue; }
-                d.ResultQualCode = data[i].ResultQualCode;
-                d.sampledate = parseDate(data[i].SampleDate);
-                d.StationCode = data[i].StationCode;
-                d.StationName = data[i].StationName;
-                d.Unit = data[i].Unit;
-                chartData.push(d);
             }
             var analytes = [];
             analyteSet.forEach(function(i) { analytes.push(i); }); 
             // sort descending so that enteroccocus and e. coli appear first 
-            analytes.sort(function(a,b) { return b > a; });
+            console.log('unsorted:', analytes);
+            analytes.sort(function(a, b) { 
+                if (a < b) { return 1; }
+                if (a > b) { return -1; }
+                return 0;
+            });
+            console.log('sorted:', analytes);
             var defaultAnalyte = analytes[0];
             addAnalyteMenu(analytes);
             addFilterMenu(); 
@@ -122,7 +127,7 @@ function onMarkerClick(e) {
         });
 
         var windowSize = getWindowSize(),
-            panelHeight = (windowSize[1] - 50) * 0.55
+            panelHeight = (windowSize[1] - 50) * 0.55;
 
         var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
         var chart = new Chart({
@@ -133,7 +138,7 @@ function onMarkerClick(e) {
             height: panelHeight - chartMargin.top - chartMargin.bottom
         })
 
-        // calculate axis buffers based on analyte selected
+        // calculate axis buffers based on analyte-specific objectives
         if (analyte === ecoli.name) {
             chart.createScales(ecoli.stv);
         } else if (analyte === enterococcus.name) {
@@ -237,7 +242,7 @@ function addAnalyteMenu(analytes) {
 
 function addFilterMenu() {
     var filterContainer = document.getElementById("filter-container");
-    var filterMenu = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;Observations</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><span class="glyphicon glyphicon-question-sign pop-left" data-toggle="popover" title="Geometric Mean" data-content="The six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. Hover your mouse cursor over a geometric mean element to highlight the date range used in the calculation."></span></a></label></div></div>';
+    var filterMenu = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;Observations</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-left" data-toggle="popover" title="Geometric Mean" data-content="For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. At least two sample results are required for the calculation. Hover the mouse cursor over a geometric mean chart element to highlight the date period used in the calculation."></i></a></label></div></div>';
     filterContainer.innerHTML += filterMenu;
 }
 
@@ -404,13 +409,13 @@ function getDataSites(url, callback, offset, data) {
 function getWindowSize() {
     return [Math.max(
       document.body.scrollWidth,
-      document.documentElement.scrollWidth,
+      //document.documentElement.scrollWidth,
       document.body.offsetWidth,
       document.documentElement.offsetWidth,
       document.documentElement.clientWidth
     ), Math.max(
         document.body.scrollHeight,
-        document.documentElement.scrollHeight,
+        //document.documentElement.scrollHeight,
         document.body.offsetHeight,
         document.documentElement.offsetHeight,
         document.documentElement.clientHeight
@@ -423,7 +428,7 @@ function hideLoadingMask() {
 
 function initializeDatePanel() {
     $(".date-panel").empty();
-    $(".date-panel").append('<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span>&nbsp;&nbsp;<a href="#"><span class="glyphicon glyphicon-question-sign pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold the left or right side of the gray box and drag it towards the center of the timeline."></span></a></p>');
+    $(".date-panel").append('<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold the left or right side of the gray box and drag it towards the center of the timeline."></i></a></p>');
 }
 
 function initializeChartPanel() {
@@ -439,13 +444,6 @@ function resendRequest() {
 function resetFilters() {
     document.getElementById("filter-result").checked="true";
     document.getElementById("filter-geomean").checked="true";
-}
-
-function resetLayerMenu() {
-    document.getElementById("carto-tile-radio").checked="true";
-    document.getElementById("sites-box").checked="true";
-    document.getElementById("counties-box").checked="";
-    document.getElementById("rb-boundaries-box").checked="";
 }
 
 function resetPanel() {
@@ -507,44 +505,6 @@ function addMapLegend() {
     legend.addTo(map);
 }
 
-function addRefLayers() {
-    map.createPane('refPane');
-    // set z-index of reference pane under overlay pane (400) and over tile pane (200)
-    map.getPane('refPane').style.zIndex = 350;
-    var countyLayer = L.esri.featureLayer({
-        url: 'https://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/CountyBoundaries/MapServer/0',
-        pane: 'refPane',
-        style: function (feature) {
-            return {
-                color: '#30A5E7',
-                weight: 3,
-                fillOpacity: 0
-            };
-        },
-        onEachFeature: function(feature, layer) {
-            countiesList.push({
-                name: layer.feature.properties.CNTY_NAME,
-                bounds: layer.getBounds()
-            })
-        }
-    });
-    /*
-    var rbLayer = L.esri.featureLayer({
-        url: 'https://gispublic.waterboards.ca.gov/arcgis/rest/services/webmap/rbbound/MapServer/0',
-        pane: 'refPane',
-        style: function (feature) {
-            return {
-                color: '#732B8D', 
-                weight: 3,
-                fillOpacity: 0
-            };
-        }
-    });
-    */
-    $("#counties-box").click( function() { toggleLayer(countyLayer); });
-    $("#rb-boundaries-box").click( function() { toggleLayer(rbLayer); });
-}
-
 function addSiteLayer() {
     // initialize variable for keeping track of clicked sites
     var selected = null;
@@ -583,8 +543,6 @@ function addSiteLayer() {
 
     getDataSites(sitesPath, processSites);
 
-    // add listeners
-    document.getElementById('sites-box').addEventListener('click', function() { toggleLayer(siteLayer); });
     // leaflet event
     siteLayer.on('click', function(e) {
         // record new selection in global variable
@@ -725,29 +683,6 @@ function addTileLayers() {
         subdomains: 'abcd',
         maxZoom: 19
     }).addTo(map);
-    /*
-    var Esri_WorldTopoMap = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri'}).addTo(map);
-    */
-    var Esri_WorldImagery = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'});
-        
-    // listener for toggling tile layers
-    $('#tile-menu input').on('change', function() {
-        var selectedBasemap = $('input[name=tileRadio]:checked').val(); 
-        if (selectedBasemap === 'carto') {
-            if (map.hasLayer(Esri_WorldImagery)) {
-                map.removeLayer(Esri_WorldImagery);
-                map.addLayer(Carto_Voyager);
-            }
-        }
-        if (selectedBasemap === 'satellite') {
-            if (map.hasLayer(Carto_Voyager)) {
-                map.removeLayer(Carto_Voyager);
-                map.addLayer(Esri_WorldImagery);
-            }
-        }
-    });
 }
 
 function getColor(d) {

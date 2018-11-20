@@ -521,14 +521,6 @@ rect.pane {
     color: #000;
 }
 
-.date-panel a {
-    color: dimgray;
-}
-
-#gm-form-container a {
-    color: dimgray;
-}
-
 @media (max-width: 1007px) {
     .navbar .navbar-brand {
         font-size: 18px;

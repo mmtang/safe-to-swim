@@ -8,44 +8,6 @@ https://github.com/mmtang
 
 */
 
-var ecoli = new Analyte('E. coli', 320, 100),
-    enterococcus = new Analyte('Enterococcus', 110, 30),
-    coliformtotal = new Analyte('Coliform, Total'),
-    coliformfecal = new Analyte('Coliform, Fecal');
-
-var dataQuality0 = "MetaData, QC record",
-    dataQuality1 = "Passed"
-    dataQuality2 = "Some review needed",
-    dataQuality3 = "Spatial Accuracy Unknown",
-    dataQuality4 = "Extensive review needed",
-    dataQuality5 = "Unknown data quality",
-    dataQuality6 = "Reject record",
-    dataQuality7 = "Error";
-
-var map = L.map('map',{ 
-    center: [37.4050, -119.365], 
-    zoom: 6, 
-    preferCanvas: true,
-    doubleClickZoom: false, 
-    zoomControl: false
-}); 
-
-// before API format change: '%m/%d/%Y %H:%M'
-var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
-// limit the number of records from the API
-var recordLimit = 1000;
-// variable for keeping track of map clicks
-var lastStation = new Object();
-var currentScale = 'linear';
-var sitesList = [];
-var siteLayer;
-var primColor = '#1f78b4', secColor = '#ff7f0e';
-
-clearSearch();
-addTileLayers();
-addMapControls(); 
-addSiteLayer(); 
-
 function onMarkerClick(e) {
     var clickedSite = e.layer.feature.properties.StationCode;
     var path = createURL('6e99b457-0719-47d6-9191-8f5e7cd8866f', clickedSite);
@@ -94,13 +56,11 @@ function onMarkerClick(e) {
             var analytes = [];
             analyteSet.forEach(function(i) { analytes.push(i); }); 
             // sort descending so that enteroccocus and e. coli appear first 
-            console.log('unsorted:', analytes);
             analytes.sort(function(a, b) { 
                 if (a < b) { return 1; }
                 if (a > b) { return -1; }
                 return 0;
             });
-            console.log('sorted:', analytes);
             var defaultAnalyte = analytes[0];
             addAnalyteMenu(analytes);
             addFilterMenu(); 
@@ -260,7 +220,7 @@ function clearChartPanel() {
 }
 
 function clearSearch() {
-    $('#searchbox').val('');
+    document.getElementById('searchbox').value='';
 }
 
 function clickLinear(chart) {
@@ -316,7 +276,7 @@ function getData(url, callback, offset, data) {
                 var records = res.result.records;
                 var firstRecord = records[0];
                 // check that the site matches the last site clicked in the event that the user clicks multiple sites in succession
-                if (firstRecord.StationCode === lastStation.code) {
+                if (firstRecord.StationCode === lastSite.code) {
                     data = data.concat(records);
                     if (records.length < recordLimit) {
                         callback(data);
@@ -335,7 +295,7 @@ function getData(url, callback, offset, data) {
             // parse the url to get the site code and check that it matches the last site clicked
             var splitURL = url.split('=');
             var parsedSite = splitURL[splitURL.length - 1];
-            if (parsedSite === lastStation.code) {
+            if (parsedSite === lastSite.code) {
                 showSiteError();
             } else {
                 console.log('ERROR: Request for ' + parsedSite);
@@ -436,8 +396,8 @@ function initializeChartPanel() {
 }
 
 function resendRequest() {
-    $('.panel-text').html('<h3 class="panel-title">' + lastStation.name + ' (' + lastStation.code + ')</h3>');
-    onMarkerClick(lastStation.e);
+    $('.panel-text').html('<h3 class="panel-title">' + lastSite.name + ' (' + lastSite.code + ')</h3>');
+    onMarkerClick(lastSite.e);
 }
 
 function resetFilters() {
@@ -480,19 +440,17 @@ function showSiteError() {
 */
 
 function addMapControls() {
-    var zoomControl = L.control.zoom({ position:'topleft' }).addTo(map);
+    L.control.zoom({ position:'topleft' }).addTo(map);
     addMapLegend();
 }
 
 function addMapLegend() {
     var legend = L.control({ position: 'bottomleft' });
-
     legend.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'info legend'),
             labels = ['<strong>Last Sample Date</strong>'],
-            categories = ['Within last 30 days', 'Within last year', 'Older than a year'],
+            categories = ['Within last 30 days', 'Within last year', 'Older than one year'],
             colors = ['#fefb47', '#82ff83', '#50cfe9'];
-
         for (var i = 0; i < categories.length; i++ ) {
             div.innerHTML += labels.push(
                 '<i class="circle" style="background:' + colors[i] + '"></i> ' + (categories[i] ? categories[i] : '+')
@@ -505,12 +463,10 @@ function addMapLegend() {
 }
 
 function addSiteLayer() {
-    // initialize variable for keeping track of clicked sites
-    var selected = null;
-    // initialize layer
+    // assign to global scope for highlight functions
     siteLayer = L.geoJson([], {
         onEachFeature: function(feature, layer) {
-            // add site name tooltip
+            // add tooltip
             if (feature.properties.StationName) {
                 layer.bindPopup(feature.properties.StationName, {closeButton: false, offset: L.point(0, 0)});
                 layer.on('mouseover', function(e) { 
@@ -535,14 +491,17 @@ function addSiteLayer() {
         }
     }).addTo(map);
 
-    // *** request sites from API and process data
+    /* request site list */
     // data.ca.gov endpoint
     // var sitesPath = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
-    // data.cnra.ca.gov endpoint 
+
+    // data.cnra.ca.gov endpoint, started using 11/6/18
     var sitesPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=eb3e96c9-15f5-4734-9d25-f7d2eca2b883&limit=' + recordLimit;
-    // *** request most recent samples from API for join
-    // data.ca.gov endpoint, started using 11/6/18
+
+    /* request join data */
+    // data.ca.gov endpoint
     // var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=6e99b457-0719-47d6-9191-8f5e7cd8866f&fields[t]=StationCode,SampleDate&limit=5000&sort[SampleDate]=desc';
+
     // data.cnra.ca.gov endpoint, started using 11/6/18
     var siteDataPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=b6f30bfc-badd-47d3-93b9-445bd90f9738&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
 
@@ -551,9 +510,9 @@ function addSiteLayer() {
     // leaflet event
     siteLayer.on('click', function(e) {
         // record new selection in global variable
-        lastStation.e = e;
-        lastStation.code = e.layer.feature.properties.StationCode;
-        lastStation.name = e.layer.feature.properties.StationName;
+        lastSite.e = e;
+        lastSite.code = e.layer.feature.properties.StationCode;
+        lastSite.name = e.layer.feature.properties.StationName;
         $('.panel-text').html('<h3 class="panel-title">' + e.layer.feature.properties.StationName + ' (' + e.layer.feature.properties.StationCode + ')</h3>');
         onMarkerClick(e);
     });
@@ -614,6 +573,7 @@ function addSiteLayer() {
         }
         var joined = joinSiteData(siteData);
         // reformat objects to geojson
+        var siteList = [];
         var today = new Date();
         for (var i = 0; i < joined.length; i++) {
             var site = {};
@@ -628,15 +588,15 @@ function addSiteLayer() {
             site.geometry = {'type': 'Point', 'coordinates': [joined[i].Longitude, joined[i].Latitude]};
             site.properties = {'StationName': joined[i].StationName, 'StationCode': joined[i].StationCode, 'LastSampleDate': date, 'DateDifference': dateDiff};
             // store in global variable
-            sitesList.push(site);
+            siteList.push(site);
         }
-        addSites(sitesList);
-        initializeSearch();
+        addSites(siteList);
+        initializeSearch(siteList);
     }
 }
 
-function initializeSearch() {
-    var sites = sitesList.map(function(d) {
+function initializeSearch(arr) {
+    var sites = arr.map(function(d) {
         return {
             name: d.properties.StationName + ' ' + d.properties.StationCode,
             lat: d.geometry.coordinates[1],
@@ -682,8 +642,8 @@ function initializeSearch() {
     $(".twitter-typeahead").css("display", "block");
 }
 
-function addTileLayers() {
-    var Carto_Voyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+function addMapTiles() {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
         subdomains: 'abcd',
         maxZoom: 19
@@ -691,20 +651,19 @@ function addTileLayers() {
 }
 
 function getColor(d) {
-    if (d === null) {
+    if (d === null) { 
         return '#50cfe9'; // null date
-    } else if (d <= 30) {
-        return '#fefb47' // 1 month
-    } else if (d <= 360) {
+    } else if (d <= 30) { 
+        return '#fefb47'; // 1 month
+    } else if (d <= 360) { 
         return '#82ff83'; // 1 year
-    } else {
+    } else { 
         return '#50cfe9'; // older than 1 year, same as null
     } 
 }
 
 function highlightMarker(e) {
     var layer = e.target;
-    
     layer.setStyle({
         fillcolor: '#00e5ee',
         color: '#00e5ee',
@@ -712,7 +671,6 @@ function highlightMarker(e) {
         opacity: 1,
         fillOpacity: 0.9
     })
-
     if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
         layer.bringToFront();
     }
@@ -816,3 +774,37 @@ function toggleElement(context, name) {
         d3.selectAll(name).attr('visibility', 'hidden');
     }
 }
+
+var ecoli = new Analyte('E. coli', 320, 100),
+    enterococcus = new Analyte('Enterococcus', 110, 30),
+    coliformtotal = new Analyte('Coliform, Total'),
+    coliformfecal = new Analyte('Coliform, Fecal');
+
+var dataQuality0 = "MetaData, QC record",
+    dataQuality1 = "Passed"
+    dataQuality2 = "Some review needed",
+    dataQuality3 = "Spatial Accuracy Unknown",
+    dataQuality4 = "Extensive review needed",
+    dataQuality5 = "Unknown data quality",
+    dataQuality6 = "Reject record",
+    dataQuality7 = "Error";
+
+var map = L.map('map',{ 
+    center: [37.4050, -119.365], 
+    zoom: 6, 
+    preferCanvas: true,
+    doubleClickZoom: false, 
+    zoomControl: false
+}); 
+
+var siteLayer; // accessed globally for highlight functions
+var lastSite = new Object();
+var currentScale = 'linear';
+var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
+var primColor = '#1f78b4', secColor = '#ff7f0e';
+var recordLimit = 1000;
+
+clearSearch();
+addMapTiles();
+addMapControls(); 
+addSiteLayer(); 

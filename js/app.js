@@ -11,6 +11,7 @@ https://github.com/mmtang
 function onMarkerClick(e) {
     var clickedSite = e.layer.feature.properties.StationCode;
     var path = createURL('6e99b457-0719-47d6-9191-8f5e7cd8866f', clickedSite);
+    // only need to change once, on initial load
     $('#chart-container').css('display', 'inline-block');
     resetPanel();
     openPanel();
@@ -25,43 +26,46 @@ function onMarkerClick(e) {
             initializeChartPanel();
             var analyteSet = new Set(); 
             var chartData = [];
-            for(var i = 0; i < data.length; i++) {
+            for (var i = 0; i < data.length; i++) {
                 // filter out records based on data quality code
                 if ((data[i].DataQuality === dataQuality0) || (data[i].DataQuality === dataQuality6) || (data[i].DataQuality === dataQuality7)) {
-                    console.log(data[i].DataQuality);
+                    console.log("Filtered:", data[i].DataQuality);
                     continue;
                 } else {
                     var d = {};
+                    // check NDs before charting and calculating the geomean, use half the MDL
+                    if (checkResult(data[i])) { 
+                        d.result = +(d.MDL / 2); 
+                    } else { 
+                        d.result = +data[i].Result; 
+                    }
+                    if (d.result <= 0) { 
+                        continue; 
+                    }
                     d.Analyte = data[i].Analyte;
-                    analyteSet.add(data[i].Analyte);
                     d.DataQuality = data[i].DataQuality;
                     d.mdl = +data[i].MDL;
                     d.Program = data[i].Program;
-                    // change all non-detects before charting and calculating the geomean
-                    // result = new (converted) field, Result = original field
-                    if (checkND(data[i])) {
-                        d.result = d.mdl * 0.5; // use half the mdl for non-detects
-                    } else {
-                        d.result = +data[i].Result;
-                    }
-                    if (d.result <= 0) { continue; }
                     d.ResultQualCode = data[i].ResultQualCode;
                     d.sampledate = parseDate(data[i].SampleDate);
                     d.StationCode = data[i].StationCode;
                     d.StationName = data[i].StationName;
                     d.Unit = data[i].Unit;
+                    analyteSet.add(data[i].Analyte);
                     chartData.push(d);
                 }
             }
+            // convert set to array, for older browsers
             var analytes = [];
             analyteSet.forEach(function(i) { analytes.push(i); }); 
-            // sort descending so that enteroccocus and e. coli appear first 
+            // sort descending so enteroccocus and e. coli appear first 
             analytes.sort(function(a, b) { 
                 if (a < b) { return 1; }
-                if (a > b) { return -1; }
-                return 0;
+                else if (a > b) { return -1; }
+                else { return 0; }
             });
             var defaultAnalyte = analytes[0];
+            // add chart panel elements
             addAnalyteMenu(analytes);
             addFilterMenu(); 
             addScaleMenu(); 
@@ -195,18 +199,20 @@ function addAnalyteMenu(analytes) {
         var opt = analytes[i];
         analyteMenu.innerHTML += '<option value=\"' + opt + '\">' + opt + '</option>';
     }
-    var analyteContainer = document.getElementById("analyte-container");
+    var analyteContainer = document.getElementById('analyte-container');
     analyteContainer.appendChild(analyteMenu);
 }
 
 function addFilterMenu() {
-    var filterContainer = document.getElementById("filter-container");
-    var filterMenu = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;Observations</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-left" data-toggle="popover" title="Geometric Mean" data-content="For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. At least two sample results are required for the calculation. Hover the mouse cursor over a geometric mean chart element to highlight the date period used in the calculation."></i></a></label></div></div>';
-    filterContainer.innerHTML += filterMenu;
+    var filterContainer = document.getElementById('filter-container');
+    var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;Observations</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-left" data-toggle="popover" title="Geometric Mean" data-content="For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. At least two sample results are required for the calculation. Hover the mouse cursor over a geometric mean chart element to highlight the date period used in the calculation."></i></a></label></div></div>';
+    filterContainer.innerHTML = content;
 }
 
 function addScaleMenu() {
-    $('#scale-container').append('<div class="btn-group btn-group-sm" role="group"><button type="button" id="linearButton" class="btn btn-default active">Linear Scale</button><button type="button" id="logButton" class="btn btn-default">Log Scale</button></div>');
+    var scaleContainer = document.getElementById('scale-container');
+    var content = '<div class="btn-group btn-group-sm" role="group"><button type="button" id="linearButton" class="btn btn-default active">Linear Scale</button><button type="button" id="logButton" class="btn btn-default">Log Scale</button></div>';
+    scaleContainer.innerHTML = content;
 }
 
 function Analyte(name, stv, geomean) {
@@ -216,11 +222,11 @@ function Analyte(name, stv, geomean) {
 }
 
 function clearChartPanel() {
-    $('#chart-panel').html('');
+    document.getElementById('chart-panel').innerHTML = '';
 }
 
 function clearSearch() {
-    document.getElementById('searchbox').value='';
+    document.getElementById('searchbox').value = '';
 }
 
 function clickLinear(chart) {
@@ -301,10 +307,10 @@ function getData(url, callback, offset, data) {
         data: {offset: offset},
         dataType: 'json',
         success: function(res) {
-                var records = res.result.records;
-                var firstRecord = records[0];
-                // check that the site matches the last site clicked in the event that the user clicks multiple sites in succession
+                // check that the site matches the last site clicked in case the user clicks multiple sites in succession
+                var firstRecord = res.result.records[0];
                 if (firstRecord.StationCode === lastSite.code) {
+                    var records = res.result.records;
                     data = data.concat(records);
                     if (records.length < recordLimit) {
                         callback(data);
@@ -327,8 +333,6 @@ function getData(url, callback, offset, data) {
             if (parsedSite === lastSite.code) {
                 showSiteError();
             } else {
-                console.log('parsedSite:', parsedSite);
-                console.log('lastSite:', lastSite.code);
                 console.log('ERROR: Request for ' + parsedSite);
             }
         }
@@ -428,7 +432,7 @@ function initializeDatePanel() {
 
 function initializeChartPanel() {
     var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"></div></div>' + '<div id="chart-space"></div><div class="date-panel"></div>';
-    $('#chart-panel').html(featureContent);
+    document.getElementById('chart-panel').innerHTML = featureContent;
 }
 
 function resendRequest() {
@@ -437,13 +441,15 @@ function resendRequest() {
 }
 
 function resetFilters() {
-    document.getElementById("filter-result").checked="true";
-    document.getElementById("filter-geomean").checked="true";
+    document.getElementById("filter-result").checked = "true";
+    document.getElementById("filter-geomean").checked = "true";
 }
 
 function resetPanel() {
-    $('#chart-container').removeClass('panel-warning');
-    $('#chart-container').addClass('panel-primary');
+    if ($('#chart-container').hasClass('panel-warning')) {
+        $('#chart-container').removeClass('panel-warning');
+        $('#chart-container').addClass('panel-primary');
+    }
 }
 
 function resetScaleMenu() {
@@ -465,10 +471,12 @@ function showSiteLoading() {
 }
 
 function showSiteError() {
-    $('#chart-container').removeClass('panel-primary');
-    $('#chart-container').addClass('panel-warning');
-    $('.panel-text').html('<h3 class="panel-title">Error!</h3>');
-    $('#chart-panel').html('<p class="warning">Error fetching the site data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>');
+    if ($('#chart-container').hasClass('panel-primary')) {
+        $('#chart-container').removeClass('panel-primary');
+        $('#chart-container').addClass('panel-warning');
+        $('.panel-text').html('<h3 class="panel-title">Error!</h3>');
+        $('#chart-panel').html('<p class="warning">Error fetching the site data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>');
+    }
 }
 
 /*
@@ -672,8 +680,9 @@ function initializeSearch(arr) {
         $(".navbar-collapse.in").css("height", "");
     });
 
-    //$(".twitter-typeahead").css("position", "static");
-    //$(".twitter-typeahead").css("display", "block");
+    // commented out 11/20/18
+    // $(".twitter-typeahead").css("position", "static");
+    // $(".twitter-typeahead").css("display", "block");
 }
 
 function addMapTiles() {
@@ -725,7 +734,7 @@ function toggleLayer(layer, customPane) {
 / D3 Helper Functions 
 */
 
-function checkND(d) {
+function checkResult(d) {
     if ((d.result <= 0) || (d.ResultQualCode === "ND")) {
         return true;
     } else {

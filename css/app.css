@@ -544,7 +544,7 @@ rect.pane {
         width: 100%;
         top: 51px;
         right: 0px;
-        overflow-y: auto;
+        overflow-y: hidden;
     }
     #chart-panel {
         width: 100%;

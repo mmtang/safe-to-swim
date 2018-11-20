@@ -252,12 +252,40 @@ function closePanel() {
     $('.panel-heading span.clickable').find('i').removeClass('fa fa-caret-up').addClass('fa fa-caret-down');
 }
 
+function decode(str) {
+    str = str.replace(/\%23/, '#');
+    str = str.replace(/\%20/, ' ');
+    str = str.replace(/\%28/, '(');
+    str = str.replace(/\%29/, ')');
+    str = str.replace(/\%2E/, '.');
+    str = str.replace(/\%27/, "'");
+    str = str.replace(/\%2C/, ",");
+    str = str.replace(/\%2F/, "/");
+    return str;
+}
+
+function encode(str) {
+    str = str.replace(/\#/, '%23');
+    str = str.replace(/\ /g, '%20');
+    str = str.replace(/\(/, '%28');
+    str = str.replace(/\)/, '%29');
+    str = str.replace(/\./, '%2E');
+    str = str.replace(/\'/, '%27');
+    str = str.replace(/\,/, '%2C');
+    str = str.replace(/\//, '%2F');
+    return str;
+}
+
 function createURL(resource, site) {
+    // url encoding for site code, add more as needed
+    var cleanSite = encode(site);
+    // data.ca.gov endpoint
     // var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
+    // data.cnra.ca.gov endpoint, started using 11/6/18
     var url = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=b6f30bfc-badd-47d3-93b9-445bd90f9738';
     url += '&fields=Analyte,DataQuality,MDL,Program,Result,ResultQualCode,SampleDate,StationCode,StationName,Unit';
-    url += '&filters={%22StationCode%22:%22' + site + '%22}';
     url += '&limit=' + recordLimit;
+    url += '&filters={%22StationCode%22:%22' + cleanSite + '%22}';
     return url;
 }
 
@@ -294,10 +322,13 @@ function getData(url, callback, offset, data) {
             // if multiple sites are clicked in succession, only the last request should show an error
             // parse the url to get the site code and check that it matches the last site clicked
             var splitURL = url.split('=');
-            var parsedSite = splitURL[splitURL.length - 1];
+            var splitSite = splitURL[splitURL.length - 1];
+            var parsedSite = decode(splitSite); 
             if (parsedSite === lastSite.code) {
                 showSiteError();
             } else {
+                console.log('parsedSite:', parsedSite);
+                console.log('lastSite:', lastSite.code);
                 console.log('ERROR: Request for ' + parsedSite);
             }
         }
@@ -318,7 +349,10 @@ function getDataRecent(url, callback, offset, data) {
         success: function(res) {
             var records = res.result.records;
             data = data.concat(records);
-            var lastDate = parseDate(records[0].SampleDate);
+            // get the sample date of the last record in the array 
+            // check if the date is within 365 days
+            var length = records.length;
+            var lastDate = parseDate(records[length - 1].SampleDate);
             var today = new Date();
             var dateDiff = daysBetween(lastDate, today);
             if (dateDiff > 365) {
@@ -357,8 +391,10 @@ function getDataSites(url, callback, offset, data) {
                 getDataSites(url, callback, offset + recordLimit, data);
             }
         },
-        error: function(e) {
-            console.log(e);
+        error: function(xhr, textStatus, error) {
+            console.log(xhr.statusText);
+            console.log(textStatus);
+            console.log(error);
             hideLoadingMask();
             showMapLoadError();
         }
@@ -509,7 +545,7 @@ function addSiteLayer() {
 
     // leaflet event
     siteLayer.on('click', function(e) {
-        // record new selection in global variable
+        // assign to global scope
         lastSite.e = e;
         lastSite.code = e.layer.feature.properties.StationCode;
         lastSite.name = e.layer.feature.properties.StationName;
@@ -523,23 +559,21 @@ function addSiteLayer() {
     }
 
     function processSites(data) {
+        // use this array for the join to sample date
         features = [];
         for (var i = 0; i < data.length; i++) {
-            var site = {};
             // check for missing values
-            if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode)) { 
+            // filter out site 'Leona Creek at Brommer Trailer Park' for inaccurate coordinates
+            // this is a temporary solution until we correct the coordiantes
+            if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode) || (data[i].SiteCode === '304-LEONA-21')) { 
                 continue; 
             } else {
-                // filter out site name 'Leona Creek at Brommer Trailer Park' for inaccurate coordinates
-                if (data[i].SiteCode === '304-LEONA-21') {
-                    continue;
-                } else {
-                    site.StationName = data[i].StationName;
-                    site.StationCode = data[i].SiteCode;
-                    site.Latitude = +data[i].Latitude;
-                    site.Longitude = +data[i].Longitude;
-                    features.push(site);
-                }
+                var site = {};
+                site.StationName = data[i].StationName;
+                site.StationCode = data[i].SiteCode;
+                site.Latitude = +data[i].Latitude;
+                site.Longitude = +data[i].Longitude;
+                features.push(site);
             }
         }
         getDataRecent(siteDataPath, processSiteData);
@@ -553,10 +587,10 @@ function addSiteLayer() {
         db.exec('SELECT * INTO feature FROM ?', [features]);
         db.exec('SELECT * INTO att FROM ?', [data]);
         // get list of distinct sites based on most recent sample date
-        var date = db.exec('SELECT stationcode, max(sampledate) as sampledate FROM att GROUP BY stationcode');
+        var date = db.exec('SELECT stationcode, max(sampledate) AS sampledate FROM att GROUP BY stationcode');
         db.exec('CREATE TABLE date');
         db.exec('SELECT * INTO date FROM ?', [date]);
-        // join data back to site list
+        // join data back to site list, left join to keep all sites
         var joined = db.exec('SELECT feature.*, date.sampledate FROM feature LEFT JOIN date ON feature.StationCode = date.stationcode ORDER BY date.sampledate');
         return joined;
     }
@@ -566,7 +600,7 @@ function addSiteLayer() {
         for (var i = 0; i < data.length; i++) {
             var record = {};
             // create new fields for join
-            // convert date to UTC timestamp for use in max function
+            // convert date to UTC for use in max function
             record.stationcode = data[i].StationCode;
             record.sampledate = parseDate(data[i].SampleDate).getTime();
             siteData.push(record); 
@@ -580,14 +614,13 @@ function addSiteLayer() {
             var date = null;
             var dateDiff = null;
             if (joined[i].sampledate) {
-                // convert UTC timestamp to date
+                // convert UTC to date
                 date = convertUNIX(joined[i].sampledate);
                 dateDiff = daysBetween(date, today);
             }
             site.type = 'Feature';
             site.geometry = {'type': 'Point', 'coordinates': [joined[i].Longitude, joined[i].Latitude]};
             site.properties = {'StationName': joined[i].StationName, 'StationCode': joined[i].StationCode, 'LastSampleDate': date, 'DateDifference': dateDiff};
-            // store in global variable
             siteList.push(site);
         }
         addSites(siteList);
@@ -622,6 +655,7 @@ function initializeSearch(arr) {
         source: sitesBH
     });
 
+    // select input text when clicked
     $('#searchbox').click(function () {
         $(this).select();
     });
@@ -638,8 +672,8 @@ function initializeSearch(arr) {
         $(".navbar-collapse.in").css("height", "");
     });
 
-    $(".twitter-typeahead").css("position", "static");
-    $(".twitter-typeahead").css("display", "block");
+    //$(".twitter-typeahead").css("position", "static");
+    //$(".twitter-typeahead").css("display", "block");
 }
 
 function addMapTiles() {

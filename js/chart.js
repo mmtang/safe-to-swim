@@ -164,8 +164,8 @@ Chart.prototype.createScales = function(threshold) {
     var xExtent = d3.extent(this.data, function(d,i) { return d.sampledate; });
     var yExtent = d3.extent(this.data, function(d,i) { return d.result; });
     var xBuffered = bufferX(xExtent, 35);  
+    // compare the max Y to the threshold and pick the greater value
     var yMax = d3.max(this.data, function(d) { return d.result }); 
-    // compare the max Y to the given threshold and pick the greater value
     var yDisplay = Math.max(yMax, threshold);
     // add arbitrary buffer to y axis
     var yBuffered = Math.ceil(roundHundred(yDisplay + (yDisplay / 3)))
@@ -179,13 +179,14 @@ Chart.prototype.createScales = function(threshold) {
     this.logScale = d3.scaleLog() 
         .domain([0.1, yBuffered])
         .range([this.height, 0]);
+    // set to linear on creation
     this.yScale = this.linearScale;
 
     function bufferX(extent, days) {
-        var extentMin = convertDate(extent[0]);
-        var extentMax = convertDate(extent[1]);
-        var newMin = extentMin - ((24 * 60 * 60 * 1000) * days); 
-        var newMax = extentMax + ((24 * 60 * 60 * 1000) * days);
+        var min = convertDate(extent[0]);
+        var max = convertDate(extent[1]);
+        var newMin = min - MS_IN_ONE_DAY * days; 
+        var newMax = max + MS_IN_ONE_DAY * days;
         return [convertUNIX(newMin), convertUNIX(newMax)];
     }
 }

@@ -22,38 +22,34 @@ function onMarkerClick(e) {
     function processData(data) { 
         console.log('data: ', data);
         if (data.length > 0) { 
-            clearChartPanel();
-            initializeChartPanel();
+            // filter on data quality code
+            data = data.filter(function(d) {
+                return ((d.DataQuality === dataQuality1) || (d.DataQuality === dataQuality2) || (d.DataQuality === dataQuality3) || (d.DataQuality === dataQuality4) || (d.DataQuality === dataQuality5));
+            });
             var analyteSet = new Set(); 
             var chartData = [];
             for (var i = 0; i < data.length; i++) {
-                // filter out records based on data quality code
-                if ((data[i].DataQuality === dataQuality0) || (data[i].DataQuality === dataQuality6) || (data[i].DataQuality === dataQuality7)) {
-                    console.log("Filtered:", data[i].DataQuality);
-                    continue;
-                } else {
-                    var d = {};
-                    // check NDs before charting and calculating the geomean, use half the MDL
-                    if (checkResult(data[i])) { 
-                        d.result = +(d.MDL / 2); 
-                    } else { 
-                        d.result = +data[i].Result; 
-                    }
-                    if (d.result <= 0) { 
-                        continue; 
-                    }
-                    d.Analyte = data[i].Analyte;
-                    d.DataQuality = data[i].DataQuality;
-                    d.mdl = +data[i].MDL;
-                    d.Program = data[i].Program;
-                    d.ResultQualCode = data[i].ResultQualCode;
-                    d.sampledate = parseDate(data[i].SampleDate);
-                    d.StationCode = data[i].StationCode;
-                    d.StationName = data[i].StationName;
-                    d.Unit = data[i].Unit;
-                    analyteSet.add(data[i].Analyte);
-                    chartData.push(d);
+                var d = {};
+                // check NDs before charting and calculating the geomean, use half the MDL
+                if (checkResult(data[i])) { 
+                    d.result = +(d.MDL / 2); 
+                } else { 
+                    d.result = +data[i].Result; 
                 }
+                if (d.result <= 0) { 
+                    continue; 
+                }
+                d.Analyte = data[i].Analyte;
+                d.DataQuality = data[i].DataQuality;
+                d.MDL = +data[i].MDL;
+                d.Program = data[i].Program;
+                d.ResultQualCode = data[i].ResultQualCode;
+                d.sampledate = parseDate(data[i].SampleDate);
+                d.StationCode = data[i].StationCode;
+                d.StationName = data[i].StationName;
+                d.Unit = data[i].Unit;
+                analyteSet.add(data[i].Analyte);
+                chartData.push(d);
             }
             // convert set to array, for older browsers
             var analytes = [];
@@ -65,7 +61,9 @@ function onMarkerClick(e) {
                 else { return 0; }
             });
             var defaultAnalyte = analytes[0];
-            // add chart panel elements
+            // initialize and add panel elements
+            clearChartPanel();
+            initializeChartPanel();
             addAnalyteMenu(analytes);
             addFilterMenu(); 
             addScaleMenu(); 
@@ -441,8 +439,8 @@ function resendRequest() {
 }
 
 function resetFilters() {
-    document.getElementById("filter-result").checked = "true";
-    document.getElementById("filter-geomean").checked = "true";
+    document.getElementById("filter-result").checked="true";
+    document.getElementById("filter-geomean").checked="true";
 }
 
 function resetPanel() {

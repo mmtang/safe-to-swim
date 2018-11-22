@@ -77,12 +77,26 @@ function onMarkerClick(e) {
         initializeDatePanel();
         currentScale = 'linear';
 
-        var chartData = data.filter(function(d) {
-            return d.Analyte === analyte;
+        // initialize popovers after they have been added, popovers must be visible
+        $(document).ready(function() {
+            $(".pop-top").popover({ 
+                trigger: 'hover', 
+                placement: 'top',
+                template: '<div class="popover"><div class="arrow"></div><div class="popover-content"></div></div>'
+            });
+            $(".pop-left").popover({ 
+                trigger: 'hover', 
+                placement : 'left',
+                template: '<div class="popover"><div class="arrow"></div><div class="popover-content"></div></div>' 
+            });
         });
 
         var windowSize = getWindowSize(),
             panelHeight = (windowSize[1] - 50) * 0.55;
+
+        var chartData = data.filter(function(d) {
+            return d.Analyte === analyte;
+        });
 
         var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
         var chart = new Chart({
@@ -106,7 +120,7 @@ function onMarkerClick(e) {
         }
 
         chart.addAxes();
-        chart.drawObjectives(analyte);
+        chart.drawLines(analyte);
         chart.drawPoints();
         chart.drawGPoints();
         chart.drawBrush();
@@ -125,19 +139,6 @@ function onMarkerClick(e) {
         // add scale listeners
         d3.select('#linear-button').on('click', function() { clickLinear(chart); });
         d3.select('#log-button').on('click', function() { clickLog(chart); });
-
-        $(document).ready(function() {
-            $(".pop-top").popover({ 
-                trigger: 'hover', 
-                placement: 'top',
-                template: '<div class="popover"><div class="arrow"></div><div class="popover-content"></div></div>'
-            });
-            $(".pop-left").popover({ 
-                trigger: 'hover', 
-                placement : 'left',
-                template: '<div class="popover"><div class="arrow"></div><div class="popover-content"></div></div>' 
-            });
-        });
 
         function clickLinear() {
             if (currentScale === 'log') {
@@ -832,9 +833,7 @@ var siteLayer; // accessed globally for highlight functions
 var lastSite = new Object();
 var currentScale = 'linear';
 var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
-var primColor = '#1f78b4', secColor = '#ff7f0e';
 var recordLimit = 1000;
-var MS_IN_ONE_DAY = (24 * 60 * 60 * 1000);
 
 clearSearch();
 addMapTiles();

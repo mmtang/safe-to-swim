@@ -15,11 +15,11 @@ function getGeomeans(data) {
         var geomeans = [];
         var refDate = lastDateUNIX;
         while (refDate >= firstDateUNIX) {
-            var cutoffDate = refDate - MS_IN_ONE_DAY * gm_length;
+            var cutoffDate = refDate - MS_PER_DAY * gm_length;
             var object = createGeomeanObject(refDate, cutoffDate);
             // createGeomeanObject can return null if there are not enough sample points
             if (object) { geomeans.push(object); }
-            refDate -= (MS_IN_ONE_DAY * 7);
+            refDate -= (MS_PER_DAY * 7);
         }
         console.log('geomeans:', geomeans);
         return geomeans;

@@ -2,16 +2,11 @@ var Chart = function(opts) {
     this.element = opts.element;
     this.data = opts.data;
     this.gData = [];
-    // margin = {top: ?, right: ?, bottom: ?, left: ?}
     this.margin = opts.margin;
     this.width = opts.width;
     this.height = opts.height;
     this.initializeChart();
 }
-
-var mainColor = '#1f78b4', secColor = '#ff7f0e';
-var chartOpacity = 0.8;
-var MS_IN_ONE_DAY = (24 * 60 * 60 * 1000);
 
 Chart.prototype.addAxes = function() {
     this.xAxis = d3.axisBottom()
@@ -75,8 +70,8 @@ Chart.prototype.addLine = function(val, type, color) {
                         return tooltipThresholdGM(val);
                     }
                 })
-                .style('left', function() { return _this.positionLineTooltip('x', 'tooltipLine'); })
-                .style('top', function() { return _this.positionLineTooltip('y', 'tooltipLine'); })
+                .style('left', function() { return positionLineTooltipX('tooltipLine'); })
+                .style('top', function() { return positionLineTooltipY('tooltipLine'); })
                 .style('border-color', color);
         })
         .on('mouseout', function(d) {
@@ -161,17 +156,10 @@ Chart.prototype.createScales = function(threshold) {
     function bufferX(extent, days) {
         var min = convertDate(extent[0]);
         var max = convertDate(extent[1]);
-        var newMin = min - MS_IN_ONE_DAY * days; 
-        var newMax = max + MS_IN_ONE_DAY * days;
+        var newMin = min - MS_PER_DAY * days; 
+        var newMax = max + MS_PER_DAY * days;
         return [convertUNIX(newMin), convertUNIX(newMax)];
     }
-}
-
-Chart.prototype.createTooltip = function(name) {
-    d3.select('body').append('div')
-        .attr('id', name)
-        .attr('class', 'tooltip')
-        .style('opacity', 0);
 }
 
 Chart.prototype.drawBrush = function() {
@@ -215,8 +203,8 @@ Chart.prototype.drawGPoints = function() {
             d3.select(this).style('fill', '#56f6ff');
             d3.select(tooltipPoint)
                 .html(function() { return tooltipGM(_d); })
-                .style('left', function() { return _this.positionTooltip('x', 'tooltipPoint'); })
-                .style('top', function() { return _this.positionTooltip('y', 'tooltipPoint'); })
+                .style('left', function() { return positionTooltipX('tooltipPoint'); })
+                .style('top', function() { return positionTooltipY('tooltipPoint'); })
                 .style('border-color', secColor);
             drawRect(_d);
         })
@@ -278,8 +266,8 @@ Chart.prototype.drawPoints = function() {
             d3.select(this).attr('fill', '#56f6ff');
             d3.select(tooltipPoint)
                 .html(function() { return tooltipResult(_d); })
-                .style('left', function() { return _this.positionTooltip('x', 'tooltipPoint'); })
-                .style('top', function() { return _this.positionTooltip('y', 'tooltipPoint'); })
+                .style('left', function() { return positionTooltipX('tooltipPoint'); })
+                .style('top', function() { return positionTooltipY('tooltipPoint'); })
                 .style('border-color', mainColor);
         })
         .on('mouseout', function() {
@@ -328,8 +316,8 @@ Chart.prototype.initializeChart = function() {
             .attr('width', this.width)
             .attr('height', this.height);
     // initialize tooltips
-    this.createTooltip('tooltipLine');
-    this.createTooltip('tooltipPoint');
+    createTooltip('tooltipLine');
+    createTooltip('tooltipPoint');
     // initialize gm rectangle, one element only
     // draw this first, under the other elements
     this.gmRect = this.focus.append('rect')
@@ -405,44 +393,53 @@ Chart.prototype.updateScales = function() {
         });
 }
 
-
-
-
-
-Chart.prototype.positionLineTooltip = function(axis, tooltipID) {
-    if (axis === 'x') {
-        var eventPos = d3.event.pageX;
-        var tooltipWidth = document.getElementById(tooltipID).offsetWidth;
-        return eventPos - tooltipWidth / 2 + 'px';
-    } else if (axis === 'y') {
-        var eventPos = d3.event.pageY;
-        var tooltipHeight = document.getElementById(tooltipID).offsetHeight;
-        return eventPos - tooltipHeight - 15 + 'px';
-    }
+var createTooltip = function(id) {
+    d3.select('body').append('div')
+        .attr('id', id)
+        .attr('class', 'tooltip')
+        .style('opacity', 0);
 }
 
-Chart.prototype.positionTooltip = function(axis, tooltipID) {
-    // checks for elements plotted in the left/right or top/bottom half of chart and positions the tooltip accordingly
-    // axis is 'x' or 'y'
-    if (axis === 'x') {
-        var eventPos = d3.event.pageX; // get mouse position
-        var divExtent = document.getElementById('chart-space').offsetWidth; // get width of container holding chart
-        var divOffset = document.getElementById('chart-container').offsetLeft; // get offset of chart container from left (parent container)
-        var tooltipExtent = document.getElementById(tooltipID).offsetWidth; // get tooltip div width
-    } else if (axis === 'y') {
-        var eventPos = d3.event.pageY;
-        var divExtent = document.getElementById('chart-container').offsetHeight;
-        var divOffset = document.getElementById('chart-container').offsetTop;
-        var tooltipExtent = document.getElementById(tooltipID).offsetHeight;
-    }
+var positionLineTooltipX = function(tooltipID) {
+    var eventPos = d3.event.pageX;
+    var tooltipWidth = document.getElementById(tooltipID).offsetWidth;
+    return eventPos - tooltipWidth / 2 + 'px';
+}
+
+var positionLineTooltipY = function(tooltipID) {
+    var eventPos = d3.event.pageY;
+    var tooltipHeight = document.getElementById(tooltipID).offsetHeight;
+    return eventPos - tooltipHeight - 15 + 'px';
+}
+
+var positionTooltipX = function(tooltipID) {
+    var eventPos = d3.event.pageX; // get mouse position
+    var divExtent = document.getElementById('chart-space').offsetWidth; // get width of container holding chart
+    var divOffset = document.getElementById('chart-container').offsetLeft; // get offset of chart container from left (parent container)
+    var tooltipExtent = document.getElementById(tooltipID).offsetWidth; // get tooltip div width
     // calculate element position within container
     var relativePos = eventPos - divOffset; 
     if (relativePos <= (divExtent / 2)) {
-        // if event is in the top/left half of graph
+        // if event is in the left half of chart
         return eventPos + 'px';
     } else {
-        // if event is in the bottom/right half of graph
-        var tooltipHeight = document.getElementById(tooltipID).offsetHeight;
+        // if event is in the right half of chart
+        return eventPos - tooltipExtent + 'px';
+    }
+}
+
+var positionTooltipY = function(tooltipID) {
+    var eventPos = d3.event.pageY; // get mouse position
+    var divExtent = document.getElementById('chart-container').offsetHeight; // get height of container holding chart
+    var divOffset = document.getElementById('chart-container').offsetTop; // get offset of chart container from left (parent container)
+    var tooltipExtent = document.getElementById(tooltipID).offsetHeight; // get tooltip div height
+    // calculate element position within container
+    var relativePos = eventPos - divOffset; 
+    if (relativePos <= (divExtent / 2)) {
+        // if event is in the top half of chart
+        return eventPos + 'px';
+    } else {
+        // if event is in the bottom half of chart
         return eventPos - tooltipExtent + 'px';
     }
 }
@@ -477,3 +474,4 @@ function tooltipThresholdGM(val) {
     var content = 'Geomean Threshold:<br/>' + val + ' cfu/100 mL';
     return content;
 }
+

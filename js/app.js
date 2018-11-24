@@ -12,7 +12,7 @@ function onMarkerClick(e) {
     var clickedSite = e.layer.feature.properties.StationCode;
     var path = createURL('6e99b457-0719-47d6-9191-8f5e7cd8866f', clickedSite);
     // only need to change once, on initial load
-    $('#chart-container').css('display', 'inline-block');
+    document.getElementById('chart-container').style.display = 'inline-block';
     resetPanel();
     openPanel();
     showSiteLoading(); 
@@ -62,7 +62,7 @@ function onMarkerClick(e) {
             addScaleMenu(); 
             addChart(data, defaultAnalyte);
             // add listener for analyte menu
-            $('#analyte-menu').on('change', function() {
+            document.getElementById('analyte-menu').addEventListener('change', function() {
                 addChart(data, this.value);
             });
         } else {
@@ -78,17 +78,16 @@ function onMarkerClick(e) {
         currentScale = 'linear';
 
         // initialize popovers after they have been added, popovers must be visible
-        $(document).ready(function() {
-            $(".pop-top").popover({ 
-                trigger: 'hover', 
-                placement: 'top',
-                template: '<div class="popover"><div class="arrow"></div><div class="popover-content"></div></div>'
-            });
-            $(".pop-left").popover({ 
-                trigger: 'hover', 
-                placement : 'left',
-                template: '<div class="popover"><div class="arrow"></div><div class="popover-content"></div></div>' 
-            });
+        // jquery selectors required for popover
+        $('.pop-top').popover({ 
+            trigger: 'hover', 
+            placement: 'top',
+            template: '<div class="popover"><div class="arrow"></div><div class="popover-content"></div></div>'
+        });
+        $('.pop-left').popover({ 
+            trigger: 'hover', 
+            placement : 'left',
+            template: '<div class="popover"><div class="arrow"></div><div class="popover-content"></div></div>' 
         });
 
         var windowSize = getWindowSize(),
@@ -150,8 +149,8 @@ function onMarkerClick(e) {
         
         function clickLog() {
             if (currentScale === 'linear') {
-                $('#linear-button').removeClass('active');
-                $('#log-button').addClass('active');
+                document.getElementById('linear-button').classList.remove('active');
+                document.getElementById('log-button').classList.add('active');
                 currentScale = 'log';
                 chart.redraw();
             }
@@ -164,27 +163,21 @@ function onMarkerClick(e) {
 / Global Listeners
 */
 
-$(document).on('click', '.panel-heading span.clickable', function(e) {
-    var $this = $(this);
-	if ($this.hasClass('panel-collapsed')) {
+document.getElementById('panel-arrow-container').addEventListener('click', function() {
+    if (this.classList.contains('panel-collapsed')) {
         openPanel();
-	} else {
-		closePanel();
-	}
+    } else {
+        closePanel();
+    }
 });
 
-$("#about-btn").click(function() {
-    $("#aboutModal").modal("show");
-    $(".navbar-collapse.in").collapse("hide");
+$('#about-btn').click(function() {
+    $('#aboutModal').modal('show');
+    $('.navbar-collapse.in').collapse('hide');
 });
 
-$("#mobile-about-btn").click(function() {
-    $("#aboutModal").modal("show");
-    $(".navbar-collapse.in").collapse("hide");
-});
-
-$("#nav-btn").click(function() {
-    $(".navbar-collapse").collapse("toggle");
+$('#nav-btn').click(function() {
+    $('.navbar-collapse').collapse('toggle');
 });
 
 
@@ -234,39 +227,21 @@ function clearSearch() {
 }
 
 function openPanel() {
-    $('#chart-panel').css('display', 'block');
-    $('.panel-heading span.clickable').removeClass('panel-collapsed');
-    $('.panel-heading span.clickable').find('i').removeClass('fa fa-caret-down').addClass('fa fa-caret-up');
+    document.getElementById('chart-panel').style.display = 'block';
+    var container = document.getElementById('panel-arrow-container');
+    container.classList.remove('panel-collapsed');
+    var icon = container.querySelectorAll('i')[0];
+    icon.classList.remove('fa-caret-down');
+    icon.classList.add('fa-caret-up');
 }
 
 function closePanel() {
-    $('#chart-panel').css('display', 'none');
-    $('.panel-heading span.clickable').addClass('panel-collapsed');
-    $('.panel-heading span.clickable').find('i').removeClass('fa fa-caret-up').addClass('fa fa-caret-down');
-}
-
-function decode(str) {
-    str = str.replace(/\%23/, '#');
-    str = str.replace(/\%20/, ' ');
-    str = str.replace(/\%28/, '(');
-    str = str.replace(/\%29/, ')');
-    str = str.replace(/\%2E/, '.');
-    str = str.replace(/\%27/, "'");
-    str = str.replace(/\%2C/, ",");
-    str = str.replace(/\%2F/, "/");
-    return str;
-}
-
-function encode(str) {
-    str = str.replace(/\#/, '%23');
-    str = str.replace(/\ /g, '%20');
-    str = str.replace(/\(/, '%28');
-    str = str.replace(/\)/, '%29');
-    str = str.replace(/\./, '%2E');
-    str = str.replace(/\'/, '%27');
-    str = str.replace(/\,/, '%2C');
-    str = str.replace(/\//, '%2F');
-    return str;
+    document.getElementById('chart-panel').style.display = 'none';
+    var container = document.getElementById('panel-arrow-container');
+    container.classList.add('panel-collapsed');
+    var icon = container.querySelectorAll('i')[0];
+    icon.classList.remove('fa-caret-up');
+    icon.classList.add('fa-caret-down');
 }
 
 function createURL(resource, site) {
@@ -280,6 +255,30 @@ function createURL(resource, site) {
     url += '&limit=' + recordLimit;
     url += '&filters={%22StationCode%22:%22' + cleanSite + '%22}';
     return url;
+}
+
+function decode(str) {
+    str = str.replace(/\%23/, '#')
+        .replace(/\%20/g, ' ')
+        .replace(/\%28/g, '(')
+        .replace(/\%29/g, ')')
+        .replace(/\%2E/g, '.')
+        .replace(/\%27/g, "'")
+        .replace(/\%2C/g, ",")
+        .replace(/\%2F/g, "/");
+    return str;
+}
+
+function encode(str) {
+    str = str.replace(/\#/, '%23')
+        .replace(/\ /g, '%20')
+        .replace(/\(/g, '%28')
+        .replace(/\)/g, '%29')
+        .replace(/\./g, '%2E')
+        .replace(/\'/g, '%27')
+        .replace(/\,/g, '%2C')
+        .replace(/\//g, '%2F');
+    return str;
 }
 
 // recursive function for requesting site data
@@ -394,13 +393,13 @@ function getDataSites(url, callback, offset, data) {
 
 function getWindowSize() {
     return [Math.max(
-      document.body.scrollWidth,
+      //document.body.scrollWidth,
       //document.documentElement.scrollWidth,
       document.body.offsetWidth,
       document.documentElement.offsetWidth,
       document.documentElement.clientWidth
     ), Math.max(
-        document.body.scrollHeight,
+        //document.body.scrollHeight,
         //document.documentElement.scrollHeight,
         document.body.offsetHeight,
         document.documentElement.offsetHeight,
@@ -409,7 +408,7 @@ function getWindowSize() {
 }
 
 function hideLoadingMask() {
-    $("#map-loading-mask").hide();  
+    document.getElementById('map-loading-mask').style.display = 'none';
 }
 
 function initializeDatePanel() {
@@ -424,7 +423,7 @@ function initializeChartPanel() {
 }
 
 function resendRequest() {
-    $('.panel-text').html('<h3 class="panel-title">' + lastSite.name + ' (' + lastSite.code + ')</h3>');
+    document.getElementById('site-title').innerHTML = '<h3 class="panel-title">' + lastSite.name + ' (' + lastSite.code + ')</h3>';
     onMarkerClick(lastSite.e);
 }
 
@@ -546,7 +545,7 @@ function addSiteLayer() {
         lastSite.e = e;
         lastSite.code = e.layer.feature.properties.StationCode;
         lastSite.name = e.layer.feature.properties.StationName;
-        $('.panel-text').html('<h3 class="panel-title">' + e.layer.feature.properties.StationName + ' (' + e.layer.feature.properties.StationCode + ')</h3>');
+        document.getElementById('site-title').innerHTML = '<h3 class="panel-title">' + e.layer.feature.properties.StationName + ' (' + e.layer.feature.properties.StationCode + ')</h3>';
         onMarkerClick(e);
     });
 
@@ -652,21 +651,21 @@ function initializeSearch(arr) {
         source: sitesBH
     });
 
-    // select input text when clicked
-    $('#searchbox').click(function () {
-        $(this).select();
-    });
-
+    // jquery required for typeahead:selected
     $('#searchbox').on('typeahead:selected', function (e, datum) {
         closePanel();
         $('.navbar-collapse').collapse('hide');
         map.setView([datum.lat, datum.lng], 17);
+        // unfocus input text
+        this.blur();
     }).on('focus', function () {
-        $(".navbar-collapse.in").css("max-height", $(document).height() - $(".navbar-header").height());
-        $(".navbar-collapse.in").css("height", $(document).height() - $(".navbar-header").height());
-    }).on("focusout", function () {
-        $(".navbar-collapse.in").css("max-height", "");
-        $(".navbar-collapse.in").css("height", "");
+        $('.navbar-collapse.in').css('max-height', $(document).height() - $('.navbar-header').height());
+        $('.navbar-collapse.in').css('height', $(document).height() - $('.navbar-header').height());
+        // select input text when clicked
+        this.select();
+    }).on('focusout', function () {
+        $('.navbar-collapse.in').css('max-height', '');
+        $('.navbar-collapse.in').css('height', '');
     });
 
     // commented out 11/20/18
@@ -731,37 +730,18 @@ function convertND(d) {
     } else {}
 }
 
-function clearChart() {
-    var svg = d3.select("svg");
-    svg.selectAll("*").remove();
-    d3.selectAll(".tooltip").remove();
-}
-
 // convert to UNIX time
 function convertDate(date) {
     return date.getTime();
 }
 
-// convert to Javascript date
+// convert to date object
 function convertUNIX(seconds) {
     return new Date(seconds);
 }
 
-function maxDisplay(y) {
-    // for both analytes, STV value is higher than the GM value
-    if (analyte === ecoli) {
-        return Math.max(stvEcoli, y);
-    } else if (analyte === enterococcus) {
-        return Math.max(stvEnterococcus, y);
-    }
-}
-
 function roundHundred(value) {
     return (value / 100) * 100
-}
-
-function caller(callback, param) {
-    return callback(param);
 }
 
 function daysBetween(a, b) {
@@ -829,11 +809,14 @@ var map = L.map('map',{
     zoomControl: false
 }); 
 
-var siteLayer; // accessed globally for highlight functions
-var lastSite = new Object();
+var chartOpacity = 0.8;
 var currentScale = 'linear';
+var lastSite = new Object();
+var mainColor = '#1f78b4', secColor = '#ff7f0e';
+var MS_PER_DAY = (24 * 60 * 60 * 1000);
 var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
 var recordLimit = 1000;
+var siteLayer; // accessed globally for highlight functions
 
 clearSearch();
 addMapTiles();

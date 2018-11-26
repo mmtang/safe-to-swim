@@ -76,37 +76,52 @@
             <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                <button class="close" type="button" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title">About the Map</h4>
+                    <button class="close" type="button" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">Safe to Swim Interactive Map</h4>
                 </div>
                 <div class="modal-body">
-                    <div class="tab-pane fade active in" id="about">
-                        <a href="https://mywaterquality.ca.gov/index.html" target="_blank"><img style="float: right; padding-bottom: 10px; padding-left: 10px;" src="assets\cwqmc-logo.jpg"></a>
-                        <p><strong>What are the trends of bacteria at my coastal or inland beach?</strong></p>
-                        <p>This interactive map displays the bacterial sampling results (E. coli, enterococci, fecal coliforms, and total coliforms) for coastal and inland monitoring locations over time.</p>
-                        <p>The data is sourced from the <a href="http://www.ceden.org" target="_blank">California Environmental Data Exchange Network</a> (CEDEN) and accessed using the public API on the California Natural Resources Agency (CNRA) Open Data Platform. The <a href="https://data.cnra.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results" target="_blank">dataset</a> on the CNRA Open Data Platform is updated monthly.</p>
-                        <div class="well well-sm">
-                            <p><strong>Using the interactive map</strong></p>
-                            <ul>
-                                <li>To find sample results for a particular site, locate a site on the map or search for a site using the search bar located at the upper right of the application.</li>
-                                <li>Click on a site location. The sample results will appear on a chart to the right. Results may take time to appear depending on the network connection and the amount of data being loaded. </li>
-                            </ul>
-                            <p><strong>Using the interactive chart</strong></p>
-                            <ul>
-                                <li>Use the dropdown menu located at the upper left of the panel to view sample results for E. coli, enterococci, fecal coliforms, or total coliforms. Not all sites have results for all indicators.</li>
-                                <li>Place the mouse cursor over a blue point to see the agency, date, and result associated with a particular sample event.</li>
-                                <li>Place the mouse cursor over an orange triangle to see the six-week rolling geometric mean and to highlight the date range used in the calculation.</li>
-                                <li>Horizontal lines on the chart represent the State Water Resources Control Board statewide bacteria water quality objectives outlined in the <a href="https://www.waterboards.ca.gov/bacterialobjectives/" target="_blank">Water Quality Control Plan for Inland Surface Waters, Enclosed Bays, and Estuaries of California</a>.</li>
-                                    <ul>
-                                        <li>The blue dashed line is the statistical threshold value for single samples. Sample points above this line represent violations of the objective.</li>
-                                        <li>The orange dashed line is the six-week geometric mean objective. Geometric mean points above this line represent violations of the objective. </li>
-                                    </ul>
-                                <li>Use the timeline below the chart to change the date view. Click and hold the left or right side of the gray box and drag it towards the center of the timeline.</li>
-                            </ul>
+                    <ul class="nav nav-tabs nav-justified" id="aboutTabs">
+                        <li class="active"><a href="#about" data-toggle="tab">About</a></li>
+                        <li><a href="#how-to-use" data-toggle="tab">How to use</a></li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade active in" id="about">
+                            <br><a href="https://mywaterquality.ca.gov/index.html" target="_blank"><img style="float: right; padding-bottom: 10px; padding-left: 10px;" src="assets\cwqmc-logo.jpg"></a>
+                            <p><strong>What are the trends of bacteria at my coastal or inland beach?</strong></p>
+                            <p>This interactive map displays the bacterial sampling results (E. coli, enterococci, fecal coliforms, and total coliforms) for coastal and inland monitoring locations over time.</p>
+                            <p>The data is sourced from the <a href="http://www.ceden.org" target="_blank">California Environmental Data Exchange Network</a> (CEDEN) and accessed using the public API on the California Natural Resources Agency (CNRA) Open Data Platform. The <a href="https://data.cnra.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results" target="_blank">dataset</a> on the CNRA Open Data Platform is updated monthly.</p>
+                            <p><strong>Disclaimer & Access Use Constraints</strong></p>
+                            <p>This data can change at any time and should not be used for any particular purpose other than general reference.</p>
+                            <!--
+                            <div class="text-center">
+                                <a href="http://ceden.org/" target="_blank"><img style="padding: 5px;" src="assets\ceden-logo.jpg" height="64"></a>
+                                <a href="https://data.cnra.ca.gov/" target="_blank"><img style="padding: 5px;" src="assets\cnra-logo.png" height="64"></a>
+                            </div>
+                            -->
                         </div>
-                        <div class="text-center">
-                            <a href="http://ceden.org/" target="_blank"><img style="padding: 5px;" src="assets\ceden-logo.jpg" height="64"></a><a href="https://data.cnra.ca.gov/" target="_blank"><img style="padding: 5px;" src="assets\cnra-logo.png" height="64"></a>
+                        <div id="how-to-use" class="tab-pane fade">
+                                <br><p><strong>Using the interactive map</strong></p>
+                                <ul>
+                                    <li>To find sample results for a particular site, locate a site on the map or search for a site using the search bar at the upper right of the application.</li>
+                                    <li>Click on a site location. The sample results will appear on a chart to the right. Results may take time to appear depending on the network connection and the amount of data being loaded. </li>
+                                </ul>
+                                <p><strong>Using the interactive chart</strong></p>
+                                <ul>
+                                    <li>Use the dropdown menu located at the upper left of the panel to view sample results for E. coli, enterococci, fecal coliforms, or total coliforms. Not all sites have results for all indicators.</li>
+                                    <li>Place the mouse cursor over a blue point to see the agency, date, and result associated with a particular sample event.</li>
+                                    <li>Place the mouse cursor over an orange triangle to see the six-week rolling geometric mean and to highlight the date range used in the calculation.</li>
+                                    <li>Horizontal lines on the chart represent the State Water Resources Control Board statewide bacteria water quality objectives outlined in the <a href="https://www.waterboards.ca.gov/bacterialobjectives/" target="_blank">Water Quality Control Plan for Inland Surface Waters, Enclosed Bays, and Estuaries of California</a>.</li>
+                                        <ul>
+                                            <li>The blue dashed line is the statistical threshold value for single samples. Sample points above this line represent violations of the objective.</li>
+                                            <li>The orange dashed line is the six-week geometric mean objective. Geometric mean points above this line represent violations of the objective. </li>
+                                        </ul>
+                                    <li>Use the timeline below the chart to change the date view. Click and hold the left or right side of the gray box and drag it towards the center of the timeline.</li>
+                                </ul>
+                            </div>
                         </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div><!-- /.modal-content -->

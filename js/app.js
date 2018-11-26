@@ -551,7 +551,10 @@ function addSiteLayer() {
 
     function addSites(data) {
         siteLayer.addData(data);
-        setTimeout(hideLoadingMask, 1000);
+        setTimeout(function() {
+            hideLoadingMask();
+            $('#aboutModal').modal('show');
+        }, 1000);
     }
 
     function processSites(data) {

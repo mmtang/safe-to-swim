@@ -91,7 +91,8 @@ function onMarkerClick(e) {
         });
 
         var windowSize = getWindowSize(),
-            panelHeight = (windowSize[1] - 50) * 0.55;
+            panelHeight = Math.max(357, (Math.round((windowSize[1] - 50) * 0.55))),
+            panelWidth = Math.round(panelHeight * (16 / 9));
 
         var chartData = data.filter(function(d) {
             return d.Analyte === analyte;
@@ -102,7 +103,7 @@ function onMarkerClick(e) {
             element: document.getElementById('chart-space'),
             margin: chartMargin,
             data: chartData,
-            width: 747 - chartMargin.left - chartMargin.right,
+            width: panelWidth - chartMargin.left - chartMargin.right,
             height: panelHeight - chartMargin.top - chartMargin.bottom
         });
 

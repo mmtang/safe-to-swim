@@ -1,7 +1,7 @@
 html, body, #container {
     height: 100%;
     width: 100%;
-    overflow: hidden;
+    overflow-y: hidden;
 }
 
 body {
@@ -530,12 +530,9 @@ rect.pane {
     }
 }
 
-@media (max-width: 767px){
+@media (max-width: 767px) {
     .leaflet-control-zoom {
         display: none;
-    }
-    .panel-body {
-        overflow-y: visible;
     }
     .panel {
         border-radius: 0px;
@@ -544,7 +541,6 @@ rect.pane {
         width: 100%;
         top: 51px;
         right: 0px;
-        overflow-y: hidden;
     }
     #chart-panel {
         width: 100%;

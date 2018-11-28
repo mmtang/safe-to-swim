@@ -20,30 +20,30 @@ function onMarkerClick(e) {
     getData(path, processData); 
 
     function processData(data) { 
-        console.log('data: ', data);
-        if (data.length > 0) { 
+        var chartData = data;
+        if (chartData.length > 0) { 
             var analyteSet = new Set(); 
-            for (var i = 0; i < data.length; i++) { 
+            for (var i = 0; i < chartData.length; i++) { 
                 // filter on data quality code
-                if ((data[i].DataQuality === dataQuality0) || (data[i].DataQuality === dataQuality6) || (data[i].DataQuality === dataQuality7)) {
+                if ((chartData[i].DataQuality === dataQuality0) || (chartData[i].DataQuality === dataQuality6) || (chartData[i].DataQuality === dataQuality7)) {
                     continue;
                 } else {
                     // force data types
-                    data[i].MDL = +data[i].MDL;
-                    data[i].Result = +data[i].Result;
-                    data[i].sampledate = parseDate(data[i].SampleDate);
+                    chartData[i].MDL = +chartData[i].MDL;
+                    chartData[i].Result = +chartData[i].Result;
+                    chartData[i].sampledate = parseDate(chartData[i].SampleDate);
                     // handle NDs and copy over results to new field
-                    if ((data[i].Result <= 0) || (data[i].ResultQualCode === 'ND')) { 
+                    if ((chartData[i].Result <= 0) || (chartData[i].ResultQualCode === 'ND')) { 
                         // use half of MDL for all NDs
-                        data[i].result = data[i].MDL * 0.5;
+                        chartData[i].result = chartData[i].MDL * 0.5;
                     } else {
-                        data[i].result = data[i].Result;
+                        chartData[i].result = chartData[i].Result;
                     }
-                    analyteSet.add(data[i].Analyte);
+                    analyteSet.add(chartData[i].Analyte);
                 }
             }
             // filter to keep all results above 0
-            data = data.filter(function(d) { return d.result > 0; });
+            chartData = chartData.filter(function(d) { return d.result > 0; });
             // convert set to array, forEach used for older browsers
             var analytes = [];
             analyteSet.forEach(function(i) { analytes.push(i); }); 
@@ -60,10 +60,10 @@ function onMarkerClick(e) {
             addAnalyteMenu(analytes);
             addFilterMenu(); 
             addScaleMenu(); 
-            addChart(data, defaultAnalyte);
+            addChart(chartData, defaultAnalyte);
             // add listener for analyte menu
             document.getElementById('analyte-menu').addEventListener('change', function() {
-                addChart(data, this.value);
+                addChart(chartData, this.value);
             });
         } else {
             showSiteError();
@@ -282,11 +282,10 @@ function encode(str) {
     return str;
 }
 
-// recursive function for requesting site data
+// request site data
 function getData(url, callback, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
-    console.log(url);
 
     $.ajax({
         type: 'GET',
@@ -326,11 +325,10 @@ function getData(url, callback, offset, data) {
     });
 }
 
-// recursive function for requesting the most recent records (sampled within the last year)
+// request the most recent records (sampled within the last year)
 function getDataRecent(url, callback, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
-    console.log(url);
 
     $.ajax({
         type: 'GET',
@@ -362,11 +360,10 @@ function getDataRecent(url, callback, offset, data) {
     });
 }
 
-// recursive function for requesting the site list
+// request the site list
 function getDataSites(url, callback, offset, data) {
     if (typeof offset === 'undefined') { offset = 0; }
     if (typeof data === 'undefined') { data = []; }
-    console.log(url);
 
     $.ajax({
         type: 'GET',
@@ -564,7 +561,7 @@ function addSiteLayer() {
         for (var i = 0; i < data.length; i++) {
             // check for missing values
             // filter out site 'Leona Creek at Brommer Trailer Park' for inaccurate coordinates
-            // this is a temporary solution until we correct the coordiantes
+            // this is a temporary solution until we correct the coordinates
             if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode) || (data[i].SiteCode === '304-LEONA-21')) { 
                 continue; 
             } else {

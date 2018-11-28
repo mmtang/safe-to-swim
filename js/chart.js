@@ -321,8 +321,8 @@ Chart.prototype.initializeChart = function() {
     // initialize gm rectangle, one element only
     // draw this first, under the other elements
     this.gmRect = this.focus.append('rect')
-    .attr('clip-path', 'url(#clip)')
-    .attr('class', 'gm-rect');
+        .attr('clip-path', 'url(#clip)')
+        .attr('class', 'gm-rect');
 }
 
 Chart.prototype.redraw = function() {

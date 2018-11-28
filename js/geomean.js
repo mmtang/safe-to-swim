@@ -21,7 +21,6 @@ function getGeomeans(data) {
             if (object) { geomeans.push(object); }
             refDate -= (MS_PER_DAY * 7);
         }
-        console.log('geomeans:', geomeans);
         return geomeans;
     }
     

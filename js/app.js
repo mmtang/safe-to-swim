@@ -90,13 +90,22 @@ function onMarkerClick(e) {
             template: '<div class="popover"><div class="arrow"></div><div class="popover-content"></div></div>' 
         });
 
-        var windowSize = getWindowSize(),
-            panelHeight = Math.max(357, (Math.round((windowSize[1] - 50) * 0.55))),
-            panelWidth = Math.round(panelHeight * (16 / 9));
-
         var chartData = data.filter(function(d) {
             return d.Analyte === analyte;
         });
+
+        // 16:8 or 2:1 aspect ratio
+        var windowSize = getWindowSize(),
+            panelWidth = Math.round(windowSize[0] * 0.60),
+            panelHeight = Math.round(panelWidth * (8 / 16));
+
+        if (panelWidth < 620) {
+            panelWidth = 620;
+            panelHeight = 349;
+        } else if (panelWidth > 940) {
+            panelWidth = 940;
+            panelHeight = 470;
+        }
 
         var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
         var chart = new Chart({

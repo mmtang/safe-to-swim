@@ -23,10 +23,14 @@ body {
     padding: 15px ;
 }
 
-.date-panel {
+.panel-container {
     padding: 5px; 
     text-align: center;
     font-size: 12px;
+}
+
+.js-date-range {
+    margin: 5px 0px 0px 0px;
 }
 
 .js-start-date,
@@ -124,6 +128,10 @@ body {
     display: inline-block;
     text-align: left;
     vertical-align: middle;
+}
+
+.modal-footer {
+    padding-bottom: 0;
 }
 
 .feature-row {
@@ -404,8 +412,12 @@ rect.pane {
     position: absolute;
     width: auto;
     top: 66px;
-    right: 15px;
+    right: 16px;
     z-index: 1000;
+}
+
+#chart-panel {
+    padding-bottom: 0px;
 }
 
 #chart-space {
@@ -509,6 +521,10 @@ rect.pane {
 
 .popup-container {
     padding: 5px;
+}
+
+.popover {
+    box-shadow: none;
 }
 
 .popover-content {

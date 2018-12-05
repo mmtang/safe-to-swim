@@ -55,12 +55,16 @@ function onMarkerClick(e) {
             });
             var defaultAnalyte = analytes[0];
             // initialize and add panel elements
-            clearChartPanel();
-            initializeChartPanel();
+            clearPanelContent();
+            initializePanelBody();
+            initializeChartSpace();
+            initializeDatePanel(); 
             addAnalyteMenu(analytes);
             addFilterMenu(); 
             addScaleMenu(); 
             addChart(chartData, defaultAnalyte);
+            initializeDownloadTab();
+            // addDownloadBtn();
             // add listener for analyte menu
             document.getElementById('analyte-menu').addEventListener('change', function() {
                 addChart(chartData, this.value);
@@ -74,7 +78,7 @@ function onMarkerClick(e) {
     function addChart(data, analyte) {
         resetFilters();
         resetScaleMenu();
-        initializeDatePanel();
+        // initializeDatePanel();
         currentScale = 'linear';
 
         // initialize popovers after they have been added, popovers must be visible
@@ -210,6 +214,13 @@ function addAnalyteMenu(analytes) {
     analyteContainer.appendChild(analyteMenu);
 }
 
+/*
+function addDownloadBtn() {
+    var container = document.getElementById('download-container');
+    container.innerHTML = '<a href="#" class="btn btn-sm btn-default"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data</a>';
+}
+*/
+
 function addFilterMenu() {
     var filterContainer = document.getElementById('filter-container');
     var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;Observations</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-left" data-toggle="popover" title="Geometric Mean" data-content="For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. At least two sample results are required for the calculation. Hover the mouse cursor over a geometric mean chart element to highlight the date period used in the calculation."></i></a></label></div></div>';
@@ -228,8 +239,8 @@ function Analyte(name, stv, geomean) {
     this.geomean = geomean;
 }
 
-function clearChartPanel() {
-    document.getElementById('chart-panel').innerHTML = '';
+function clearPanelContent() {
+    document.getElementById('panel-content').innerHTML = '';
 }
 
 function clearSearch() {
@@ -237,7 +248,7 @@ function clearSearch() {
 }
 
 function openPanel() {
-    document.getElementById('chart-panel').style.display = 'block';
+    document.getElementById('panel-content').style.display = 'block';
     var container = document.getElementById('panel-arrow-container');
     container.classList.remove('panel-collapsed');
     var icon = container.querySelectorAll('i')[0];
@@ -418,14 +429,38 @@ function hideLoadingMask() {
     document.getElementById('map-loading-mask').style.display = 'none';
 }
 
+function hidePanelArrow() {
+    var container = document.getElementById('panel-arrow-container');
+    var icon = container.querySelectorAll('i')[0];
+    icon.style.display = 'none';
+}
+
+/*
+function hidePanelFooter() {
+    var footer = document.getElementById('download-footer');
+    footer.style.display = 'none';
+}
+*/
+
 function initializeDatePanel() {
     var datePanel = document.getElementById('date-container');
     datePanel.innerHTML = '';
     datePanel.innerHTML = '<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold the left or right side of the gray box and drag it towards the center of the timeline."></i></a></p>';
 }
 
-function initializeChartPanel() {
-    var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"></div></div>' + '<div id="chart-space"></div><div id="date-container" class="date-panel"></div>';
+function initializeDownloadTab() {
+    var container = document.getElementById('download');
+    container.innerHTML = '';
+    container.innerHTML = '<div id="download-panel" class="panel-body"><p>Use the menu below to download data for the selected site: <strong>' + lastSite.name + ' (' + lastSite.code + ').</strong></div>';
+}
+
+function initializePanelBody() {
+    var paneltemplate = '<ul class="nav nav-tabs" id="panel-tabs"><li class="active"><a href="#chart" data-toggle="tab"><span class="glyphicon glyphicon-stats"></span>&nbsp;&nbsp;Chart</a></li><li><a href="#download" data-toggle="tab"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data</a></li></ul><div class="tab-content"><div class="tab-pane fade active in" id="chart"><div id="chart-panel" class="panel-body"></div></div><div id="download" class="tab-pane fade"></div></div>';
+    document.getElementById('panel-content').innerHTML = paneltemplate;
+}
+
+function initializeChartSpace() {
+    var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"></div></div>' + '<div id="chart-space"></div><div id="date-container" class="panel-container"></div>';
     document.getElementById('chart-panel').innerHTML = featureContent;
 }
 
@@ -462,8 +497,15 @@ function showMapLoadError() {
     document.getElementById('chart-panel').innerHTML = '<p class="warning">Error fetching the map data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="window.location.reload()">Retry</button></div>';
 }
 
+/*
+function showPanelFooter() {
+    var footer = document.getElementById('download-footer');
+    footer.style.display = 'block';
+}
+*/
+
 function showSiteLoading() {
-    document.getElementById('chart-panel').innerHTML = 'Fetching data<div id="loading"><div class="loading-indicator"><div class="progress progress-striped active"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%"></div></div></div></div>';
+    document.getElementById('panel-content').innerHTML = 'Fetching data<div id="loading"><div class="loading-indicator"><div class="progress progress-striped active"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%"></div></div></div></div>';
 }
 
 function showSiteError() {

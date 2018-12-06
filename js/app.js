@@ -56,15 +56,13 @@ function onMarkerClick(e) {
             var defaultAnalyte = analytes[0];
             // initialize and add panel elements
             clearPanelContent();
-            initializePanelBody();
-            initializeChartSpace();
+            initializeChartPanel();
             initializeDatePanel(); 
             addAnalyteMenu(analytes);
             addFilterMenu(); 
             addScaleMenu(); 
             addChart(chartData, defaultAnalyte);
-            initializeDownloadTab();
-            // addDownloadBtn();
+            addDownloadBtn();
             // add listener for analyte menu
             document.getElementById('analyte-menu').addEventListener('change', function() {
                 addChart(chartData, this.value);
@@ -214,12 +212,15 @@ function addAnalyteMenu(analytes) {
     analyteContainer.appendChild(analyteMenu);
 }
 
-/*
 function addDownloadBtn() {
     var container = document.getElementById('download-container');
-    container.innerHTML = '<a href="#" class="btn btn-sm btn-default"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data</a>';
+    container.innerHTML = '<a href="#" id="download-btn" class="btn btn-sm btn-default"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data</a>';
+
+    $('#download-btn').click(function() {
+        $('#downloadModal').modal('show');
+        $('.navbar-collapse.in').collapse('hide');
+    });
 }
-*/
 
 function addFilterMenu() {
     var filterContainer = document.getElementById('filter-container');
@@ -257,7 +258,7 @@ function openPanel() {
 }
 
 function closePanel() {
-    document.getElementById('chart-panel').style.display = 'none';
+    document.getElementById('panel-content').style.display = 'none';
     var container = document.getElementById('panel-arrow-container');
     container.classList.add('panel-collapsed');
     var icon = container.querySelectorAll('i')[0];
@@ -448,20 +449,9 @@ function initializeDatePanel() {
     datePanel.innerHTML = '<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold the left or right side of the gray box and drag it towards the center of the timeline."></i></a></p>';
 }
 
-function initializeDownloadTab() {
-    var container = document.getElementById('download');
-    container.innerHTML = '';
-    container.innerHTML = '<div id="download-panel" class="panel-body"><p>Use the menu below to download data for the selected site: <strong>' + lastSite.name + ' (' + lastSite.code + ').</strong></div>';
-}
-
-function initializePanelBody() {
-    var paneltemplate = '<ul class="nav nav-tabs" id="panel-tabs"><li class="active"><a href="#chart" data-toggle="tab"><span class="glyphicon glyphicon-stats"></span>&nbsp;&nbsp;Chart</a></li><li><a href="#download" data-toggle="tab"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data</a></li></ul><div class="tab-content"><div class="tab-pane fade active in" id="chart"><div id="chart-panel" class="panel-body"></div></div><div id="download" class="tab-pane fade"></div></div>';
-    document.getElementById('panel-content').innerHTML = paneltemplate;
-}
-
-function initializeChartSpace() {
-    var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"></div></div>' + '<div id="chart-space"></div><div id="date-container" class="panel-container"></div>';
-    document.getElementById('chart-panel').innerHTML = featureContent;
+function initializeChartPanel() {
+    var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"></div></div>' + '<div id="chart-space"></div><div id="date-container" class="panel-container"></div><div id="download-container" class="panel-container"></div>';
+    document.getElementById('panel-content').innerHTML = featureContent;
 }
 
 function resendRequest() {

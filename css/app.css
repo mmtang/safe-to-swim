@@ -24,7 +24,7 @@ body {
 }
 
 .panel-container {
-    padding: 5px; 
+    padding: 7px; 
     text-align: center;
     font-size: 12px;
 }
@@ -128,10 +128,6 @@ body {
     display: inline-block;
     text-align: left;
     vertical-align: middle;
-}
-
-.modal-footer {
-    padding-bottom: 0;
 }
 
 .feature-row {
@@ -422,6 +418,10 @@ rect.pane {
 
 #chart-space {
     padding: 5px 0px 20px 0px;
+}
+
+#download-well {
+    margin: 0px;
 }
 
 .clickable {

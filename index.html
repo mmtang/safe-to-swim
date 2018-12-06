@@ -51,12 +51,7 @@
                     <div id="site-title" class="panel-text"><h3 class="panel-title">&nbsp;</h3></div>
                     <span id="panel-arrow-container" class="pull-right clickable"><i class="fa fa-caret-up"></i></span>
                 </div>
-                <div id="panel-content" class="panel-body">&nbsp;</div>
-                <!--
-                <div id="download-footer" class="panel-footer text-right">
-                    <a href="#" class="btn btn-sm btn-default"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data</a>
-                </div>
-                -->
+                <div id="panel-content" class="panel-body"></div>
             </div>
         </div>
         <div id="map-loading-mask" class="background-mask">
@@ -83,7 +78,7 @@
                 <div class="modal-body">
                     <ul class="nav nav-tabs" id="aboutTabs">
                         <li class="active"><a href="#about" data-toggle="tab">About</a></li>
-                        <li><a href="#how-to-use" data-toggle="tab">Using the Map</a></li>
+                        <li><a href="#how-to-use" data-toggle="tab">How to use</a></li>
                     </ul>
                     <div class="tab-content">
                         <div class="tab-pane fade active in" id="about">
@@ -94,7 +89,6 @@
                             <p><em>November 28, 2018: This map is currently in public beta.</em></p>
                             <br><h5><strong>Disclaimer & Access Use</strong></h5>
                             <p>This data can change at any time and should not be used for any particular purpose other than general reference.</p>
-                            <br>
                             <!--
                             <div class="text-center">
                                 <a href="http://ceden.org/" target="_blank"><img style="padding: 5px;" src="assets\ceden-logo.jpg" height="64"></a>
@@ -103,14 +97,14 @@
                             -->
                         </div>
                         <div id="how-to-use" class="tab-pane fade">
-                            <br><h5><strong>Interactive map:</strong></h5>
+                            <br><h5><strong>Using the interactive map:</strong></h5>
                             <div class="well well-sm">
                                 <ul>
                                     <li>To find sample results for a particular site, locate a site on the map or search for a site using the search bar at the upper right of the application.</li>
                                     <li>Click on a site location. The sample results will appear on a chart to the right. Results may take time to appear depending on the network connection and the amount of data being loaded. </li>
                                 </ul>
                             </div>
-                            <h5><strong>Interactive chart:</strong></h5>
+                            <h5><strong>Using the interactive chart:</strong></h5>
                             <div class="well well-sm">
                                 <ul>
                                     <li>Use the dropdown menu located at the upper left of the panel to view sample results for E. coli, enterococci, fecal coliforms, or total coliforms. Not all sites have results for all indicators.</li>
@@ -126,10 +120,26 @@
                             </div>
                         </div>
                     </div><!-- /.tab-content -->
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                    </div><!-- /.modal-footer -->
                 </div><!-- /.modal-body -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div><!-- /.modal-footer -->
+            </div><!-- /.modal-content -->
+            </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+        <div class="modal fade" id="downloadModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button class="close" type="button" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">Download Data</h4>
+                </div>
+                <div class="modal-body">
+                    <p>Use the menu below to download data for the selected site: <span>Placeholder</span>. The full dataset is available for download on the California Natural Resources Agency Open Data portal.</p>
+                </div><!-- /.modal-body -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div><!-- /.modal-footer -->
             </div><!-- /.modal-content -->
             </div><!-- /.modal-dialog -->
         </div><!-- /.modal -->

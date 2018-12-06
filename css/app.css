@@ -26,6 +26,9 @@ body {
 .panel-container {
     padding: 7px; 
     text-align: center;
+}
+
+#date-container {
     font-size: 12px;
 }
 

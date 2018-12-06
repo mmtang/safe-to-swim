@@ -53,19 +53,24 @@ function onMarkerClick(e) {
                 else if (a > b) { return -1; }
                 else { return 0; }
             });
-            var defaultAnalyte = analytes[0];
+            currentAnalyte = analytes[0];
             // initialize and add panel elements
             clearPanelContent();
             initializeChartPanel();
             initializeDatePanel(); 
             addAnalyteMenu(analytes);
             addFilterMenu(); 
+            updateFilterMenu();
             addScaleMenu(); 
-            addChart(chartData, defaultAnalyte);
+            addChart(chartData, currentAnalyte);
             addDownloadBtn();
+            updateDownloadBtn();
             // add listener for analyte menu
             document.getElementById('analyte-menu').addEventListener('change', function() {
+                currentAnalyte = this.value;
                 addChart(chartData, this.value);
+                updateFilterMenu();
+                updateDownloadBtn();
             });
         } else {
             showSiteError();
@@ -74,6 +79,7 @@ function onMarkerClick(e) {
     }  
 
     function addChart(data, analyte) {
+        console.log(currentAnalyte);
         resetFilters();
         resetScaleMenu();
         // initializeDatePanel();
@@ -214,7 +220,8 @@ function addAnalyteMenu(analytes) {
 
 function addDownloadBtn() {
     var container = document.getElementById('download-container');
-    container.innerHTML = '<a href="#" id="download-btn" class="btn btn-sm btn-default"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data</a>';
+    // container.innerHTML = '<a href="#" id="download-btn" class="btn btn-sm btn-default"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data</a>';
+    container.innerHTML = '<div class="dropdown panel-container text-center"><div class="btn-group dropup"><button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data&nbsp;&nbsp;<span class="caret"></span></button><ul class="dropdown-menu"><li><a href="#">Download sample data (.csv)</a></li><li id="geomean-dropdown-op"><a href="#">Download geometric mean data (.csv)</a></li><li><a href="https://data.cnra.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results" target="_blank">Download full dataset (data.cnra.ca.gov)</a></li></ul></div>';
 
     $('#download-btn').click(function() {
         $('#downloadModal').modal('show');
@@ -224,7 +231,7 @@ function addDownloadBtn() {
 
 function addFilterMenu() {
     var filterContainer = document.getElementById('filter-container');
-    var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;Observations</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-left" data-toggle="popover" title="Geometric Mean" data-content="For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. At least two sample results are required for the calculation. Hover the mouse cursor over a geometric mean chart element to highlight the date period used in the calculation."></i></a></label></div></div>';
+    var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;&nbsp;Samples</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-left" data-toggle="popover" title="Geometric Mean" data-content="For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. At least two sample results are required for the calculation. Hover the mouse cursor over a geometric mean chart element to highlight the date period used in the calculation."></i></a></label></div></div>';
     filterContainer.innerHTML = content;
 }
 
@@ -450,7 +457,7 @@ function initializeDatePanel() {
 }
 
 function initializeChartPanel() {
-    var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"></div></div>' + '<div id="chart-space"></div><div id="date-container" class="panel-container"></div><div id="download-container" class="panel-container"></div>';
+    var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"></div></div>' + '<div id="chart-space"></div><div id="date-container" class="panel-container"></div><div id="download-container"></div>';
     document.getElementById('panel-content').innerHTML = featureContent;
 }
 
@@ -504,6 +511,28 @@ function showSiteError() {
     chartContainer.classList.add('panel-warning');
     document.getElementById('site-title').innerHTML = '<h3 class="panel-title">Error!</h3>';
     document.getElementById('chart-panel').innerHTML = '<p class="warning">Error fetching the site data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>';
+}
+
+function updateDownloadBtn() {
+    var menuItem = document.getElementById('geomean-dropdown-op');
+    if ((currentAnalyte === ecoli.name) || (currentAnalyte === enterococcus.name)) {
+        menuItem.classList.remove('disabled');
+    } else {
+        if (!(menuItem.classList.contains('disabled'))) {
+            menuItem.classList.add('disabled');
+        }
+    }
+}
+
+function updateFilterMenu() {
+    var menuItem = document.getElementById('filter-geomean');
+    if ((currentAnalyte === ecoli.name) || (currentAnalyte === enterococcus.name)) {
+        menuItem.disabled = false;
+        menuItem.checked = true;
+    } else {
+        menuItem.disabled = true;
+        menuItem.checked = false;
+    }
 }
 
 /*
@@ -852,6 +881,7 @@ var map = L.map('map',{
 }); 
 
 var chartOpacity = 0.8;
+var currentAnalyte;
 var currentScale = 'linear';
 var lastSite = new Object();
 var mainColor = '#1f78b4', secColor = '#ff7f0e';

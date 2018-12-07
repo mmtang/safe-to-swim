@@ -1,3 +1,15 @@
+/*
+
+California State Water Resources Control Board (SWRCB)
+Office of Information Management and Analysis (OIMA) 
+
+Michelle Tang (michelle.tang@waterboards.ca.gov)
+https://github.com/mmtang
+
+Last Updated: 12/07/2018
+
+*/
+
 var Chart = function(opts) {
     this.element = opts.element;
     this.data = opts.data;

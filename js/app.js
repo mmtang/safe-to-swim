@@ -6,6 +6,8 @@ Office of Information Management and Analysis (OIMA)
 Michelle Tang (michelle.tang@waterboards.ca.gov)
 https://github.com/mmtang
 
+Last Updated: 12/07/2018
+
 */
 
 function onMarkerClick(e) {
@@ -59,27 +61,27 @@ function onMarkerClick(e) {
             initializeChartPanel();
             initializeDatePanel(); 
             addAnalyteMenu(analytes);
+            addAnalyteListener(chartData);
             addScaleMenu(); 
             addFilterMenu(); 
-            updateFilterMenu();
-            addDownloadBtn();
-            updateDownloadBtn();
+            initializeDownloadMenu();
             addChart(chartData, currentAnalyte);
-            // add listener for analyte menu
-            document.getElementById('analyte-menu').addEventListener('change', function() {
-                currentAnalyte = this.value;
-                addChart(chartData, this.value);
-                updateFilterMenu();
-                updateDownloadBtn();
-            });
         } else {
             showSiteError();
             console.log('ERROR: Dataset is empty');
         }
     }  
 
+    function addAnalyteListener(data) {
+        document.getElementById('analyte-menu').addEventListener('change', function() {
+            currentAnalyte = this.value;
+            updateFilters();
+            addChart(data, this.value);
+        });
+    }
+
     function addChart(data, analyte) {
-        resetFilters();
+        updateFilters();
         resetScaleMenu();
         // initializeDatePanel();
         currentScale = 'linear';
@@ -138,8 +140,6 @@ function onMarkerClick(e) {
         console.log('geomeans', chart.gData);
         console.log('data', chart.data);
 
-        convertToCSV(formatGeomeanData(chart.gData));
-
         chart.addAxes();
         chart.drawLines(analyte);
         chart.drawPoints();
@@ -147,7 +147,7 @@ function onMarkerClick(e) {
         chart.drawBrush();
         chart.drawBrushPoints();
 
-        // add chart filter listeners
+        // chart filter listeners
         d3.select('#filter-result').on('change', function() { 
             toggleElement(this, '.circle'); 
             toggleElement(this, '.line.stv');
@@ -157,9 +157,11 @@ function onMarkerClick(e) {
             toggleElement(this, '.line.gm');
         });
 
-        // add scale listeners
+        // scale listeners
         d3.select('#linear-button').on('click', function() { clickLinear(); });
         d3.select('#log-button').on('click', function() { clickLog(); });
+
+        updateDownloadMenu();
 
         function clickLinear() {
             if (currentScale === 'log') {
@@ -177,60 +179,28 @@ function onMarkerClick(e) {
                 chart.redraw();
             }
         }
+
+        function updateDownloadMenu() {
+            toggleDownloadMenu();
+            d3.selectAll('#download-menu a').on('click', function() { 
+                var selected = this.text;
+                switch (selected) {
+                    case downloadOp1:
+                        convertToCSV(formatSampleData(chart.data));
+                        break;
+                    case downloadOp2:
+                        convertToCSV(formatGeomeanData(chart.gData));
+                        break;
+                    case downloadOp3:
+                        window.open('https://data.cnra.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results', '_blank');
+                        break;
+                    default:
+                        console.log('ERROR: No match for download value.')
+                }
+            });
+        }
     } // addChart
 } // onMarkerClick
-
-function formatGeomeanData(data) {
-    var formatDate = d3.timeFormat("%Y-%m-%d %X");
-    var selected = data.map(function(d) {
-        return {
-            'EndDate': formatDate(d.enddate),
-            'Geomean': d.geomean,
-            'SampleCount': d.count,
-            'StartDate': formatDate(d.startdate),
-            'StationCode': lastSite.code,
-            'StationName': lastSite.name
-        };
-    });
-    return selected;
-}
-
-function formatSampleData(data) {
-    var selected = data.map(function(d) {
-        return {
-            'Analyte': d.Analyte,
-            'DataQuality': d.DataQuality,
-            'MDL': d.MDL,
-            'Program': d.Program,
-            'Result': d.result,
-            'ResultQualCode': d.ResultQualCode,
-            'SampleDate': d.SampleDate,
-            'StationCode': d.StationCode,
-            'StationName': d.StationName,
-            'Unit': d.Unit
-        };
-    });
-    return selected;
-}
-
-function convertToCSV(data) {
-    var csvString = '';
-    var header = Object.keys(data[0]);
-    var values = data.map(function(d) {
-        return Object.values(d).join(',');
-    }).join('\n');
-    csvString += header + '\n' + values;
-
-    var csv = document.createElement('a');
-    var fileName = 'SafeToSwim_Download_' + Date.now() + '.csv';
-    csv.href = 'data:attachment/csv,' +  encodeURIComponent(csvString);
-    csv.target = '_blank';
-    csv.download = fileName;
-    
-    document.body.appendChild(csv);
-    csv.click();
-}
-
 
 /*
 / Global Listeners
@@ -253,7 +223,6 @@ $('#nav-btn').click(function() {
     $('.navbar-collapse').collapse('toggle');
 });
 
-
 /*
 / App Helper Functions 
 */
@@ -273,21 +242,11 @@ function addAnalyteMenu(analytes) {
     analyteContainer.appendChild(analyteMenu);
 }
 
-function addDownloadBtn() {
-    var container = document.getElementById('download-container');
-    // container.innerHTML = '<a href="#" id="download-btn" class="btn btn-sm btn-default"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data</a>';
-    container.innerHTML = '<div class="dropdown panel-container text-center"><div class="btn-group dropup"><button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data&nbsp;&nbsp;<span class="caret"></span></button><ul class="dropdown-menu"><li><a href="#">Download sample data (.csv)</a></li><li id="geomean-dropdown-op"><a href="#">Download geometric mean data (.csv)</a></li><li><a href="https://data.cnra.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results" target="_blank">Download full dataset (data.cnra.ca.gov)</a></li></ul></div>';
-
-    $('#download-btn').click(function() {
-        $('#downloadModal').modal('show');
-        $('.navbar-collapse.in').collapse('hide');
-    });
-}
-
 function addFilterMenu() {
     var filterContainer = document.getElementById('filter-container');
     var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;&nbsp;Samples</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-left" data-toggle="popover" title="Geometric Mean" data-content="For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. At least two sample results are required for the calculation. Hover the mouse cursor over a geometric mean chart element to highlight the date period used in the calculation."></i></a></label></div></div>';
     filterContainer.innerHTML = content;
+    updateFilters();
 }
 
 function addScaleMenu() {
@@ -328,6 +287,24 @@ function closePanel() {
     icon.classList.add('fa-caret-down');
 }
 
+function convertToCSV(data) {
+    var csvString = '';
+    var header = Object.keys(data[0]);
+    var values = data.map(function(d) {
+        return Object.values(d).join(',');
+    }).join('\n');
+    csvString += header + '\n' + values;
+
+    var csv = document.createElement('a');
+    var fileName = 'SafeToSwim_Download_' + Date.now() + '.csv';
+    csv.href = 'data:attachment/csv,' +  encodeURIComponent(csvString);
+    csv.target = '_blank';
+    csv.download = fileName;
+    
+    document.body.appendChild(csv);
+    csv.click();
+}
+
 function createURL(resource, site) {
     // url encoding for site code, add more as needed
     var cleanSite = encode(site);
@@ -363,6 +340,39 @@ function encode(str) {
         .replace(/\,/g, '%2C')
         .replace(/\//g, '%2F');
     return str;
+}
+
+function formatGeomeanData(data) {
+    var formatDate = d3.timeFormat("%Y-%m-%d %X");
+    var selected = data.map(function(d) {
+        return {
+            'EndDate': formatDate(d.enddate),
+            'Geomean': d.geomean,
+            'SampleCount': d.count,
+            'StartDate': formatDate(d.startdate),
+            'StationCode': lastSite.code,
+            'StationName': lastSite.name
+        };
+    });
+    return selected;
+}
+
+function formatSampleData(data) {
+    var selected = data.map(function(d) {
+        return {
+            'Analyte': d.Analyte,
+            'DataQuality': d.DataQuality,
+            'MDL': d.MDL,
+            'Program': d.Program,
+            'Result': d.result,
+            'ResultQualCode': d.ResultQualCode,
+            'SampleDate': d.SampleDate,
+            'StationCode': d.StationCode,
+            'StationName': d.StationName,
+            'Unit': d.Unit
+        };
+    });
+    return selected;
 }
 
 // request site data
@@ -498,12 +508,10 @@ function hidePanelArrow() {
     icon.style.display = 'none';
 }
 
-/*
-function hidePanelFooter() {
-    var footer = document.getElementById('download-footer');
-    footer.style.display = 'none';
+function initializeChartPanel() {
+    var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"></div></div>' + '<div id="chart-space"></div><div id="date-container" class="panel-container"></div><div id="download-container"></div>';
+    document.getElementById('panel-content').innerHTML = featureContent;
 }
-*/
 
 function initializeDatePanel() {
     var datePanel = document.getElementById('date-container');
@@ -511,9 +519,9 @@ function initializeDatePanel() {
     datePanel.innerHTML = '<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold the left or right side of the gray box and drag it towards the center of the timeline."></i></a></p>';
 }
 
-function initializeChartPanel() {
-    var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"></div></div>' + '<div id="chart-space"></div><div id="date-container" class="panel-container"></div><div id="download-container"></div>';
-    document.getElementById('panel-content').innerHTML = featureContent;
+function initializeDownloadMenu() {
+    var container = document.getElementById('download-container');
+    container.innerHTML = '<div class="dropdown panel-container text-center"><div class="btn-group dropup"><button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data&nbsp;&nbsp;<span class="caret"></span></button><ul id="download-menu" class="dropdown-menu"><li><a href="#">' + downloadOp1 + '</a></li><li id="geomean-dropdown-op"><a href="#">' + downloadOp2 + '</a></li><li><a href="#" target="_blank">' + downloadOp3 + '</a></li></ul></div>';
 }
 
 function resendRequest() {
@@ -521,10 +529,12 @@ function resendRequest() {
     onMarkerClick(lastSite.e);
 }
 
+/*
 function resetFilters() {
     document.getElementById('filter-result').checked='true';
     document.getElementById('filter-geomean').checked='true';
 }
+*/
 
 function resetPanel() {
     var chartContainer = document.getElementById('chart-container');
@@ -568,7 +578,7 @@ function showSiteError() {
     document.getElementById('chart-panel').innerHTML = '<p class="warning">Error fetching the site data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>';
 }
 
-function updateDownloadBtn() {
+function toggleDownloadMenu() {
     var menuItem = document.getElementById('geomean-dropdown-op');
     if ((currentAnalyte === ecoli.name) || (currentAnalyte === enterococcus.name)) {
         menuItem.classList.remove('disabled');
@@ -579,14 +589,17 @@ function updateDownloadBtn() {
     }
 }
 
-function updateFilterMenu() {
-    var menuItem = document.getElementById('filter-geomean');
+function updateFilters() {
+    var sampleFilter = document.getElementById('filter-result');
+    sampleFilter.checked = true;
+
+    var gmFilter = document.getElementById('filter-geomean');
     if ((currentAnalyte === ecoli.name) || (currentAnalyte === enterococcus.name)) {
-        menuItem.disabled = false;
-        menuItem.checked = true;
+        gmFilter.disabled = false;
+        gmFilter.checked = true;
     } else {
-        menuItem.disabled = true;
-        menuItem.checked = false;
+        gmFilter.disabled = true;
+        gmFilter.checked = false;
     }
 }
 
@@ -926,6 +939,10 @@ var dataQuality0 = "MetaData",
     dataQuality5 = "Unknown data quality",
     dataQuality6 = "Reject record",
     dataQuality7 = "Error";
+
+var downloadOp1 = 'Download sample date (.csv)',
+    downloadOp2 = 'Download geometric mean data (.csv)',
+    downloadOp3 = 'Download full dataset (data.cnra.ca.gov)';
 
 var map = L.map('map',{ 
     center: [37.4050, -119.365], 

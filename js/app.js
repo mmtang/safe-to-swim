@@ -59,12 +59,12 @@ function onMarkerClick(e) {
             initializeChartPanel();
             initializeDatePanel(); 
             addAnalyteMenu(analytes);
+            addScaleMenu(); 
             addFilterMenu(); 
             updateFilterMenu();
-            addScaleMenu(); 
-            addChart(chartData, currentAnalyte);
             addDownloadBtn();
             updateDownloadBtn();
+            addChart(chartData, currentAnalyte);
             // add listener for analyte menu
             document.getElementById('analyte-menu').addEventListener('change', function() {
                 currentAnalyte = this.value;
@@ -79,7 +79,6 @@ function onMarkerClick(e) {
     }  
 
     function addChart(data, analyte) {
-        console.log(currentAnalyte);
         resetFilters();
         resetScaleMenu();
         // initializeDatePanel();
@@ -136,6 +135,11 @@ function onMarkerClick(e) {
             chart.createScales(null);
         }
 
+        console.log('geomeans', chart.gData);
+        console.log('data', chart.data);
+
+        convertToCSV(formatGeomeanData(chart.gData));
+
         chart.addAxes();
         chart.drawLines(analyte);
         chart.drawPoints();
@@ -154,8 +158,8 @@ function onMarkerClick(e) {
         });
 
         // add scale listeners
-        d3.select('#linear-button').on('click', function() { clickLinear(chart); });
-        d3.select('#log-button').on('click', function() { clickLog(chart); });
+        d3.select('#linear-button').on('click', function() { clickLinear(); });
+        d3.select('#log-button').on('click', function() { clickLog(); });
 
         function clickLinear() {
             if (currentScale === 'log') {
@@ -175,6 +179,57 @@ function onMarkerClick(e) {
         }
     } // addChart
 } // onMarkerClick
+
+function formatGeomeanData(data) {
+    var formatDate = d3.timeFormat("%Y-%m-%d %X");
+    var selected = data.map(function(d) {
+        return {
+            'EndDate': formatDate(d.enddate),
+            'Geomean': d.geomean,
+            'SampleCount': d.count,
+            'StartDate': formatDate(d.startdate),
+            'StationCode': lastSite.code,
+            'StationName': lastSite.name
+        };
+    });
+    return selected;
+}
+
+function formatSampleData(data) {
+    var selected = data.map(function(d) {
+        return {
+            'Analyte': d.Analyte,
+            'DataQuality': d.DataQuality,
+            'MDL': d.MDL,
+            'Program': d.Program,
+            'Result': d.result,
+            'ResultQualCode': d.ResultQualCode,
+            'SampleDate': d.SampleDate,
+            'StationCode': d.StationCode,
+            'StationName': d.StationName,
+            'Unit': d.Unit
+        };
+    });
+    return selected;
+}
+
+function convertToCSV(data) {
+    var csvString = '';
+    var header = Object.keys(data[0]);
+    var values = data.map(function(d) {
+        return Object.values(d).join(',');
+    }).join('\n');
+    csvString += header + '\n' + values;
+
+    var csv = document.createElement('a');
+    var fileName = 'SafeToSwim_Download_' + Date.now() + '.csv';
+    csv.href = 'data:attachment/csv,' +  encodeURIComponent(csvString);
+    csv.target = '_blank';
+    csv.download = fileName;
+    
+    document.body.appendChild(csv);
+    csv.click();
+}
 
 
 /*
@@ -863,7 +918,7 @@ var ecoli = new Analyte('E. coli', 320, 100),
     coliformtotal = new Analyte('Coliform, Total'),
     coliformfecal = new Analyte('Coliform, Fecal');
 
-var dataQuality0 = "MetaData, QC record",
+var dataQuality0 = "MetaData",
     dataQuality1 = "Passed"
     dataQuality2 = "Some review needed",
     dataQuality3 = "Spatial Accuracy Unknown",
@@ -881,7 +936,7 @@ var map = L.map('map',{
 }); 
 
 var chartOpacity = 0.8;
-var currentAnalyte;
+var currentAnalyte; // accessed globally for chart menu refreshes
 var currentScale = 'linear';
 var lastSite = new Object();
 var mainColor = '#1f78b4', secColor = '#ff7f0e';

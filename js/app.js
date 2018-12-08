@@ -80,6 +80,21 @@ function onMarkerClick(e) {
         });
     }
 
+    function addAnalyteMenu(analytes) {
+        // initialize dropdown
+        var analyteMenu = document.createElement('select');
+        analyteMenu.id = 'analyte-menu';
+        analyteMenu.className = 'form-control input-sm';
+        analyteMenu.innerHTML = '';
+        // populate dropdown
+        for (var i = 0; i < analytes.length; i++) {
+            var opt = analytes[i];
+            analyteMenu.innerHTML += '<option value=\"' + opt + '\">' + opt + '</option>';
+        }
+        var analyteContainer = document.getElementById('analyte-container');
+        analyteContainer.appendChild(analyteMenu);
+    }
+
     function addChart(data, analyte) {
         updateFilters();
         resetScaleMenu();
@@ -158,24 +173,20 @@ function onMarkerClick(e) {
         });
 
         // scale listeners
-        d3.select('#linear-button').on('click', function() { clickLinear(); });
-        d3.select('#log-button').on('click', function() { clickLog(); });
+        d3.select('#linear-button').on('click', function() { changeScale(); });
+        d3.select('#log-button').on('click', function() { changeScale(); });
 
         updateDownloadMenu();
-
-        function clickLinear() {
-            if (currentScale === 'log') {
-                resetScaleMenu();
-                currentScale = 'linear';
-                chart.redraw();
-            }
-        }
         
-        function clickLog() {
+        function changeScale() {
             if (currentScale === 'linear') {
                 document.getElementById('linear-button').classList.remove('active');
                 document.getElementById('log-button').classList.add('active');
                 currentScale = 'log';
+                chart.redraw();
+            } else if (currentScale === 'log') {
+                resetScaleMenu();
+                currentScale = 'linear';
                 chart.redraw();
             }
         }
@@ -200,6 +211,17 @@ function onMarkerClick(e) {
             });
         }
     } // addChart
+
+    function toggleDownloadMenu() {
+        var menuItem = document.getElementById('geomean-dropdown-op');
+        if ((currentAnalyte === ecoli.name) || (currentAnalyte === enterococcus.name)) {
+            menuItem.classList.remove('disabled');
+        } else {
+            if (!(menuItem.classList.contains('disabled'))) {
+                menuItem.classList.add('disabled');
+            }
+        }
+    }
 } // onMarkerClick
 
 /*
@@ -226,21 +248,6 @@ $('#nav-btn').click(function() {
 /*
 / App Helper Functions 
 */
-
-function addAnalyteMenu(analytes) {
-    // initialize dropdown
-    var analyteMenu = document.createElement('select');
-    analyteMenu.id = 'analyte-menu';
-    analyteMenu.className = 'form-control input-sm';
-    analyteMenu.innerHTML = '';
-    // populate dropdown
-    for (var i = 0; i < analytes.length; i++) {
-        var opt = analytes[i];
-        analyteMenu.innerHTML += '<option value=\"' + opt + '\">' + opt + '</option>';
-    }
-    var analyteContainer = document.getElementById('analyte-container');
-    analyteContainer.appendChild(analyteMenu);
-}
 
 function addFilterMenu() {
     var filterContainer = document.getElementById('filter-container');
@@ -529,13 +536,6 @@ function resendRequest() {
     onMarkerClick(lastSite.e);
 }
 
-/*
-function resetFilters() {
-    document.getElementById('filter-result').checked='true';
-    document.getElementById('filter-geomean').checked='true';
-}
-*/
-
 function resetPanel() {
     var chartContainer = document.getElementById('chart-container');
     if (chartContainer.classList.contains('panel-warning')) {
@@ -559,13 +559,6 @@ function showMapLoadError() {
     document.getElementById('chart-panel').innerHTML = '<p class="warning">Error fetching the map data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="window.location.reload()">Retry</button></div>';
 }
 
-/*
-function showPanelFooter() {
-    var footer = document.getElementById('download-footer');
-    footer.style.display = 'block';
-}
-*/
-
 function showSiteLoading() {
     document.getElementById('panel-content').innerHTML = 'Fetching data<div id="loading"><div class="loading-indicator"><div class="progress progress-striped active"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%"></div></div></div></div>';
 }
@@ -576,17 +569,6 @@ function showSiteError() {
     chartContainer.classList.add('panel-warning');
     document.getElementById('site-title').innerHTML = '<h3 class="panel-title">Error!</h3>';
     document.getElementById('chart-panel').innerHTML = '<p class="warning">Error fetching the site data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>';
-}
-
-function toggleDownloadMenu() {
-    var menuItem = document.getElementById('geomean-dropdown-op');
-    if ((currentAnalyte === ecoli.name) || (currentAnalyte === enterococcus.name)) {
-        menuItem.classList.remove('disabled');
-    } else {
-        if (!(menuItem.classList.contains('disabled'))) {
-            menuItem.classList.add('disabled');
-        }
-    }
 }
 
 function updateFilters() {
@@ -940,7 +922,7 @@ var dataQuality0 = "MetaData",
     dataQuality6 = "Reject record",
     dataQuality7 = "Error";
 
-var downloadOp1 = 'Download sample date (.csv)',
+var downloadOp1 = 'Download sample data (.csv)',
     downloadOp2 = 'Download geometric mean data (.csv)',
     downloadOp3 = 'Download full dataset (data.cnra.ca.gov)';
 

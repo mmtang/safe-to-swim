@@ -151,16 +151,17 @@ Chart.prototype.createScales = function(threshold) {
     var yMax = d3.max(this.data, function(d) { return d.result }); 
     var yDisplay = Math.max(yMax, threshold);
     // add arbitrary buffer to y axis
-    var yBuffered = Math.ceil(roundHundred(yDisplay + (yDisplay / 3)))
+    var yLinearBuffered = Math.ceil(roundHundred(yDisplay + (yDisplay / 3)));
+    var yLogBuffered = Math.ceil(roundHundred(yDisplay + (yDisplay / 2)));
 
     this.xScale = d3.scaleTime()
         .domain(xBuffered)
         .range([0, this.width]);
     this.linearScale = d3.scaleLinear()
-        .domain([0, yBuffered])
+        .domain([0, yLinearBuffered])
         .range([this.height, 0]);
     this.logScale = d3.scaleLog() 
-        .domain([0.1, yBuffered])
+        .domain([0.1, yLogBuffered])
         .range([this.height, 0]);
     // set to linear on creation
     this.yScale = this.linearScale;

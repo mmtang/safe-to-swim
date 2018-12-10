@@ -293,20 +293,43 @@ function closePanel() {
 
 function convertToCSV(data) {
     var csvString = '';
+    var fileName = 'SafeToSwim_Download_' + Date.now() + '.csv';
     var header = Object.keys(data[0]);
-    var values = data.map(function(d) {
-        return Object.values(d).join(',');
+    var values = data.map(function(obj) {
+        return Object.keys(obj)
+            .map(function(e) { return obj[e]; })
+            .join(',');
+        return strValues;
     }).join('\n');
     csvString += header + '\n' + values;
 
-    var csv = document.createElement('a');
-    var fileName = 'SafeToSwim_Download_' + Date.now() + '.csv';
-    csv.href = 'data:attachment/csv,' +  encodeURIComponent(csvString);
-    csv.target = '_blank';
-    csv.download = fileName;
+    if (msieversion()) {
+        var IEwindow = window.open();
+        IEwindow.document.write('sep=,\r\n' + csvString);
+        IEwindow.document.close();
+        IEwindow.document.execCommand('SaveAs', true, fileName);
+        IEwindow.close();
+    } else {
+        var csv = document.createElement('a');
+        csv.href = 'data:attachment/csv,' +  encodeURIComponent(csvString);
+        csv.target = '_blank';
+        csv.download = fileName;
+        document.body.appendChild(csv);
+        csv.click();
+    }
+
+    function msieversion() {
+        var ua = window.navigator.userAgent;
+        var msie = ua.indexOf("MSIE ");
     
-    document.body.appendChild(csv);
-    csv.click();
+        if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
+            return true;
+        }
+        else  {
+            return false;
+        }
+        return false;
+    }
 }
 
 function createURL(resource, site) {
@@ -354,8 +377,8 @@ function formatGeomeanData(data) {
             'Geomean': d.geomean,
             'SampleCount': d.count,
             'StartDate': formatDate(d.startdate),
-            'StationCode': lastSite.code,
-            'StationName': lastSite.name
+            'StationCode': '"' + lastSite.code + '"',
+            'StationName': '"' + lastSite.name + '"'
         };
     });
     return selected;
@@ -364,16 +387,16 @@ function formatGeomeanData(data) {
 function formatSampleData(data) {
     var selected = data.map(function(d) {
         return {
-            'Analyte': d.Analyte,
-            'DataQuality': d.DataQuality,
+            'Analyte': '"' + d.Analyte + '"',
+            'DataQuality': '"' + d.DataQuality + '"',
             'MDL': d.MDL,
-            'Program': d.Program,
+            'Program': '"' + d.Program + '"',
             'Result': d.result,
             'ResultQualCode': d.ResultQualCode,
             'SampleDate': d.SampleDate,
-            'StationCode': d.StationCode,
-            'StationName': d.StationName,
-            'Unit': d.Unit
+            'StationCode': '"' + d.StationCode + '"',
+            'StationName': '"' + d.StationName + '"',
+            'Unit': '"' + d.Unit + '"'
         };
     });
     return selected;

@@ -152,9 +152,6 @@ function onMarkerClick(e) {
             chart.createScales(null);
         }
 
-        console.log('geomeans', chart.gData);
-        console.log('data', chart.data);
-
         chart.addAxes();
         chart.drawLines(analyte);
         chart.drawPoints();
@@ -191,6 +188,14 @@ function onMarkerClick(e) {
             }
         }
 
+        function toggleLayer(layer, customPane) { 
+            if (map.hasLayer(layer)) {
+                map.removeLayer(layer);
+            } else {
+                map.addLayer(layer);
+            }
+        }
+
         function updateDownloadMenu() {
             toggleDownloadMenu();
             d3.selectAll('#download-menu a').on('click', function() { 
@@ -224,10 +229,6 @@ function onMarkerClick(e) {
     }
 } // onMarkerClick
 
-/*
-/ Global Listeners
-*/
-
 document.getElementById('panel-arrow-container').addEventListener('click', function() {
     if (this.classList.contains('panel-collapsed')) {
         openPanel();
@@ -244,10 +245,6 @@ $('#about-btn').click(function() {
 $('#nav-btn').click(function() {
     $('.navbar-collapse').collapse('toggle');
 });
-
-/*
-/ App Helper Functions 
-*/
 
 function addFilterMenu() {
     var filterContainer = document.getElementById('filter-container');
@@ -585,31 +582,27 @@ function updateFilters() {
     }
 }
 
-/*
-/ Map Helper Functions 
-*/
-
 function addMapControls() {
-    L.control.zoom({ position:'topleft' }).addTo(map);
+    L.control.zoom({ position: 'topleft' }).addTo(map);
     addMapLegend();
-}
 
-function addMapLegend() {
-    var legend = L.control({ position: 'bottomleft' });
-    legend.onAdd = function(map) {
-        var div = L.DomUtil.create('div', 'info legend'),
-            labels = ['<strong>Last Sample Date</strong>'],
-            categories = ['Within last 30 days', 'Within last year', 'Older than one year'],
-            colors = ['#fefb47', '#82ff83', '#50cfe9'];
-        for (var i = 0; i < categories.length; i++ ) {
-            div.innerHTML += labels.push(
-                '<i class="circle" style="background:' + colors[i] + '"></i> ' + (categories[i] ? categories[i] : '+')
-            );
+    function addMapLegend() {
+        var legend = L.control({ position: 'bottomleft' });
+        legend.onAdd = function(map) {
+            var div = L.DomUtil.create('div', 'info legend'),
+                labels = ['<strong>Last Sample Date</strong>'],
+                categories = ['Within last 30 days', 'Within last year', 'Older than one year'],
+                colors = ['#fefb47', '#82ff83', '#50cfe9'];
+            for (var i = 0; i < categories.length; i++ ) {
+                div.innerHTML += labels.push(
+                    '<i class="circle" style="background:' + colors[i] + '"></i> ' + (categories[i] ? categories[i] : '+')
+                );
+            };
+            div.innerHTML = labels.join('<br>');
+            return div;
         };
-        div.innerHTML = labels.join('<br>');
-        return div;
-    };
-    legend.addTo(map);
+        legend.addTo(map);
+    }
 }
 
 function addSiteLayer() {
@@ -675,6 +668,48 @@ function addSiteLayer() {
         }, 1000);
     }
 
+    function getColor(d) {
+        if (d === null) { 
+            return '#50cfe9'; // null date
+        } else if (d <= 30) { 
+            return '#fefb47'; // 1 month
+        } else if (d <= 360) { 
+            return '#82ff83'; // 1 year
+        } else { 
+            return '#50cfe9'; // older than 1 year, same as null
+        } 
+    }
+
+    function highlightMarker(e) {
+        var layer = e.target;
+        layer.setStyle({
+            fillcolor: '#00e5ee',
+            color: '#00e5ee',
+            weight: 3,
+            opacity: 1,
+            fillOpacity: 0.9
+        });
+        if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+            layer.bringToFront();
+        }
+    }
+
+    function joinSiteData(data) {
+        var db = new alasql.Database();
+        db.exec('CREATE TABLE feature');
+        db.exec('CREATE TABLE att');
+        // 'features' is the site list from processSites()
+        db.exec('SELECT * INTO feature FROM ?', [features]);
+        db.exec('SELECT * INTO att FROM ?', [data]);
+        // get list of distinct sites based on most recent sample date
+        var date = db.exec('SELECT stationcode, max(sampledate) AS sampledate FROM att GROUP BY stationcode');
+        db.exec('CREATE TABLE date');
+        db.exec('SELECT * INTO date FROM ?', [date]);
+        // join data back to site list, left join to keep all sites
+        var joined = db.exec('SELECT feature.*, date.sampledate FROM feature LEFT JOIN date ON feature.StationCode = date.stationcode ORDER BY date.sampledate');
+        return joined;
+    }
+
     function processSites(data) {
         // use this array for the join to sample date
         features = [];
@@ -694,22 +729,6 @@ function addSiteLayer() {
             }
         }
         getDataRecent(siteDataPath, processSiteData);
-    }
-
-    function joinSiteData(data) {
-        var db = new alasql.Database();
-        db.exec('CREATE TABLE feature');
-        db.exec('CREATE TABLE att');
-        // 'features' is the site list from processSites()
-        db.exec('SELECT * INTO feature FROM ?', [features]);
-        db.exec('SELECT * INTO att FROM ?', [data]);
-        // get list of distinct sites based on most recent sample date
-        var date = db.exec('SELECT stationcode, max(sampledate) AS sampledate FROM att GROUP BY stationcode');
-        db.exec('CREATE TABLE date');
-        db.exec('SELECT * INTO date FROM ?', [date]);
-        // join data back to site list, left join to keep all sites
-        var joined = db.exec('SELECT feature.*, date.sampledate FROM feature LEFT JOIN date ON feature.StationCode = date.stationcode ORDER BY date.sampledate');
-        return joined;
     }
 
     function processSiteData(data) {
@@ -742,6 +761,10 @@ function addSiteLayer() {
         }
         addSites(siteList);
         initializeSearch(siteList);
+    }
+
+    function resetHighlight(e) {
+        siteLayer.resetStyle(e.target);
     }
 }
 
@@ -788,10 +811,6 @@ function initializeSearch(arr) {
         $('.navbar-collapse.in').css('max-height', '');
         $('.navbar-collapse.in').css('height', '');
     });
-
-    // commented out 11/20/18
-    // $(".twitter-typeahead").css("position", "static");
-    // $(".twitter-typeahead").css("display", "block");
 }
 
 function addMapTiles() {
@@ -801,47 +820,6 @@ function addMapTiles() {
         maxZoom: 19
     }).addTo(map);
 }
-
-function getColor(d) {
-    if (d === null) { 
-        return '#50cfe9'; // null date
-    } else if (d <= 30) { 
-        return '#fefb47'; // 1 month
-    } else if (d <= 360) { 
-        return '#82ff83'; // 1 year
-    } else { 
-        return '#50cfe9'; // older than 1 year, same as null
-    } 
-}
-
-function highlightMarker(e) {
-    var layer = e.target;
-    layer.setStyle({
-        fillcolor: '#00e5ee',
-        color: '#00e5ee',
-        weight: 3,
-        opacity: 1,
-        fillOpacity: 0.9
-    })
-    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-        layer.bringToFront();
-    }
-}
-function resetHighlight(e) {
-    siteLayer.resetStyle(e.target);
-}
-
-function toggleLayer(layer, customPane) { 
-    if (map.hasLayer(layer)) {
-        map.removeLayer(layer);
-    } else {
-        map.addLayer(layer);
-    }
-}
-
-/*
-/ D3 Helper Functions 
-*/
 
 function convertND(d) {
     // for all NDs, use half of MDL
@@ -935,7 +913,7 @@ var map = L.map('map',{
 }); 
 
 var chartOpacity = 0.8;
-var currentAnalyte; // accessed globally for chart menu refreshes
+var currentAnalyte; 
 var currentScale = 'linear';
 var lastSite = new Object();
 var mainColor = '#1f78b4', secColor = '#ff7f0e';

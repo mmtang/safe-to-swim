@@ -22,30 +22,33 @@ function onMarkerClick(e) {
     getData(path, processData); 
 
     function processData(data) { 
-        var chartData = data;
+        // filter on data quality category
+        var chartData = data.filter(function(d) {
+            if (d.DataQuality === dataQuality1 || d.DataQuality === dataQuality2 || d.DataQuality === dataQuality3 || d.DataQuality === dataQuality4 || d.DataQuality === dataQuality5) {
+                return d;
+            }
+        });
+        // force data types and handle NDs
+        for (var i = 0; i < chartData.length; i++) { 
+            chartData[i].MDL = +chartData[i].MDL;
+            chartData[i].Result = +chartData[i].Result;
+            chartData[i].sampledate = parseDate(chartData[i].SampleDate);
+            // copy to new field
+            if ((chartData[i].Result <= 0) || (chartData[i].ResultQualCode === 'ND')) { 
+                // use half of MDL for all NDs
+                chartData[i].result = chartData[i].MDL * 0.5;
+            } else {
+                chartData[i].result = chartData[i].Result;
+            }
+        }
+        // filter to keep all results above 0
+        chartData = chartData.filter(function(d) { return d.result > 0; });
+
         if (chartData.length > 0) { 
             var analyteSet = new Set(); 
             for (var i = 0; i < chartData.length; i++) { 
-                // filter on data quality code
-                if ((chartData[i].DataQuality === dataQuality0) || (chartData[i].DataQuality === dataQuality6) || (chartData[i].DataQuality === dataQuality7)) {
-                    continue;
-                } else {
-                    // force data types
-                    chartData[i].MDL = +chartData[i].MDL;
-                    chartData[i].Result = +chartData[i].Result;
-                    chartData[i].sampledate = parseDate(chartData[i].SampleDate);
-                    // handle NDs and copy over results to new field
-                    if ((chartData[i].Result <= 0) || (chartData[i].ResultQualCode === 'ND')) { 
-                        // use half of MDL for all NDs
-                        chartData[i].result = chartData[i].MDL * 0.5;
-                    } else {
-                        chartData[i].result = chartData[i].Result;
-                    }
-                    analyteSet.add(chartData[i].Analyte);
-                }
+                analyteSet.add(chartData[i].Analyte);
             }
-            // filter to keep all results above 0
-            chartData = chartData.filter(function(d) { return d.result > 0; });
             // convert set to array, forEach used for older browsers
             var analytes = [];
             analyteSet.forEach(function(i) { analytes.push(i); }); 
@@ -118,17 +121,16 @@ function onMarkerClick(e) {
             return d.Analyte === analyte;
         });
 
-        // 16:8 or 2:1 aspect ratio
         var windowSize = getWindowSize(),
-            panelWidth = Math.round(windowSize[0] * 0.60),
-            panelHeight = Math.round(panelWidth * (8 / 16));
-
-        if (panelWidth < 620) {
-            panelWidth = 620;
-            panelHeight = 349;
-        } else if (panelWidth > 940) {
-            panelWidth = 940;
-            panelHeight = 470;
+            windowWidth = windowSize[0],
+            windowHeight = windowSize[1];
+            
+        if (windowWidth < 768) {
+            var panelWidth = 620;
+            var panelHeight = 349;
+        } else {
+            var panelWidth = 745;
+            var panelHeight = Math.min(349, Math.round((windowHeight * 0.5)));
         }
 
         var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
@@ -510,19 +512,7 @@ function getDataSites(url, callback, offset, data) {
 }
 
 function getWindowSize() {
-    return [Math.max(
-      //document.body.scrollWidth,
-      //document.documentElement.scrollWidth,
-      document.body.offsetWidth,
-      document.documentElement.offsetWidth,
-      document.documentElement.clientWidth
-    ), Math.max(
-        //document.body.scrollHeight,
-        //document.documentElement.scrollHeight,
-        document.body.offsetHeight,
-        document.documentElement.offsetHeight,
-        document.documentElement.clientHeight
-    )];
+    return [document.documentElement.clientWidth, document.documentElement.clientHeight];
 }
 
 function hideLoadingMask() {
@@ -588,7 +578,7 @@ function showSiteError() {
     chartContainer.classList.remove('panel-primary');
     chartContainer.classList.add('panel-warning');
     document.getElementById('site-title').innerHTML = '<h3 class="panel-title">Error!</h3>';
-    document.getElementById('chart-panel').innerHTML = '<p class="warning">Error fetching the site data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>';
+    document.getElementById('panel-content').innerHTML = '<p class="warning">Error fetching the site data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>';
 }
 
 function updateFilters() {

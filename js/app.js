@@ -6,19 +6,14 @@ Office of Information Management and Analysis (OIMA)
 Michelle Tang (michelle.tang@waterboards.ca.gov)
 https://github.com/mmtang
 
-Last Updated: 12/07/2018
-
 */
 
 function onMarkerClick(e) {
     var clickedSite = e.layer.feature.properties.StationCode;
     var path = createURL('6e99b457-0719-47d6-9191-8f5e7cd8866f', clickedSite);
-    // only need to change once, on initial load
-    document.getElementById('chart-container').style.display = 'inline-block';
-    resetPanel();
-    openPanel();
-    showSiteLoading(); 
 
+    resetPanel();
+    showSiteLoading(); 
     getData(path, processData); 
 
     function processData(data) { 
@@ -33,13 +28,7 @@ function onMarkerClick(e) {
             chartData[i].MDL = +chartData[i].MDL;
             chartData[i].Result = +chartData[i].Result;
             chartData[i].sampledate = parseDate(chartData[i].SampleDate);
-            // copy to new field
-            if ((chartData[i].Result <= 0) || (chartData[i].ResultQualCode === 'ND')) { 
-                // use half of MDL for all NDs
-                chartData[i].result = chartData[i].MDL * 0.5;
-            } else {
-                chartData[i].result = chartData[i].Result;
-            }
+            handleND(chartData[i]);
         }
         // filter to keep all results above 0
         chartData = chartData.filter(function(d) { return d.result > 0; });
@@ -70,8 +59,28 @@ function onMarkerClick(e) {
             initializeDownloadMenu();
             addChart(chartData, currentAnalyte);
         } else {
-            showSiteError();
+            showDataError();
             console.log('ERROR: Dataset is empty');
+        }
+
+        function handleND(d) {
+            if (isND(d)) {
+                d.result = calculateND(d);
+            } else {
+                d.result = d.Result;
+            }
+        
+            function calculateND(d) {
+                return d.MDL * 0.5;
+            }
+        
+            function isND(d) {
+                if ((d.Result <= 0) || (d.ResultQualCode === 'ND')) { 
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         }
     }  
 
@@ -190,19 +199,18 @@ function onMarkerClick(e) {
             }
         }
 
-        function toggleLayer(layer, customPane) { 
-            if (map.hasLayer(layer)) {
-                map.removeLayer(layer);
+        function toggleElement(context, name) {
+            if (d3.select(context).property('checked')) {
+                d3.selectAll(name).attr('visibility', 'visible');
             } else {
-                map.addLayer(layer);
+                d3.selectAll(name).attr('visibility', 'hidden');
             }
         }
 
         function updateDownloadMenu() {
             toggleDownloadMenu();
             d3.selectAll('#download-menu a').on('click', function() { 
-                var selected = this.text;
-                switch (selected) {
+                switch (this.text) {
                     case downloadOp1:
                         convertToCSV(formatSampleData(chart.data));
                         break;
@@ -235,7 +243,7 @@ document.getElementById('panel-arrow-container').addEventListener('click', funct
     if (this.classList.contains('panel-collapsed')) {
         openPanel();
     } else {
-        closePanel();
+        collapsePanel();
     }
 });
 
@@ -276,6 +284,7 @@ function clearSearch() {
 }
 
 function openPanel() {
+    document.getElementById('chart-container').style.display = 'inline-block';
     document.getElementById('panel-content').style.display = 'block';
     var container = document.getElementById('panel-arrow-container');
     container.classList.remove('panel-collapsed');
@@ -284,7 +293,7 @@ function openPanel() {
     icon.classList.add('fa-caret-up');
 }
 
-function closePanel() {
+function collapsePanel() {
     document.getElementById('panel-content').style.display = 'none';
     var container = document.getElementById('panel-arrow-container');
     container.classList.add('panel-collapsed');
@@ -301,19 +310,19 @@ function convertToCSV(data) {
         return Object.keys(obj)
             .map(function(e) { return obj[e]; })
             .join(',');
-        return strValues;
-    }).join('\n');
-    csvString += header + '\n' + values;
+    });
+    var body = values.join('\r\n');
+    csvString += header + '\r\n' + body;
 
     if (msieversion()) {
         var IEwindow = window.open();
-        IEwindow.document.write('sep=,\r\n' + csvString);
+        IEwindow.document.write(csvString);
         IEwindow.document.close();
         IEwindow.document.execCommand('SaveAs', true, fileName);
         IEwindow.close();
     } else {
         var csv = document.createElement('a');
-        csv.href = 'data:attachment/csv,' +  encodeURIComponent(csvString);
+        csv.href = 'data:text/csv;charset=utf-8,' +  encodeURIComponent(csvString);
         csv.target = '_blank';
         csv.download = fileName;
         document.body.appendChild(csv);
@@ -331,6 +340,10 @@ function convertToCSV(data) {
             return false;
         }
         return false;
+    }
+
+    function utf8_to_b64(str) {
+        return window.btoa(unescape(encodeURIComponent(str)));
     }
 }
 
@@ -559,26 +572,38 @@ function resetScaleMenu() {
     document.getElementById('linear-button').classList.add('active');
 }
 
-function showMapLoadError() {
-    var chartContainer = document.getElementById('chart-container');
-    // chartContainer.style.display = 'inline-block';
-    openPanel();
-    chartContainer.classList.remove('panel-primary');
-    chartContainer.classList.add('panel-warning');
+function showPanelError(message) {
+    var container = document.getElementById('chart-container');
+    container.classList.remove('panel-primary');
+    container.classList.add('panel-warning');
     document.getElementById('site-title').innerHTML = '<h3 class="panel-title">Error!</h3>';
-    document.getElementById('chart-panel').innerHTML = '<p class="warning">Error fetching the map data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="window.location.reload()">Retry</button></div>';
-}
-
-function showSiteLoading() {
-    document.getElementById('panel-content').innerHTML = 'Fetching data<div id="loading"><div class="loading-indicator"><div class="progress progress-striped active"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%"></div></div></div></div>';
+    setPanelContent(message);
+    openPanel();
 }
 
 function showSiteError() {
-    var chartContainer = document.getElementById('chart-container');
-    chartContainer.classList.remove('panel-primary');
-    chartContainer.classList.add('panel-warning');
-    document.getElementById('site-title').innerHTML = '<h3 class="panel-title">Error!</h3>';
-    document.getElementById('panel-content').innerHTML = '<p class="warning">Error fetching the site data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>';
+    var message = '<p class="warning">Error fetching data from the server. Please try again.</p><div><button type="button" class="btn btn-default" onclick="resendRequest()">Retry</button></div>';
+    showPanelError(message);
+}
+
+function showDataError() {
+    var message = '<p class="warning">Not enough data for the selected site. Please select another site.</p></div>';
+    showPanelError(message);
+}
+
+function showMapLoadError() {
+    var message = '<p class="warning">Error fetching the map data. Please try again.</p><div><button type="button" class="btn btn-default" onclick="window.location.reload()">Retry</button></div>';
+    showPanelError(message);
+}
+
+function showSiteLoading() {
+    var message = 'Fetching data<div id="loading"><div class="loading-indicator"><div class="progress progress-striped active"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%"></div></div></div></div>';
+    setPanelContent(message);
+    openPanel();
+}
+
+function setPanelContent(html) {
+    document.getElementById('panel-content').innerHTML = html;
 }
 
 function updateFilters() {
@@ -810,7 +835,7 @@ function initializeSearch(arr) {
 
     // jquery required for typeahead:selected
     $('#searchbox').on('typeahead:selected', function (e, datum) {
-        closePanel();
+        collapsePanel();
         $('.navbar-collapse').collapse('hide');
         map.setView([datum.lat, datum.lng], 17);
         // unfocus input text
@@ -834,14 +859,6 @@ function addMapTiles() {
     }).addTo(map);
 }
 
-function convertND(d) {
-    // for all NDs, use half of MDL
-    var val = d.MDL * 0.5;
-    if (val > 0) {
-        return val;
-    } else {}
-}
-
 // convert to UNIX time
 function convertDate(date) {
     return date.getTime();
@@ -850,10 +867,6 @@ function convertDate(date) {
 // convert to date object
 function convertUNIX(seconds) {
     return new Date(seconds);
-}
-
-function roundHundred(value) {
-    return (value / 100) * 100
 }
 
 function daysBetween(a, b) {
@@ -891,12 +904,8 @@ function responsive() {
     }
 }
 
-function toggleElement(context, name) {
-    if (d3.select(context).property('checked')) {
-        d3.selectAll(name).attr('visibility', 'visible');
-    } else {
-        d3.selectAll(name).attr('visibility', 'hidden');
-    }
+function roundHundred(value) {
+    return (value / 100) * 100
 }
 
 var ecoli = new Analyte('E. coli', 320, 100),
@@ -907,7 +916,7 @@ var ecoli = new Analyte('E. coli', 320, 100),
 var dataQuality0 = "MetaData",
     dataQuality1 = "Passed"
     dataQuality2 = "Some review needed",
-    dataQuality3 = "Spatial Accuracy Unknown",
+    dataQuality3 = "Spatial accuracy unknown",
     dataQuality4 = "Extensive review needed",
     dataQuality5 = "Unknown data quality",
     dataQuality6 = "Reject record",

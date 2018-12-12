@@ -6,8 +6,6 @@ Office of Information Management and Analysis (OIMA)
 Michelle Tang (michelle.tang@waterboards.ca.gov)
 https://github.com/mmtang
 
-Last Updated: 12/07/2018
-
 */
 
 var Chart = function(opts) {

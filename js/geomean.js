@@ -1,3 +1,13 @@
+/*
+
+California State Water Resources Control Board (SWRCB)
+Office of Information Management and Analysis (OIMA) 
+
+Michelle Tang (michelle.tang@waterboards.ca.gov)
+https://github.com/mmtang
+
+*/
+
 function getGeomeans(data) {
     // define geomean length (6 weeks = 42 days)
     var gm_length = 42;

@@ -9,12 +9,51 @@ https://github.com/mmtang
 */
 
 function onMarkerClick(e) {
-    var clickedSite = e.layer.feature.properties.StationCode;
-    var path = createURL('6e99b457-0719-47d6-9191-8f5e7cd8866f', clickedSite);
-
     resetPanel();
     showSiteLoading(); 
-    getData(path, processData); 
+    getSiteData(); 
+
+    function getSiteData() {
+        var clickedSite = e.layer.feature.properties.StationCode;
+        var path = createURL(clickedSite);
+        var siteDataConfig = {
+            url: path,
+            success: checkSiteData,
+            error: handleSiteError
+        };
+
+        requestData(siteDataConfig);
+
+        function checkSiteData(res, config) {
+            // check that the site matches the last site clicked in case the user clicks multiple sites in succession
+            var firstRecord = res.result.records[0];
+            if (firstRecord.StationCode === lastSite.code) {
+                var records = res.result.records;
+                config.data = config.data.concat(records);
+                if (records.length < recordLimit) {
+                    processData(config.data);
+                } else {
+                    config.offset += recordLimit;
+                    requestData(config);
+                }
+            } else {
+                console.log('Ignored request for ' + firstRecord.StationName + ' (' + firstRecord.StationCode + ')');
+            }
+        }
+
+        function handleSiteError(config) {
+            // if multiple sites are clicked in succession, only the last request should show an error
+            // get the site code from the url and check that it matches the last site clicked
+            var splitURL = config.url.split('=');
+            var splitSite = splitURL[splitURL.length - 1];
+            var parsedSite = decode(splitSite); 
+            if (parsedSite === lastSite.code) {
+                showSiteError();
+            } else {
+                console.log('ERROR: Request for ' + parsedSite);
+            }
+        }
+    }
 
     function processData(data) { 
         // filter on data quality category
@@ -48,19 +87,22 @@ function onMarkerClick(e) {
                 else { return 0; }
             });
             currentAnalyte = analytes[0];
-            // initialize and add panel elements
+            addPanelContent();
+        } else {
+            showDataError();
+            console.log('ERROR: Dataset is empty');
+        }
+
+        function addPanelContent() {
             clearPanelContent();
             initializeChartPanel();
             initializeDatePanel(); 
+            initializeDownloadMenu();
             addAnalyteMenu(analytes);
             addAnalyteListener(chartData);
             addScaleMenu(); 
             addFilterMenu(); 
-            initializeDownloadMenu();
             addChart(chartData, currentAnalyte);
-        } else {
-            showDataError();
-            console.log('ERROR: Dataset is empty');
         }
 
         function handleND(d) {
@@ -336,7 +378,7 @@ function convertToCSV(data) {
         if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
             return true;
         }
-        else  {
+        else {
             return false;
         }
         return false;
@@ -347,7 +389,7 @@ function convertToCSV(data) {
     }
 }
 
-function createURL(resource, site) {
+function createURL(site) {
     // url encoding for site code, add more as needed
     var cleanSite = encode(site);
     // data.ca.gov endpoint
@@ -417,115 +459,35 @@ function formatSampleData(data) {
     return selected;
 }
 
-// request site data
-function getData(url, callback, offset, data) {
-    if (typeof offset === 'undefined') { offset = 0; }
-    if (typeof data === 'undefined') { data = []; }
+function requestData(config) {
+    console.log(config.url);
+    if (typeof config.offset === 'undefined') { config.offset = 0; }
+    if (typeof config.data === 'undefined') { config.data = []; }
 
     $.ajax({
         type: 'GET',
-        url: url,
-        data: {offset: offset},
+        url: config.url,
+        data: {offset: config.offset},
         dataType: 'json',
         success: function(res) {
-                // check that the site matches the last site clicked in case the user clicks multiple sites in succession
-                var firstRecord = res.result.records[0];
-                if (firstRecord.StationCode === lastSite.code) {
-                    var records = res.result.records;
-                    data = data.concat(records);
-                    if (records.length < recordLimit) {
-                        callback(data);
-                    } else {
-                        getData(url, callback, offset + recordLimit, data);
-                    }
-                } else {
-                    console.log('Ignored request for ' + firstRecord.StationName + ' (' + firstRecord.StationCode + ')');
-                }
+            config.success(res, config);
         },
         error: function(xhr, textStatus, error) {
             console.log(xhr.statusText);
             console.log(textStatus);
             console.log(error);
-            // if multiple sites are clicked in succession, only the last request should show an error
-            // get the site code from the url and check that it matches the last site clicked
-            var splitURL = url.split('=');
-            var splitSite = splitURL[splitURL.length - 1];
-            var parsedSite = decode(splitSite); 
-            if (parsedSite === lastSite.code) {
-                showSiteError();
-            } else {
-                console.log('ERROR: Request for ' + parsedSite);
-            }
-        }
-    });
-}
-
-// request the most recent records (sampled within the last year)
-function getDataRecent(url, callback, offset, data) {
-    if (typeof offset === 'undefined') { offset = 0; }
-    if (typeof data === 'undefined') { data = []; }
-
-    $.ajax({
-        type: 'GET',
-        url: url,
-        data: {offset: offset},
-        dataType: 'json',
-        success: function(res) {
-            var records = res.result.records;
-            data = data.concat(records);
-            // get the sample date of the last record in the array 
-            // check if the date is within 365 days
-            var length = records.length;
-            var lastDate = parseDate(records[length - 1].SampleDate);
-            var today = new Date();
-            var dateDiff = daysBetween(lastDate, today);
-            if (dateDiff > 365) {
-                callback(data);
-            } else {
-                getDataRecent(url, callback, offset + recordLimit, data);
-            }
-        },
-        error: function(xhr, textStatus, error) {
-            console.log(xhr.statusText);
-            console.log(textStatus);
-            console.log(error);
-            hideLoadingMask();
-            showMapLoadError();
-        }
-    });
-}
-
-// request the site list
-function getDataSites(url, callback, offset, data) {
-    if (typeof offset === 'undefined') { offset = 0; }
-    if (typeof data === 'undefined') { data = []; }
-
-    $.ajax({
-        type: 'GET',
-        url: url,
-        data: {offset: offset},
-        dataType: 'json',
-        success: function(res) {
-            var records = res.result.records;
-            data = data.concat(records);
-            if (records.length < recordLimit) {
-                callback(data);
-            } else {
-                getDataSites(url, callback, offset + recordLimit, data);
-            }
-        },
-        error: function(xhr, textStatus, error) {
-            console.log(xhr.statusText);
-            console.log(textStatus);
-            console.log(error);
-            hideLoadingMask();
-            showMapLoadError();
+            config.error(config);
         }
     });
 }
 
 function getWindowSize() {
     return [document.documentElement.clientWidth, document.documentElement.clientHeight];
+}
+
+function handleMapLoadError() {
+    hideLoadingMask();
+    showMapLoadError();
 }
 
 function hideLoadingMask() {
@@ -644,10 +606,23 @@ function addMapControls() {
 }
 
 function addSiteLayer() {
+    /* request site list */
+    // data.ca.gov endpoint
+    // var sitesPath = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
+
+    // data.cnra.ca.gov endpoint, started using 11/6/18
+    var siteListPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=eb3e96c9-15f5-4734-9d25-f7d2eca2b883&limit=' + recordLimit;
+    
+    /* request recent data */
+    // data.ca.gov endpoint
+    // var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=6e99b457-0719-47d6-9191-8f5e7cd8866f&fields[t]=StationCode,SampleDate&limit=5000&sort[SampleDate]=desc';
+
+    // data.cnra.ca.gov endpoint, started using 11/6/18
+    var recentDataPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=b6f30bfc-badd-47d3-93b9-445bd90f9738&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
+    
     // assign to global scope for highlight functions
     siteLayer = L.geoJson([], {
         onEachFeature: function(feature, layer) {
-            // add tooltip
             if (feature.properties.StationName) {
                 layer.bindPopup(feature.properties.StationName, {closeButton: false, offset: L.point(0, 0)});
                 layer.on('mouseover', function(e) { 
@@ -672,21 +647,7 @@ function addSiteLayer() {
         }
     }).addTo(map);
 
-    /* request site list */
-    // data.ca.gov endpoint
-    // var sitesPath = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
-
-    // data.cnra.ca.gov endpoint, started using 11/6/18
-    var sitesPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=eb3e96c9-15f5-4734-9d25-f7d2eca2b883&limit=' + recordLimit;
-
-    /* request join data */
-    // data.ca.gov endpoint
-    // var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=6e99b457-0719-47d6-9191-8f5e7cd8866f&fields[t]=StationCode,SampleDate&limit=5000&sort[SampleDate]=desc';
-
-    // data.cnra.ca.gov endpoint, started using 11/6/18
-    var siteDataPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=b6f30bfc-badd-47d3-93b9-445bd90f9738&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
-
-    getDataSites(sitesPath, processSites);
+    getSiteList();
 
     // leaflet event
     siteLayer.on('click', function(e) {
@@ -716,6 +677,26 @@ function addSiteLayer() {
         } else { 
             return '#50cfe9'; // older than 1 year, same as null
         } 
+    }
+
+    function getSiteList() {
+        var config = {
+            url: siteListPath,
+            success: checkSiteList,
+            error: handleMapLoadError
+        };
+        requestData(config);
+    }
+
+    function checkSiteList(res, config) {
+        var records = res.result.records;
+        config.data = config.data.concat(records);
+        if (records.length < recordLimit) {
+            processSites(config.data);
+        } else {
+            config.offset += recordLimit;
+            requestData(config);
+        }
     }
 
     function highlightMarker(e) {
@@ -766,7 +747,34 @@ function addSiteLayer() {
                 features.push(site);
             }
         }
-        getDataRecent(siteDataPath, processSiteData);
+
+        getRecentData(); 
+
+        function getRecentData() {
+            var config = {
+                url: recentDataPath,
+                success: checkRecentData,
+                error: handleMapLoadError
+            };
+            requestData(config);
+
+            function checkRecentData(res, config) {
+                var records = res.result.records;
+                config.data = config.data.concat(records);
+                // get the sample date of the last record in the array 
+                // check if the date is within 365 days
+                var length = records.length;
+                var lastDate = parseDate(records[length - 1].SampleDate);
+                var today = new Date();
+                var dateDiff = daysBetween(lastDate, today);
+                if (dateDiff > 365) {
+                    processSiteData(config.data);
+                } else {
+                    config.offset += recordLimit;
+                    requestData(config);
+                }
+            }
+        }
     }
 
     function processSiteData(data) {

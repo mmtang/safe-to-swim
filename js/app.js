@@ -395,7 +395,9 @@ function createURL(site) {
     // data.ca.gov endpoint
     // var url = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=' + resource + '&limit=' + recordLimit;
     // data.cnra.ca.gov endpoint, started using 11/6/18
-    var url = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=b6f30bfc-badd-47d3-93b9-445bd90f9738';
+    // var url = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=b6f30bfc-badd-47d3-93b9-445bd90f9738';
+    // http://california-ckan.civicactions.net endpoint, started using 12/13/18
+    var url = 'http://california-ckan.civicactions.net/api/3/action/datastore_search?resource_id=c1a69e91-8f99-4c3d-aba0-1ec839d0800f';
     url += '&fields=Analyte,DataQuality,MDL,Program,Result,ResultQualCode,SampleDate,StationCode,StationName,Unit';
     url += '&limit=' + recordLimit;
     url += '&filters={%22StationCode%22:%22' + cleanSite + '%22}';
@@ -611,15 +613,21 @@ function addSiteLayer() {
     // var sitesPath = createURL('02e59b14-99e9-489f-bc62-987108bc8e27');
 
     // data.cnra.ca.gov endpoint, started using 11/6/18
-    var siteListPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=eb3e96c9-15f5-4734-9d25-f7d2eca2b883&limit=' + recordLimit;
+    // var siteListPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=eb3e96c9-15f5-4734-9d25-f7d2eca2b883&limit=' + recordLimit;
+
+    // http://california-ckan.civicactions.net endpoint, started using 12/13/18
+    var siteListPath = 'http://california-ckan.civicactions.net/api/3/action/datastore_search?resource_id=3b07023c-8c20-4a98-bd50-454a4fd0a291&limit=' + recordLimit;
     
     /* request recent data */
     // data.ca.gov endpoint
     // var siteDataPath = 'https://data.ca.gov/api/action/datastore/search.jsonp?resource_id=6e99b457-0719-47d6-9191-8f5e7cd8866f&fields[t]=StationCode,SampleDate&limit=5000&sort[SampleDate]=desc';
 
     // data.cnra.ca.gov endpoint, started using 11/6/18
-    var recentDataPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=b6f30bfc-badd-47d3-93b9-445bd90f9738&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
+    //var recentDataPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=b6f30bfc-badd-47d3-93b9-445bd90f9738&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
     
+    // http://california-ckan.civicactions.net endpoint, started using 12/13/18
+    var recentDataPath = 'http://california-ckan.civicactions.net/api/3/action/datastore_search?resource_id=c1a69e91-8f99-4c3d-aba0-1ec839d0800f&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
+
     // assign to global scope for highlight functions
     siteLayer = L.geoJson([], {
         onEachFeature: function(feature, layer) {

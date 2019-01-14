@@ -616,7 +616,7 @@ function addSiteLayer() {
     // var siteListPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=eb3e96c9-15f5-4734-9d25-f7d2eca2b883&limit=' + recordLimit;
 
     // http://california-ckan.civicactions.net endpoint, started using 12/13/18
-    var siteListPath = 'http://california-ckan.civicactions.net/api/3/action/datastore_search?resource_id=3b07023c-8c20-4a98-bd50-454a4fd0a291&limit=' + recordLimit;
+    var siteListPath = 'http://california-ckan.civicactions.net/api/3/action/datastore_search?resource_id=3b07023c-8c20-4a98-bd50-454a4fd0a291&limit=5000';
     
     /* request recent data */
     // data.ca.gov endpoint
@@ -699,10 +699,10 @@ function addSiteLayer() {
     function checkSiteList(res, config) {
         var records = res.result.records;
         config.data = config.data.concat(records);
-        if (records.length < recordLimit) {
+        if (records.length < 5000) {
             processSites(config.data);
         } else {
-            config.offset += recordLimit;
+            config.offset += 5000;
             requestData(config);
         }
     }

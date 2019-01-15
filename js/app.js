@@ -300,7 +300,7 @@ $('#nav-btn').click(function() {
 
 function addFilterMenu() {
     var filterContainer = document.getElementById('filter-container');
-    var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;&nbsp;Samples</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-left" data-toggle="popover" title="Geometric Mean" data-content="For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. At least two sample results are required for the calculation. Hover the mouse cursor over a geometric mean chart element to highlight the date period used in the calculation."></i></a></label></div></div>';
+    var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;&nbsp;Samples</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-left" data-toggle="popover" title="Geometric Mean" data-content="For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. At least two sample results are required for the calculation. Position the mouse cursor over a geometric mean chart element to highlight the date period used in the calculation."></i></a></label></div></div>';
     filterContainer.innerHTML = content;
     updateFilters();
 }
@@ -397,7 +397,8 @@ function createURL(site) {
     // data.cnra.ca.gov endpoint, started using 11/6/18
     // var url = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=b6f30bfc-badd-47d3-93b9-445bd90f9738';
     // http://california-ckan.civicactions.net endpoint, started using 12/13/18
-    var url = 'https://california-ckan.civicactions.net/api/3/action/datastore_search?resource_id=c1a69e91-8f99-4c3d-aba0-1ec839d0800f';
+    // CivicActions portal not federating most recent data, switched back to CNRA 1/15/19
+    var url = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=c9110631-879b-4eac-b1e9-323c6d180b47';
     url += '&fields=Analyte,DataQuality,MDL,Program,Result,ResultQualCode,SampleDate,StationCode,StationName,Unit';
     url += '&limit=' + recordLimit;
     url += '&filters={%22StationCode%22:%22' + cleanSite + '%22}';
@@ -616,7 +617,7 @@ function addSiteLayer() {
     // var siteListPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=eb3e96c9-15f5-4734-9d25-f7d2eca2b883&limit=' + recordLimit;
 
     // http://california-ckan.civicactions.net endpoint, started using 12/13/18
-    var siteListPath = 'https://california-ckan.civicactions.net/api/3/action/datastore_search?resource_id=3b07023c-8c20-4a98-bd50-454a4fd0a291&limit=' + recordLimit;
+    var siteListPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=64347cbc-34f4-456e-aa42-cbc1dbebba3c&limit=' + recordLimit;
     
     /* request recent data */
     // data.ca.gov endpoint
@@ -626,7 +627,8 @@ function addSiteLayer() {
     //var recentDataPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=b6f30bfc-badd-47d3-93b9-445bd90f9738&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
     
     // http://california-ckan.civicactions.net endpoint, started using 12/13/18
-    var recentDataPath = 'https://california-ckan.civicactions.net/api/3/action/datastore_search?resource_id=c1a69e91-8f99-4c3d-aba0-1ec839d0800f&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
+    // CivicActions portal not federating most recent data, switched back to CNRA 1/15/19
+    var recentDataPath = 'https://data.cnra.ca.gov/api/3/action/datastore_search?resource_id=c9110631-879b-4eac-b1e9-323c6d180b47&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
 
     // assign to global scope for highlight functions
     siteLayer = L.geoJson([], {

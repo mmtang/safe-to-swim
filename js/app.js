@@ -260,10 +260,10 @@ function onMarkerClick(e) {
                         convertToCSV(formatGeomeanData(chart.gData));
                         break;
                     case downloadOp3:
-                        window.open('https://data.cnra.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results', '_blank');
+                        console.log('External link clicked.');
                         break;
                     default:
-                        console.log('ERROR: No match for download value.')
+                        console.log('ERROR: No match for download value.');
                 }
             });
         }
@@ -463,7 +463,7 @@ function formatSampleData(data) {
 }
 
 function requestData(config) {
-    console.log(config.url);
+    console.log(config.url, 'offset = ' + config.offset);
     if (typeof config.offset === 'undefined') { config.offset = 0; }
     if (typeof config.data === 'undefined') { config.data = []; }
 
@@ -516,7 +516,7 @@ function initializeDatePanel() {
 
 function initializeDownloadMenu() {
     var container = document.getElementById('download-container');
-    container.innerHTML = '<div class="dropdown panel-container text-center"><div class="btn-group dropup"><button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data&nbsp;&nbsp;<span class="caret"></span></button><ul id="download-menu" class="dropdown-menu"><li><a href="#">' + downloadOp1 + '</a></li><li id="geomean-dropdown-op"><a href="#">' + downloadOp2 + '</a></li><li><a href="#" target="_blank">' + downloadOp3 + '</a></li></ul></div>';
+    container.innerHTML = '<div class="dropdown panel-container text-center"><div class="btn-group dropup"><button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data&nbsp;&nbsp;<span class="caret"></span></button><ul id="download-menu" class="dropdown-menu"><li><a href="#">' + downloadOp1 + '</a></li><li id="geomean-dropdown-op"><a href="#">' + downloadOp2 + '</a></li><li><a href="https://data.cnra.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results" target="_blank">' + downloadOp3 + '</a></li></ul></div>';
 }
 
 function resendRequest() {

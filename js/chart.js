@@ -63,8 +63,8 @@ Chart.prototype.addLine = function(val, type, color) {
         .datum(val)
         .attr('class', 'line ' + type)
         .style('stroke', color)
-        .style('stroke-width', 4)
-        .style('stroke-dasharray', ('9, 3'))
+        .style('stroke-width', 3)
+        //.style('stroke-dasharray', ('9, 3'))
         .attr('x1', 0)
         .attr('x2', _this.width)
         .attr('y1', _this.yScale(val))
@@ -80,9 +80,11 @@ Chart.prototype.addLine = function(val, type, color) {
                         return tooltipThresholdGM(val);
                     }
                 })
-                .style('left', function() { return positionLineTooltipX('tooltipLine'); })
+                .style('left', function() { return positionTooltipX('tooltipLine'); })
                 .style('top', function() { return positionLineTooltipY('tooltipLine'); })
-                .style('border-color', color);
+                .style('border-color', '#000')
+                .style('background-color', '#000')
+                .style('color', '#FFF');
         })
         .on('mouseout', function(d) {
             toggleTooltip(tooltipLine, 0);
@@ -411,16 +413,10 @@ var createTooltip = function(id) {
         .style('opacity', 0);
 }
 
-var positionLineTooltipX = function(tooltipID) {
-    var eventPos = d3.event.pageX;
-    var tooltipWidth = document.getElementById(tooltipID).offsetWidth;
-    return eventPos - tooltipWidth / 2 + 'px';
-}
-
 var positionLineTooltipY = function(tooltipID) {
     var eventPos = d3.event.pageY;
     var tooltipHeight = document.getElementById(tooltipID).offsetHeight;
-    return eventPos - tooltipHeight - 15 + 'px';
+    return eventPos - tooltipHeight - 10 + 'px';
 }
 
 var positionTooltipX = function(tooltipID) {

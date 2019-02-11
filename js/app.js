@@ -940,16 +940,16 @@ var dataQuality0 = "MetaData",
     dataQuality6 = "Reject record",
     dataQuality7 = "Error";
 
-var downloadOp1 = 'Download sample data (.csv)',
+var downloadOp1 = 'Download monitoring data (.csv)',
     downloadOp2 = 'Download geometric mean data (.csv)',
-    downloadOp3 = 'Download full dataset (data.cnra.ca.gov)';
+    downloadOp3 = 'Download monitoring data for all sites (data.cnra.ca.gov)';
 
 var map = L.map('map',{ 
     center: [37.4050, -119.365], 
     zoom: 6, 
     preferCanvas: true,
     doubleClickZoom: false, 
-    zoomControl: false
+    zoomControl: false,
 }); 
 
 var chartOpacity = 0.8;

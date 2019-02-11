@@ -361,10 +361,6 @@ body {
     pointer-events: none;
 }
 
-#tooltipLine {
-    text-align: center;
-}
-
 #tooltipD {
     border: 1px solid rgba(51, 91, 150, 0.8);
 }

@@ -39,19 +39,6 @@ body {
     text-align: center;
 }
 
-#date-container {
-    font-size: 12px;
-}
-
-.js-date-range {
-    margin: 5px 0px 0px 0px;
-}
-
-.js-start-date,
-.js-end-date {
-    font-weight: bold;
-}
-
 .white {
     color: #FFFFFF;
 }
@@ -226,7 +213,7 @@ body {
     width: 10px;
     height: 10px;
     margin-top: 5px;
-  }
+}
 
 .table {
     margin-bottom: 0px;
@@ -354,19 +341,18 @@ body {
     padding: 8px 12px 8px 10px;
     font-family: inherit;
     font-size: 11px;
-    background-color: rgba(255, 255, 255, 0.9);
-    border: 1px solid;
     border-radius: 0px;
     box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 3px;
     pointer-events: none;
 }
 
-#tooltipD {
-    border: 1px solid rgba(51, 91, 150, 0.8);
+#tooltipPoint {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid;
 }
 
-#tooltipG {
-    border: 1px solid rgba(237, 104, 116, 0.8);
+#tooltipLine {
+    background-color: rgba(0, 0, 0, 0.9);
 }
 
 #siteTextBox {
@@ -440,6 +426,19 @@ rect.pane {
 
 .panel-date p {
     margin: 0px;
+}
+
+#date-container {
+    font-size: 12px;
+}
+
+.js-date-range {
+    margin: 5px 0px 0px 0px;
+}
+
+.js-start-date,
+.js-end-date {
+    font-weight: bold;
 }
 
 .panel-primary {

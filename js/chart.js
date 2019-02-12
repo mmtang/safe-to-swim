@@ -64,7 +64,6 @@ Chart.prototype.addLine = function(val, type, color) {
         .attr('class', 'line ' + type)
         .style('stroke', color)
         .style('stroke-width', 3)
-        //.style('stroke-dasharray', ('9, 3'))
         .attr('x1', 0)
         .attr('x2', _this.width)
         .attr('y1', _this.yScale(val))
@@ -82,8 +81,6 @@ Chart.prototype.addLine = function(val, type, color) {
                 })
                 .style('left', function() { return positionTooltipX('tooltipLine'); })
                 .style('top', function() { return positionLineTooltipY('tooltipLine'); })
-                .style('border-color', '#000')
-                .style('background-color', '#000')
                 .style('color', '#FFF');
         })
         .on('mouseout', function(d) {

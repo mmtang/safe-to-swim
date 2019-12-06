@@ -646,6 +646,11 @@ function addSiteLayer() {
     });
 
     function addSites(data) {
+        // sort features based on sample date ascending
+        // this will draw the sites with the most recent dates on top
+        features.sort(function(a, b) {
+            return a.properties.LastSampleDate > b.properties.LastSampleDate;
+        });
         siteLayer.addData(data);
         setTimeout(function() {
             hideLoadingMask();
@@ -699,24 +704,8 @@ function addSiteLayer() {
         }
     }
 
-    function joinSiteData(data) {
-        var db = new alasql.Database();
-        db.exec('CREATE TABLE feature');
-        db.exec('CREATE TABLE att');
-        // 'features' is the site list from processSites()
-        db.exec('SELECT * INTO feature FROM ?', [features]);
-        db.exec('SELECT * INTO att FROM ?', [data]);
-        // get list of distinct sites based on most recent sample date
-        var date = db.exec('SELECT stationcode, max(sampledate) AS sampledate FROM att GROUP BY stationcode');
-        db.exec('CREATE TABLE date');
-        db.exec('SELECT * INTO date FROM ?', [date]);
-        // join data back to site list, left join to keep all sites
-        var joined = db.exec('SELECT feature.*, date.sampledate FROM feature LEFT JOIN date ON feature.StationCode = date.stationcode ORDER BY date.sampledate');
-        return joined;
-    }
-
     function processSites(data) {
-        // use this array for the join to sample date
+        var today = new Date();
         features = [];
         for (var i = 0; i < data.length; i++) {
             // check for missing values
@@ -725,74 +714,17 @@ function addSiteLayer() {
             if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode) || (data[i].SiteCode === '304-LEONA-21')) { 
                 continue; 
             } else {
+                // process data and reformat objects to geojson
                 var site = {};
-                site.StationName = data[i].StationName;
-                site.StationCode = data[i].SiteCode;
-                site.Latitude = +data[i].Latitude;
-                site.Longitude = +data[i].Longitude;
+                site.type = 'Feature';
+                site.geometry = { 'type': 'Point', 'coordinates': [+data[i].Longitude, +data[i].Latitude] };
+                site.properties = { 'StationName': data[i].StationName, 'StationCode': data[i].SiteCode, 'LastSampleDate': parseDate(data[i].LastSampleDate), 'DateDifference': daysBetween(convertUNIX(data[i].LastSampleDate), today) };
                 features.push(site);
             }
         }
-
-        getRecentData(); 
-
-        function getRecentData() {
-            var config = {
-                url: recentDataPath,
-                success: checkRecentData,
-                error: handleMapLoadError
-            };
-            requestData(config);
-
-            function checkRecentData(res, config) {
-                var records = res.result.records;
-                config.data = config.data.concat(records);
-                // get the sample date of the last record in the array 
-                // check if the date is within 365 days
-                var length = records.length;
-                var lastDate = parseDate(records[length - 1].SampleDate);
-                var today = new Date();
-                var dateDiff = daysBetween(lastDate, today);
-                if (dateDiff > 365) {
-                    processSiteData(config.data);
-                } else {
-                    config.offset += recordLimit;
-                    requestData(config);
-                }
-            }
-        }
-    }
-
-    function processSiteData(data) {
-        var siteData = [];
-        for (var i = 0; i < data.length; i++) {
-            var record = {};
-            // create new fields for join
-            // convert date to UTC for use in max function
-            record.stationcode = data[i].StationCode;
-            record.sampledate = parseDate(data[i].SampleDate).getTime();
-            siteData.push(record); 
-        }
-        var joined = joinSiteData(siteData);
-        // reformat objects to geojson
-        var siteList = [];
-        var today = new Date();
-        for (var i = 0; i < joined.length; i++) {
-            var site = {};
-            var date = null;
-            var dateDiff = null;
-            if (joined[i].sampledate) {
-                // convert UTC to date
-                date = convertUNIX(joined[i].sampledate);
-                dateDiff = daysBetween(date, today);
-            }
-            site.type = 'Feature';
-            site.geometry = {'type': 'Point', 'coordinates': [joined[i].Longitude, joined[i].Latitude]};
-            site.properties = {'StationName': joined[i].StationName, 'StationCode': joined[i].StationCode, 'LastSampleDate': date, 'DateDifference': dateDiff};
-            siteList.push(site);
-        }
-        addSites(siteList);
-        initializeSearch(siteList);
+        console.log(features);
+        addSites(features);
+        initializeSearch(features);
     }
 
     function resetHighlight(e) {

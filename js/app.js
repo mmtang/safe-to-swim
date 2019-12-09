@@ -671,23 +671,22 @@ function addSiteLayer() {
     }
 
     function getSiteList() {
-        var config = {
-            url: siteListPath,
-            success: checkSiteList,
-            error: handleMapLoadError
-        };
-        requestData(config);
-    }
-
-    function checkSiteList(res, config) {
-        var records = res.result.records;
-        config.data = config.data.concat(records);
-        if (records.length < recordLimit) {
-            processSites(config.data);
-        } else {
-            config.offset += recordLimit;
-            requestData(config);
-        }
+        var siteListURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=4f41c529-a33f-4006-9cfc-71b6944cb951&limit=' + recordLimit;
+        var cvURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fc450fb6-e997-4bcf-b824-1b3ed0f06045&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
+        var call1 = $.get(siteListURL);
+        var call2 = $.get(cvURL);
+        $.when(call1, call2).then(function (res1, res2) {
+            var siteData = res1[0]['result']['records'];
+            var cvData = res2[0]['result']['records'];
+            var cvSites = processCVSiteData(cvData);
+            // join CV data to main site list
+            siteData.forEach(function(d) {
+                if (d.SiteCode in cvSites) {
+                    d.LastSampleDate = cvSites[d.SiteCode];
+                }
+            });
+            processSites(siteData);
+        });
     }
 
     function highlightMarker(e) {
@@ -702,6 +701,20 @@ function addSiteLayer() {
         if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
             layer.bringToFront();
         }
+    }
+
+    // outputs a dictionary of the CV sites with last sample date
+    function processCVSiteData(data) {
+        var parseCVDate = d3.timeParse('%Y-%m-%dT%H:%M:%S');
+        var cvSites = {};
+        var uniqueSites = new Set(data.map(function(d) { return d.StationCode; })); 
+        var siteArr = Array.from(uniqueSites);
+        for (var i = 0; i < siteArr.length; i++) {
+            var siteDates = data.filter(function(d) { return d.StationCode === siteArr[i]; });
+            var maxDate = d3.max(siteDates.map(function(d) { return parseCVDate(d.SampleDate); }));
+            cvSites[siteArr[i]] = maxDate;
+        }
+        return cvSites;
     }
 
     function processSites(data) {
@@ -867,7 +880,7 @@ var lastSite = new Object();
 var mainColor = '#1f78b4', secColor = '#ff7f0e';
 var MS_PER_DAY = (24 * 60 * 60 * 1000);
 var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
-var recordLimit = 5000;
+var recordLimit = 10000;
 var siteLayer; // accessed globally for highlight functions
 
 clearSearch();

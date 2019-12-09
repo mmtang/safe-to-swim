@@ -623,6 +623,7 @@ function addSiteLayer() {
         },
         pointToLayer: function (feature, latlng) {
             return L.circleMarker(latlng, {
+                pane: getPane(feature.properties.DateDifference),
                 radius: 5,
                 fillColor: getColor(feature.properties.DateDifference),
                 color: '#000',
@@ -668,6 +669,16 @@ function addSiteLayer() {
         } else { 
             return '#50cfe9'; // older than 1 year, same as null
         } 
+    }
+
+    function getPane(d) {
+        if (d <= 30) {
+            return "monthPane";
+        } else if (d <= 360) {
+            return "yearPane";
+        } else {
+            return "otherPane";
+        }
     }
 
     function getSiteList() {
@@ -872,6 +883,13 @@ var map = L.map('map',{
     doubleClickZoom: false, 
     zoomControl: false,
 }); 
+
+var otherPane = map.createPane('otherPane');
+var yearPane = map.createPane('yearPane');
+var monthPane = map.createPane('monthPane');
+map.getPane('otherPane').style.zIndex = 650;
+map.getPane('yearPane').style.zIndex = 660;
+map.getPane('monthPane').style.zIndex = 670;
 
 var chartOpacity = 0.8;
 var currentAnalyte; 

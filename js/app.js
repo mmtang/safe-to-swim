@@ -510,7 +510,7 @@ function initializeDatePanel() {
 
 function initializeDownloadMenu() {
     var container = document.getElementById('download-container');
-    container.innerHTML = '<div class="dropdown panel-container text-center"><div class="btn-group dropup"><button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data&nbsp;&nbsp;<span class="caret"></span></button><ul id="download-menu" class="dropdown-menu"><li><a href="#">' + downloadOp1 + '</a></li><li id="geomean-dropdown-op"><a href="#">' + downloadOp2 + '</a></li><li><a href="https://data.cnra.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results" target="_blank">' + downloadOp3 + '</a></li></ul></div>';
+    container.innerHTML = '<div class="dropdown panel-container text-center"><div class="btn-group dropup"><button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data&nbsp;&nbsp;<span class="caret"></span></button><ul id="download-menu" class="dropdown-menu"><li><a href="#">' + downloadOp1 + '</a></li><li id="geomean-dropdown-op"><a href="#">' + downloadOp2 + '</a></li><li><a href="https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results" target="_blank">' + downloadOp3 + '</a></li></ul></div>';
 }
 
 function resendRequest() {
@@ -647,11 +647,6 @@ function addSiteLayer() {
     });
 
     function addSites(data) {
-        // sort features based on sample date ascending
-        // this will draw the sites with the most recent dates on top
-        features.sort(function(a, b) {
-            return a.properties.LastSampleDate > b.properties.LastSampleDate;
-        });
         siteLayer.addData(data);
         setTimeout(function() {
             hideLoadingMask();
@@ -716,7 +711,7 @@ function addSiteLayer() {
 
     // outputs a dictionary of the CV sites with last sample date
     function processCVSiteData(data) {
-        var parseCVDate = d3.timeParse('%Y-%m-%dT%H:%M:%S');
+        var parseCVDate = d3.timeParse('%Y-%m-%d');
         var cvSites = {};
         var uniqueSites = new Set(data.map(function(d) { return d.StationCode; })); 
         var siteArr = Array.from(uniqueSites);
@@ -874,7 +869,7 @@ var dataQuality0 = "MetaData",
 
 var downloadOp1 = 'Download monitoring data (.csv)',
     downloadOp2 = 'Download geometric mean data (.csv)',
-    downloadOp3 = 'Download monitoring data for all sites (data.cnra.ca.gov)';
+    downloadOp3 = 'Download monitoring data for all sites (data.ca.gov)';
 
 var map = L.map('map',{ 
     center: [37.4050, -119.365], 

@@ -12,10 +12,10 @@ function getGeomeans(data) {
     // define geomean length (6 weeks = 42 days)
     var gm_length = 42;
     // sort descending by sample date
-    var sortedData = data.sort(function(a, b) { return b.sampledate - a.sampledate });
+    var sortedData = data.sort(function(a, b) { return b.SampleDate - a.SampleDate });
     // reference dates
-    var lastDate = sortedData[0].sampledate,
-        firstDate = sortedData[sortedData.length - 1].sampledate,
+    var lastDate = sortedData[0].SampleDate,
+        firstDate = sortedData[sortedData.length - 1].SampleDate,
         lastDateUNIX = convertDate(lastDate),
         firstDateUNIX = convertDate(firstDate);
     return compileGeomeans();
@@ -50,11 +50,11 @@ function getGeomeans(data) {
     function getRangeData(refDate, cutoffDate) {
         var rangeData = [];
         for (var i = 0; i < sortedData.length; i++) {
-            if (sortedData[i].sampledate > refDate) {
+            if (sortedData[i].SampleDate > refDate) {
                 continue;
-            } else if ((sortedData[i].sampledate <= refDate) && (sortedData[i].sampledate >= cutoffDate)) {
+            } else if ((sortedData[i].SampleDate <= refDate) && (sortedData[i].SampleDate >= cutoffDate)) {
                 rangeData.push(sortedData[i]);
-            } else if (sortedData[i].sampldate < cutoffDate) {
+            } else if (sortedData[i].SampleDate < cutoffDate) {
                 break;
             }
         }
@@ -66,7 +66,7 @@ function getGeomeans(data) {
         else {
             var product = 1;
             data.forEach(function(d) {
-                product *= d.result;
+                product *= d.Result;
             });
             var geomean = Math.pow(product, (1 / data.length)); // nth root
             return geomean;

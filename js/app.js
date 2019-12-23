@@ -9,20 +9,86 @@ https://github.com/mmtang
 */
 
 function onMarkerClick(e) {
+    var site = e.layer.feature.properties.StationCode;
     resetPanel();
     showSiteLoading(); 
     getSiteData(); 
 
     function getSiteData() {
-        var clickedSite = e.layer.feature.properties.StationCode;
-        var path = createURL(clickedSite);
+        $.when(
+            getCEDENData(site),
+            getCVData(site)
+        ).done(function(res1, res2) {
+            var allData = null;
+            if (res1) {
+                var data = processCEDENData(res1[0].result.records);
+                cedenData = data;
+                allData = data;
+                if (res2) {
+                    var data = res2[0].result.records;
+                    cvData = processCVData(data);
+                    // compare to ceden data, do not add duplicates
+                    for (var i = 0; i < cvData.length; i++) {
+                        var analyte = cvData[i]['Analyte'];
+                        var sampleDate = convertDate(cvData[i]['SampleDate']);
+                        var result = cvData[i]['Result'];
+                        var matches = cedenData.filter(function(rec) {
+                            return ((rec['Analyte'] === analyte) && (convertDate(rec['SampleDate']) === sampleDate) && (rec['Result'] === result));
+                        });
+                        // testing: use to examine the found duplicate records
+                        // console.log(matches);
+                        if (matches.length === 0) {
+                            allData.push(cvData[i]);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+            addPanelContent(allData);
+        });
+    }
+
+    function getCVData(site) {
+        var cvSites = ['519AMNSAC', '519AMNDVY', '514SAC009', '519SAC106', '519SAC104', '519SAC105', '519LSAC53', '519SAC102', '519LSAC52', '519SAC000', '519SAC001'];
+        if (cvSites.indexOf(site) > 0) {
+            var resource = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fc450fb6-e997-4bcf-b824-1b3ed0f06045';
+            var columns = ['StationCode', 'StationName', 'SampleDate', 'Analyte', 'Result', 'Unit', 'Program'];
+            var cvURL = createURL(resource, columns, site);
+            return $.ajax({
+                type: 'GET',
+                url: cvURL,
+                dataType: 'json',
+                error: function(xhr, textStatus, error) {
+                    handleSiteError();
+                    console.log(xhr.statusText);
+                    console.log(textStatus);
+                    console.log(error);
+                }
+            });
+        }
+    }
+
+    function getCEDENData(site) {
+        var resource = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fd2d24ee-3ca9-4557-85ab-b53aa375e9fc';
+        var cedenColumns = ['Analyte', 'DataQuality', 'MDL', 'Program', 'Result', 'ResultQualCode', 'SampleDate', 'StationCode', 'StationName', 'Unit'];
+        var cedenURL = createURL(resource, cedenColumns, site);
         var siteDataConfig = {
-            url: path,
+            url: cedenURL,
             success: checkSiteData,
             error: handleSiteError
         };
-
-        requestData(siteDataConfig);
+        return $.ajax({
+            type: 'GET',
+            url: cedenURL,
+            dataType: 'json',
+            error: function(xhr, textStatus, error) {
+                handleSiteError();
+                console.log(xhr.statusText);
+                console.log(textStatus);
+                console.log(error);
+            }
+        });
 
         function checkSiteData(res, config) {
             // check that the site matches the last site clicked in case the user clicks multiple sites in succession
@@ -30,12 +96,7 @@ function onMarkerClick(e) {
             if (firstRecord.StationCode === lastSite.code) {
                 var records = res.result.records;
                 config.data = config.data.concat(records);
-                if (records.length < recordLimit) {
-                    processData(config.data);
-                } else {
-                    config.offset += recordLimit;
-                    requestData(config);
-                }
+                return config.data;
             } else {
                 console.log('Ignored request for ' + firstRecord.StationName + ' (' + firstRecord.StationCode + ')');
             }
@@ -55,7 +116,20 @@ function onMarkerClick(e) {
         }
     }
 
-    function processData(data) { 
+    function processCVData(data) {
+        // shaping R5's data to look like CEDEN's
+        var parseDate = d3.timeParse('%Y-%m-%d');
+        for (d = 0; d < data.length; d++) {
+            data[d]['DataQuality'] = null;
+            // MDL for E. coli = 1
+            data[d]['MDL'] = 1;
+            data[d]['ResultQualCode'] = null;
+            data[d]['SampleDate'] = parseDate(data[d]['SampleDate']);
+        }
+        return data;
+    }
+
+    function processCEDENData(data) { 
         // filter on data quality category
         var chartData = data.filter(function(d) {
             if (d.DataQuality === dataQuality1 || d.DataQuality === dataQuality2 || d.DataQuality === dataQuality3 || d.DataQuality === dataQuality4 || d.DataQuality === dataQuality5) {
@@ -66,50 +140,18 @@ function onMarkerClick(e) {
         for (var i = 0; i < chartData.length; i++) { 
             chartData[i].MDL = +chartData[i].MDL;
             chartData[i].Result = +chartData[i].Result;
-            chartData[i].sampledate = parseDate(chartData[i].SampleDate);
+            chartData[i].SampleDate = parseDate(chartData[i].SampleDate);
             handleND(chartData[i]);
         }
         // filter to keep all results above 0
-        chartData = chartData.filter(function(d) { return d.result > 0; });
-
-        if (chartData.length > 0) { 
-            var analyteSet = new Set(); 
-            for (var i = 0; i < chartData.length; i++) { 
-                analyteSet.add(chartData[i].Analyte);
-            }
-            // convert set to array, forEach used for older browsers
-            var analytes = [];
-            analyteSet.forEach(function(i) { analytes.push(i); }); 
-            // sort descending so enteroccocus and e. coli appear first 
-            analytes.sort(function(a, b) { 
-                if (a < b) { return 1; }
-                else if (a > b) { return -1; }
-                else { return 0; }
-            });
-            currentAnalyte = analytes[0];
-            addPanelContent();
-        } else {
-            showDataError();
-            console.log('ERROR: Dataset is empty');
-        }
-
-        function addPanelContent() {
-            clearPanelContent();
-            initializeChartPanel();
-            initializeDatePanel(); 
-            initializeDownloadMenu();
-            addAnalyteMenu(analytes);
-            addAnalyteListener(chartData);
-            addScaleMenu(); 
-            addFilterMenu(); 
-            addChart(chartData, currentAnalyte);
-        }
+        chartData = chartData.filter(function(d) { return d.Result > 0; });
+        return chartData;
 
         function handleND(d) {
             if (isND(d)) {
-                d.result = calculateND(d);
+                d.Result = calculateND(d);
             } else {
-                d.result = d.Result;
+                d.Result = d.Result;
             }
         
             function calculateND(d) {
@@ -132,6 +174,39 @@ function onMarkerClick(e) {
             updateFilters();
             addChart(data, this.value);
         });
+    }
+
+    function addPanelContent(data) {
+        if (data.length > 0) { 
+            // create analyte set
+            var analyteSet = new Set(); 
+            for (var i = 0; i < data.length; i++) { 
+                analyteSet.add(data[i].Analyte);
+            }
+            // convert set to array, forEach used for older browsers
+            var analytes = [];
+            analyteSet.forEach(function(i) { analytes.push(i); }); 
+            // sort descending so enteroccocus and e. coli appear first 
+            analytes.sort(function(a, b) { 
+                if (a < b) { return 1; }
+                else if (a > b) { return -1; }
+                else { return 0; }
+            });
+            // assigned to global env.
+            currentAnalyte = analytes[0];
+            clearPanelContent();
+            initializeChartPanel();
+            initializeDatePanel(); 
+            initializeDownloadMenu();
+            addAnalyteMenu(analytes);
+            addAnalyteListener(data);
+            addScaleMenu(); 
+            addFilterMenu(); 
+            addChart(data, currentAnalyte);
+        } else {
+            showDataError();
+            console.log('ERROR: Dataset is empty');
+        }
     }
 
     function addAnalyteMenu(analytes) {
@@ -389,11 +464,11 @@ function convertToCSV(data) {
     }
 }
 
-function createURL(site) {
+function createURL(baseURL, columns, site) {
     // url encoding for site code, add more as needed
     var cleanSite = encode(site);
-    var url = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fd2d24ee-3ca9-4557-85ab-b53aa375e9fc';
-    url += '&fields=Analyte,DataQuality,MDL,Program,Result,ResultQualCode,SampleDate,StationCode,StationName,Unit';
+    var url = baseURL;
+    url += '&fields=' + columns.join();
     url += '&limit=' + recordLimit;
     url += '&filters={%22StationCode%22:%22' + cleanSite + '%22}';
     return url;
@@ -439,15 +514,16 @@ function formatGeomeanData(data) {
 }
 
 function formatSampleData(data) {
+    var formatDate = d3.timeFormat("%Y-%m-%d");
     var selected = data.map(function(d) {
         return {
             'Analyte': '"' + d.Analyte + '"',
             'DataQuality': '"' + d.DataQuality + '"',
             'MDL': d.MDL,
             'Program': '"' + d.Program + '"',
-            'Result': d.result,
+            'Result': d.Result,
             'ResultQualCode': d.ResultQualCode,
-            'SampleDate': d.SampleDate,
+            'SampleDate': '"' + formatDate(d.SampleDate) + '"',
             'StationCode': '"' + d.StationCode + '"',
             'StationName': '"' + d.StationName + '"',
             'Unit': '"' + d.Unit + '"'
@@ -461,7 +537,7 @@ function requestData(config) {
     if (typeof config.offset === 'undefined') { config.offset = 0; }
     if (typeof config.data === 'undefined') { config.data = []; }
 
-    $.ajax({
+    return $.ajax({
         type: 'GET',
         url: config.url,
         data: {offset: config.offset},
@@ -604,7 +680,6 @@ function addMapControls() {
 
 function addSiteLayer() {
     var siteListPath = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=4f41c529-a33f-4006-9cfc-71b6944cb951&limit=' + recordLimit;
-    var recentDataPath = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fd2d24ee-3ca9-4557-85ab-b53aa375e9fc&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
 
     // assign to global scope for highlight functions
     siteLayer = L.geoJson([], {
@@ -707,6 +782,15 @@ function addSiteLayer() {
         if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
             layer.bringToFront();
         }
+    }
+
+    function merge(arr1, arr2, prop){
+        var reduced = a.filter(function(aitem){
+            return ! b.find(function(bitem){
+                return aitem[prop] === bitem[prop];
+            });
+        });
+        return reduced.concat(b);
     }
 
     // outputs a dictionary of the CV sites with last sample date

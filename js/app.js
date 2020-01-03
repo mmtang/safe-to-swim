@@ -431,7 +431,9 @@ function convertToCSV(data) {
     var body = values.join('\r\n');
     csvString += header + '\r\n' + body;
 
-    if (msieversion()) {
+    // we need special cases for ie and edge because they handle data file exports differently
+    // firefox, chrome, and safari seem to be covered under the else case
+    if (checkIE()) {
         var IEwindow = window.open();
         IEwindow.document.write(csvString);
         IEwindow.document.close();
@@ -460,24 +462,12 @@ function convertToCSV(data) {
 
     function checkEdge() {
         var ua = window.navigator.userAgent;
-        return (/edge|msie\s|trident\//i.test(ua)) ? true : false;
+        return (/edge/i.test(ua)) ? true : false;
     }
-
-    function msieversion() {
-        var ua = window.navigator.userAgent;
-        var msie = ua.indexOf("MSIE ");
     
-        if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./)) {
-            return true;
-        }
-        else {
-            return false;
-        }
-        return false;
-    }
-
-    function utf8_to_b64(str) {
-        return window.btoa(unescape(encodeURIComponent(str)));
+    function checkIE() {
+        var ua = window.navigator.userAgent;
+        return (/msie\s|trident\//i.test(ua)) ? true : false;
     }
 }
 
@@ -520,7 +510,7 @@ function formatGeomeanData(data) {
     var selected = data.map(function(d) {
         return {
             'EndDate': formatDate(d.enddate),
-            'Geomean': d.geomean,
+            'GeoMean': d.geomean,
             'SampleCount': d.count,
             'StartDate': formatDate(d.startdate),
             'StationCode': '"' + lastSite.code + '"',
@@ -816,7 +806,7 @@ function addSiteLayer() {
     function processCVSiteData(data) {
         var parseCVDate = d3.timeParse('%Y-%m-%d');
         var cvSites = {};
-        // 1/3/2020: IE11 no longer supports sets
+        // IE11 no longer supports sets
         var uniqueSites = [];
         for (var i = 0; i < data.length; i++) {
             var stationCode = data[i]['StationCode'];
@@ -843,7 +833,7 @@ function addSiteLayer() {
             if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode) || (data[i].SiteCode === '304-LEONA-21')) { 
                 continue; 
             } else {
-                // process data and reformat objects to geojson
+                // reformat as geojson
                 var site = {};
                 site.type = 'Feature';
                 site.geometry = { 'type': 'Point', 'coordinates': [+data[i].Longitude, +data[i].Latitude] };

@@ -437,6 +437,18 @@ function convertToCSV(data) {
         IEwindow.document.close();
         IEwindow.document.execCommand('SaveAs', true, fileName);
         IEwindow.close();
+    } else if (checkEdge()) {
+        var blob = new Blob([csvString], { type: 'data:text/csv;charset=utf-8;' });
+        var linkElement = document.createElement('a');
+        var url = URL.createObjectURL(blob);
+        linkElement.setAttribute('href', url);
+        linkElement.setAttribute('download', fileName);
+        var clickEvent = new MouseEvent('click', {
+            'view': window,
+            'bubbles': true,
+            'cancelable': false
+        });
+        linkElement.dispatchEvent(clickEvent);
     } else {
         var csv = document.createElement('a');
         csv.href = 'data:text/csv;charset=utf-8,' +  encodeURIComponent(csvString);
@@ -444,6 +456,11 @@ function convertToCSV(data) {
         csv.download = fileName;
         document.body.appendChild(csv);
         csv.click();
+    }
+
+    function checkEdge() {
+        var ua = window.navigator.userAgent;
+        return (/edge|msie\s|trident\//i.test(ua)) ? true : false;
     }
 
     function msieversion() {

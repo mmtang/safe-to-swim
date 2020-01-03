@@ -758,6 +758,8 @@ function addSiteLayer() {
         var call2 = $.get(cvURL);
         $.when(call1, call2).then(function (res1, res2) {
             var siteData = res1[0]['result']['records'];
+            // convert to date objects
+            siteData.forEach(function(d) { d.LastSampleDate = parseDate(d.LastSampleDate); });
             var cvData = res2[0]['result']['records'];
             var cvSites = processCVSiteData(cvData);
             // join CV data to main site list
@@ -797,12 +799,18 @@ function addSiteLayer() {
     function processCVSiteData(data) {
         var parseCVDate = d3.timeParse('%Y-%m-%d');
         var cvSites = {};
-        var uniqueSites = new Set(data.map(function(d) { return d.StationCode; })); 
-        var siteArr = Array.from(uniqueSites);
-        for (var i = 0; i < siteArr.length; i++) {
-            var siteDates = data.filter(function(d) { return d.StationCode === siteArr[i]; });
-            var maxDate = d3.max(siteDates.map(function(d) { return parseCVDate(d.SampleDate); }));
-            cvSites[siteArr[i]] = maxDate;
+        // 1/3/2020: IE11 no longer supports sets
+        var uniqueSites = [];
+        for (var i = 0; i < data.length; i++) {
+            var stationCode = data[i]['StationCode'];
+            if (uniqueSites.indexOf(stationCode) < 0) {
+                uniqueSites.push(stationCode);
+            }
+        }
+        for (var i = 0; i < uniqueSites.length; i++) {
+            var dates = data.filter(function(d) { return d.StationCode === uniqueSites[i]; });
+            var maxDate = d3.max(dates.map(function(d) { return parseCVDate(d.SampleDate); }));
+            cvSites[uniqueSites[i]] = maxDate;
         }
         return cvSites;
     }
@@ -811,6 +819,7 @@ function addSiteLayer() {
         var today = new Date();
         features = [];
         for (var i = 0; i < data.length; i++) {
+            var sampleDate = data[i].LastSampleDate;
             // check for missing values
             // filter out site 'Leona Creek at Brommer Trailer Park' for inaccurate coordinates
             // this is a temporary solution until we correct the coordinates
@@ -821,11 +830,10 @@ function addSiteLayer() {
                 var site = {};
                 site.type = 'Feature';
                 site.geometry = { 'type': 'Point', 'coordinates': [+data[i].Longitude, +data[i].Latitude] };
-                site.properties = { 'StationName': data[i].StationName, 'StationCode': data[i].SiteCode, 'LastSampleDate': parseDate(data[i].LastSampleDate), 'DateDifference': daysBetween(convertUNIX(data[i].LastSampleDate), today) };
+                site.properties = { 'StationName': data[i].StationName, 'StationCode': data[i].SiteCode, 'LastSampleDate': sampleDate, 'DateDifference': daysBetween(sampleDate, today) };
                 features.push(site);
             }
         }
-        console.log(features);
         addSites(features);
         initializeSearch(features);
     }

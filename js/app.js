@@ -17,50 +17,81 @@ function onMarkerClick(e) {
     function getSiteData() {
         $.when(
             getCEDENData(site),
-            getCVData(site)
+            getR5Data(site)
         ).done(function(res1, res2) {
-            var allData = null;
-            if (res1) {
-                var data = processCEDENData(res1[0].result.records);
-                cedenData = data;
-                allData = data;
+            // checks that the returned site matches the last site clicked 
+            // this is in case the user clicks multiple sites in succession
+            if (site === lastSite.code) {
+                var allData = [];
+                var cedenData = processCEDENData(res1[0].result.records);
+                allData = cedenData;
+                // can add more if statements for other datasets we bring in, following the same pattern
                 if (res2) {
-                    var data = res2[0].result.records;
-                    cvData = processCVData(data);
-                    // compare to ceden data, do not add duplicates
-                    for (var i = 0; i < cvData.length; i++) {
-                        var analyte = cvData[i]['Analyte'];
-                        var sampleDate = convertDate(cvData[i]['SampleDate']);
-                        var result = cvData[i]['Result'];
-                        var matches = cedenData.filter(function(rec) {
-                            return ((rec['Analyte'] === analyte) && (convertDate(rec['SampleDate']) === sampleDate) && (rec['Result'] === result));
-                        });
-                        // testing: use to examine the found duplicate records
-                        // console.log(matches);
-                        if (matches.length === 0) {
-                            allData.push(cvData[i]);
-                        } else {
-                            break;
-                        }
-                    }
+                    var r5Data = processR5Data(res2[0].result.records);
+                    var uniqueR5Data = compareData(cedenData, r5Data);
+                    allData.push.apply(allData, uniqueR5Data);
                 }
+                addPanelContent(allData);
+            } else {
+                console.log('Ignored request for ' + site);
             }
-            addPanelContent(allData);
         });
     }
 
-    function getCVData(site) {
-        var cvSites = ['519AMNSAC', '519AMNDVY', '514SAC009', '519SAC106', '519SAC104', '519SAC105', '519LSAC53', '519SAC102', '519LSAC52', '519SAC000', '519SAC001'];
-        if (cvSites.indexOf(site) > 0) {
+    function compareData(data, targetData) {
+        // returns the unique records found in the second argument "targetData"
+        // this is being used to extract the records from the R5 dataset that are not already in CEDEN
+        // could be reused for any other datasets that we bring in
+        var newData = [];
+        for (var i = 0; i < targetData.length; i++) {
+            var analyte = targetData[i]['Analyte'];
+            var sampleDate = convertToTimestamp(targetData[i]['SampleDate']);
+            var result = targetData[i]['Result'];
+            // determine whether record already exists in the first dataset, will return a match if it does
+            var matches = data.filter(function(rec) {
+                return ((rec['Analyte'] === analyte) && (convertToTimestamp(rec['SampleDate']) === sampleDate) && (rec['Result'] === result));
+            });
+            // testing: use to examine the found duplicate records
+            // console.log(matches);
+            if (matches.length === 0) {
+                // if no matches, then keep it
+                newData.push(targetData[i]);
+            } else {
+                break;
+            }
+        }
+        return newData;
+    }
+
+    function getCEDENData(site) {
+        var resource = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fd2d24ee-3ca9-4557-85ab-b53aa375e9fc';
+        var cedenColumns = ['Analyte', 'DataQuality', 'MDL', 'Program', 'Result', 'ResultQualCode', 'SampleDate', 'StationCode', 'StationName', 'Unit'];
+        var cedenURL = createURL(resource, cedenColumns, site);
+        return $.ajax({
+            type: 'GET',
+            url: cedenURL,
+            dataType: 'json',
+            error: function(xhr, textStatus, error) {
+                handleSiteError(site);
+                console.log(xhr.statusText);
+                console.log(textStatus);
+                console.log(error);
+            }
+        });
+    }
+
+    function getR5Data(site) {
+        var r5Sites = ['519AMNSAC', '519AMNDVY', '514SAC009', '519SAC106', '519SAC104', '519SAC105', '519LSAC53', '519SAC102', '519LSAC52', '519SAC000', '519SAC001'];
+        if (r5Sites.indexOf(site) > 0) {
             var resource = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fc450fb6-e997-4bcf-b824-1b3ed0f06045';
             var columns = ['StationCode', 'StationName', 'SampleDate', 'Analyte', 'Result', 'Unit', 'Program'];
-            var cvURL = createURL(resource, columns, site);
+            var r5URL = createURL(resource, columns, site);
             return $.ajax({
                 type: 'GET',
-                url: cvURL,
+                url: r5URL,
                 dataType: 'json',
                 error: function(xhr, textStatus, error) {
-                    handleSiteError();
+                    handleSiteError(site);
                     console.log(xhr.statusText);
                     console.log(textStatus);
                     console.log(error);
@@ -68,65 +99,12 @@ function onMarkerClick(e) {
             });
         }
     }
-
-    function getCEDENData(site) {
-        var resource = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fd2d24ee-3ca9-4557-85ab-b53aa375e9fc';
-        var cedenColumns = ['Analyte', 'DataQuality', 'MDL', 'Program', 'Result', 'ResultQualCode', 'SampleDate', 'StationCode', 'StationName', 'Unit'];
-        var cedenURL = createURL(resource, cedenColumns, site);
-        var siteDataConfig = {
-            url: cedenURL,
-            success: checkSiteData,
-            error: handleSiteError
-        };
-        return $.ajax({
-            type: 'GET',
-            url: cedenURL,
-            dataType: 'json',
-            error: function(xhr, textStatus, error) {
-                handleSiteError();
-                console.log(xhr.statusText);
-                console.log(textStatus);
-                console.log(error);
-            }
-        });
-
-        function checkSiteData(res, config) {
-            // check that the site matches the last site clicked in case the user clicks multiple sites in succession
-            var firstRecord = res.result.records[0];
-            if (firstRecord.StationCode === lastSite.code) {
-                var records = res.result.records;
-                config.data = config.data.concat(records);
-                return config.data;
-            } else {
-                console.log('Ignored request for ' + firstRecord.StationName + ' (' + firstRecord.StationCode + ')');
-            }
+    
+    function handleSiteError(siteCode) {
+        // if multiple sites are clicked in succession, only the last request should show an error
+        if (siteCode === lastSite.code) {
+            showSiteError();
         }
-
-        function handleSiteError(config) {
-            // if multiple sites are clicked in succession, only the last request should show an error
-            // get the site code from the url and check that it matches the last site clicked
-            var splitURL = config.url.split('=');
-            var splitSite = splitURL[splitURL.length - 1];
-            var parsedSite = decode(splitSite); 
-            if (parsedSite === lastSite.code) {
-                showSiteError();
-            } else {
-                console.log('ERROR: Request for ' + parsedSite);
-            }
-        }
-    }
-
-    function processCVData(data) {
-        // shaping R5's data to look like CEDEN's
-        var parseDate = d3.timeParse('%Y-%m-%d');
-        for (d = 0; d < data.length; d++) {
-            data[d]['DataQuality'] = null;
-            // MDL for E. coli = 1
-            data[d]['MDL'] = 1;
-            data[d]['ResultQualCode'] = null;
-            data[d]['SampleDate'] = parseDate(data[d]['SampleDate']);
-        }
-        return data;
     }
 
     function processCEDENData(data) { 
@@ -167,6 +145,19 @@ function onMarkerClick(e) {
             }
         }
     }  
+
+    function processR5Data(data) {
+        // shaping R5's data to look like CEDEN's
+        var parseDate = d3.timeParse('%Y-%m-%d');
+        for (d = 0; d < data.length; d++) {
+            data[d]['DataQuality'] = null;
+            // MDL for E. coli = 1
+            data[d]['MDL'] = 1;
+            data[d]['ResultQualCode'] = null;
+            data[d]['SampleDate'] = parseDate(data[d]['SampleDate']);
+        }
+        return data;
+    }
 
     function addAnalyteListener(data) {
         document.getElementById('analyte-menu').addEventListener('change', function() {
@@ -760,19 +751,19 @@ function addSiteLayer() {
 
     function getSiteList() {
         var siteListURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=4f41c529-a33f-4006-9cfc-71b6944cb951&limit=' + recordLimit;
-        var cvURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fc450fb6-e997-4bcf-b824-1b3ed0f06045&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
+        var r5URL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fc450fb6-e997-4bcf-b824-1b3ed0f06045&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
         var call1 = $.get(siteListURL);
-        var call2 = $.get(cvURL);
+        var call2 = $.get(r5URL);
         $.when(call1, call2).then(function (res1, res2) {
             var siteData = res1[0]['result']['records'];
             // convert to date objects
             siteData.forEach(function(d) { d.LastSampleDate = parseDate(d.LastSampleDate); });
-            var cvData = res2[0]['result']['records'];
-            var cvSites = processCVSiteData(cvData);
-            // join CV data to main site list
+            var r5Data = res2[0]['result']['records'];
+            var r5Sites = processR5SiteData(r5Data);
+            // join R5 data to main site list
             siteData.forEach(function(d) {
-                if (d.SiteCode in cvSites) {
-                    d.LastSampleDate = cvSites[d.SiteCode];
+                if (d.SiteCode in r5Sites) {
+                    d.LastSampleDate = r5Sites[d.SiteCode];
                 }
             });
             processSites(siteData);
@@ -802,10 +793,10 @@ function addSiteLayer() {
         return reduced.concat(b);
     }
 
-    // outputs a dictionary of the CV sites with last sample date
-    function processCVSiteData(data) {
-        var parseCVDate = d3.timeParse('%Y-%m-%d');
-        var cvSites = {};
+    // outputs a dictionary of the R5 sites with last sample date
+    function processR5SiteData(data) {
+        var parseR5Date = d3.timeParse('%Y-%m-%d');
+        var r5Sites = {};
         // IE11 no longer supports sets
         var uniqueSites = [];
         for (var i = 0; i < data.length; i++) {
@@ -816,10 +807,10 @@ function addSiteLayer() {
         }
         for (var i = 0; i < uniqueSites.length; i++) {
             var dates = data.filter(function(d) { return d.StationCode === uniqueSites[i]; });
-            var maxDate = d3.max(dates.map(function(d) { return parseCVDate(d.SampleDate); }));
-            cvSites[uniqueSites[i]] = maxDate;
+            var maxDate = d3.max(dates.map(function(d) { return parseR5Date(d.SampleDate); }));
+            r5Sites[uniqueSites[i]] = maxDate;
         }
-        return cvSites;
+        return r5Sites;
     }
 
     function processSites(data) {
@@ -903,13 +894,13 @@ function addMapTiles() {
     }).addTo(map);
 }
 
-// convert to UNIX time
-function convertDate(date) {
+// convert to UNIX timestamp
+function convertToTimestamp(date) {
     return date.getTime();
 }
 
 // convert to date object
-function convertUNIX(seconds) {
+function convertToDateObj(seconds) {
     return new Date(seconds);
 }
 

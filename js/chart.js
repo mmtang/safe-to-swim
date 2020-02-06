@@ -164,11 +164,11 @@ Chart.prototype.createScales = function(threshold) {
     this.yScale = this.linearScale;
 
     function bufferX(extent, days) {
-        var min = convertDate(extent[0]);
-        var max = convertDate(extent[1]);
+        var min = convertToTimestamp(extent[0]);
+        var max = convertToTimestamp(extent[1]);
         var newMin = min - MS_PER_DAY * days; 
         var newMax = max + MS_PER_DAY * days;
-        return [convertUNIX(newMin), convertUNIX(newMax)];
+        return [convertToDateObj(newMin), convertToDateObj(newMax)];
     }
 }
 

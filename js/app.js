@@ -530,28 +530,6 @@ function formatSampleData(data) {
     return selected;
 }
 
-function requestData(config) {
-    console.log(config.url, 'offset = ' + config.offset);
-    if (typeof config.offset === 'undefined') { config.offset = 0; }
-    if (typeof config.data === 'undefined') { config.data = []; }
-
-    return $.ajax({
-        type: 'GET',
-        url: config.url,
-        data: {offset: config.offset},
-        dataType: 'json',
-        success: function(res) {
-            config.success(res, config);
-        },
-        error: function(xhr, textStatus, error) {
-            console.log(xhr.statusText);
-            console.log(textStatus);
-            console.log(error);
-            config.error(config);
-        }
-    });
-}
-
 function getWindowSize() {
     return [document.documentElement.clientWidth, document.documentElement.clientHeight];
 }
@@ -784,15 +762,6 @@ function addSiteLayer() {
         }
     }
 
-    function merge(arr1, arr2, prop){
-        var reduced = a.filter(function(aitem){
-            return ! b.find(function(bitem){
-                return aitem[prop] === bitem[prop];
-            });
-        });
-        return reduced.concat(b);
-    }
-
     // outputs a dictionary of the R5 sites with last sample date
     function processR5SiteData(data) {
         var parseR5Date = d3.timeParse('%Y-%m-%d');
@@ -969,6 +938,7 @@ var map = L.map('map',{
     zoomControl: false,
 }); 
 
+// panes are used in leaflet control the order in which the markers are displayed
 var otherPane = map.createPane('otherPane');
 var yearPane = map.createPane('yearPane');
 var monthPane = map.createPane('monthPane');

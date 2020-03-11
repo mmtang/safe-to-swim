@@ -707,13 +707,15 @@ function addSiteLayer() {
 
     function getColor(d) {
         if (d === null) { 
-            return '#50cfe9'; // null date
+            return '#ffffcc'; // null date
+        } else if (d <=7) {
+            return '#225ea8';
         } else if (d <= 30) { 
-            return '#fefb47'; // 1 month
+            return '#41b6c4'; // 1 month
         } else if (d <= 360) { 
-            return '#82ff83'; // 1 year
+            return '#a1dab4'; // 1 year
         } else { 
-            return '#50cfe9'; // older than 1 year, same as null
+            return '#ffffcc'; // older than 1 year, same as null
         } 
     }
 
@@ -733,6 +735,8 @@ function addSiteLayer() {
         var call1 = $.get(siteListURL);
         var call2 = $.get(r5URL);
         $.when(call1, call2).then(function (res1, res2) {
+            console.log(res1);
+            console.log(res2);
             var siteData = res1[0]['result']['records'];
             // convert to date objects
             siteData.forEach(function(d) { d.LastSampleDate = parseDate(d.LastSampleDate); });

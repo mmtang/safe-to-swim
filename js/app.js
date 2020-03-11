@@ -562,7 +562,7 @@ function initializeDatePanel() {
 
 function initializeDownloadMenu() {
     var container = document.getElementById('download-container');
-    container.innerHTML = '<div class="dropdown panel-container text-center"><div class="btn-group dropup"><button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data&nbsp;&nbsp;<span class="caret"></span></button><ul id="download-menu" class="dropdown-menu"><li><a href="#">' + downloadOp1 + '</a></li><li id="geomean-dropdown-op"><a href="#">' + downloadOp2 + '</a></li><li><a href="https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results" target="_blank">' + downloadOp3 + '</a></li></ul></div>';
+    container.innerHTML = '<div class="dropdown panel-container text-center"><div class="btn-group dropup"><button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data&nbsp;&nbsp;<span class="caret"></span></button><ul id="download-menu" class="dropdown-menu"><li><a href="#">' + downloadOp1 + '</a></li><li id="geomean-dropdown-op"><a href="#">' + downloadOp2 + '</a></li></ul></div>';
 }
 
 function resendRequest() {
@@ -933,8 +933,7 @@ var dataQuality0 = "MetaData",
     dataQuality7 = "Error";
 
 var downloadOp1 = 'Download monitoring data (.csv)',
-    downloadOp2 = 'Download geometric mean data (.csv)',
-    downloadOp3 = 'Download monitoring data for all sites (data.ca.gov)';
+    downloadOp2 = 'Download geometric mean data (.csv)';
 
 var map = L.map('map',{ 
     center: [37.4050, -119.365], 

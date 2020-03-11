@@ -640,8 +640,8 @@ function addMapControls() {
         legend.onAdd = function(map) {
             var div = L.DomUtil.create('div', 'info legend'),
                 labels = ['<strong>Last Sample Date</strong>'],
-                categories = ['Within last 30 days', 'Within last year', 'Older than one year'],
-                colors = ['#fefb47', '#82ff83', '#50cfe9'];
+                categories = ['Within last 7 days', 'Within last 14 days', 'Within last 30 days', 'Within last year', 'Older than one year'],
+                colors = ['#253494', '#2c7fb8', '#41b6c4', '#a1dab4', '#ffffe0'];
             for (var i = 0; i < categories.length; i++ ) {
                 div.innerHTML += labels.push(
                     '<i class="circle" style="background:' + colors[i] + '"></i> ' + (categories[i] ? categories[i] : '+')
@@ -707,15 +707,17 @@ function addSiteLayer() {
 
     function getColor(d) {
         if (d === null) { 
-            return '#ffffcc'; // null date
+            return '#ffffe0'; // null date
         } else if (d <=7) {
-            return '#225ea8';
+            return '#253494';
+        } else if (d <= 14) {
+            return '#2c7fb8';
         } else if (d <= 30) { 
             return '#41b6c4'; // 1 month
         } else if (d <= 360) { 
             return '#a1dab4'; // 1 year
         } else { 
-            return '#ffffcc'; // older than 1 year, same as null
+            return '#ffffe0'; // older than 1 year, same as null
         } 
     }
 

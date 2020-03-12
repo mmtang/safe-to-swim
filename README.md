@@ -1,7 +1,7 @@
 # Safe to Swim Interactive Map
 
-- Author: Michelle Tang (https://github.com/mmtang/r6-water-quality)
-- Agency: California State Water Resources Control Board, Office of Information Management and Analysis
+- Author: Michelle Tang (https://github.com/mmtang/safe-to-swim)
+- Agency: California State Water Resources Control Board
 
 ## About
 

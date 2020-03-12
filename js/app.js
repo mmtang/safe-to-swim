@@ -366,7 +366,7 @@ $('#nav-btn').click(function() {
 
 function addFilterMenu() {
     var filterContainer = document.getElementById('filter-container');
-    var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;&nbsp;Samples</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-left" data-toggle="popover" title="Geometric Mean" data-content="For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. At least two sample results are required for the calculation. Position the mouse cursor over a geometric mean chart element to highlight the date period used in the calculation."></i></a></label></div></div>';
+    var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;&nbsp;Samples</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-left" data-toggle="popover" title="Geometric Mean" data-content="For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. At least two sample results are required for the calculation. Position the mouse cursor over a geometric mean chart element to highlight the date period used in the calculation."></i></a></label></div></div>';
     filterContainer.innerHTML = content;
     updateFilters();
 }
@@ -951,7 +951,8 @@ var chartOpacity = 0.8;
 var currentAnalyte; 
 var currentScale = 'linear';
 var lastSite = new Object();
-var mainColor = '#1f78b4', secColor = '#ff7f0e';
+// var mainColor = '#1f78b4', secColor = '#ff7f0e';
+var mainColor = '#145785', secColor = '#e86348';
 var MS_PER_DAY = (24 * 60 * 60 * 1000);
 var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
 var recordLimit = 10000;

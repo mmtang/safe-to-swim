@@ -229,8 +229,8 @@ body {
 }
 
 .navbar-inverse {
-    background-color: #0F4475;
-    border-color: #0F4475;
+    background-color: #193c62;
+    border-color: #193c62;
 }
 
 .navbar-inverse .navbar-nav > .open > a, 
@@ -281,7 +281,7 @@ body {
 }
 
 .data-dot {
-    color: #1f78b4;
+    color: #145785;
 }
 
 .circles {

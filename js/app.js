@@ -674,7 +674,6 @@ function addSiteLayer() {
         },
         pointToLayer: function (feature, latlng) {
             return L.circleMarker(latlng, {
-                pane: getPane(feature.properties.DateDifference),
                 radius: 5,
                 fillColor: getColor(feature.properties.DateDifference),
                 color: '#000',
@@ -721,24 +720,12 @@ function addSiteLayer() {
         } 
     }
 
-    function getPane(d) {
-        if (d <= 30) {
-            return "monthPane";
-        } else if (d <= 360) {
-            return "yearPane";
-        } else {
-            return "otherPane";
-        }
-    }
-
     function getSiteList() {
         var siteListURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=4f41c529-a33f-4006-9cfc-71b6944cb951&limit=' + recordLimit;
         var r5URL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fc450fb6-e997-4bcf-b824-1b3ed0f06045&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
         var call1 = $.get(siteListURL);
         var call2 = $.get(r5URL);
         $.when(call1, call2).then(function (res1, res2) {
-            console.log(res1);
-            console.log(res2);
             var siteData = res1[0]['result']['records'];
             // convert to date objects
             siteData.forEach(function(d) { d.LastSampleDate = parseDate(d.LastSampleDate); });
@@ -807,6 +794,15 @@ function addSiteLayer() {
                 features.push(site);
             }
         }
+        console.log(features);
+        // sort by ascending on field "DateDifference"
+        // this is for displaying the most recently sampled sites on top
+        // i tried to use panes to control the order in which the sites are displayed;
+        // however, there were performance issues
+        // this is the best solution for now, but may try webgl in the future
+        features.sort(function(a, b) {
+            return b.properties.DateDifference - a.properties.DateDifference;
+        });
         addSites(features);
         initializeSearch(features);
     }

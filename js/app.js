@@ -932,7 +932,7 @@ var downloadOp1 = 'Download monitoring data (.csv)',
     downloadOp2 = 'Download geometric mean data (.csv)';
 
 var map = L.map('map',{ 
-    center: [37.4050, -119.365], 
+    center: [37.5050, -119.965], 
     zoom: 6, 
     preferCanvas: true,
     doubleClickZoom: false, 

@@ -82,7 +82,7 @@ function onMarkerClick(e) {
 
     function getR5Data(site) {
         var r5Sites = ['519AMNSAC', '519AMNDVY', '514SAC009', '519SAC106', '519SAC104', '519SAC105', '519LSAC53', '519SAC102', '519LSAC52', '519SAC000', '519SAC001'];
-        if (r5Sites.indexOf(site) > 0) {
+        if (r5Sites.indexOf(site) >= 0) {
             var resource = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fc450fb6-e997-4bcf-b824-1b3ed0f06045';
             var columns = ['StationCode', 'StationName', 'SampleDate', 'Analyte', 'Result', 'Unit', 'Program'];
             var r5URL = createURL(resource, columns, site);
@@ -794,7 +794,6 @@ function addSiteLayer() {
                 features.push(site);
             }
         }
-        console.log(features);
         // sort by ascending on field "DateDifference"
         // this is for displaying the most recently sampled sites on top
         // i tried to use panes to control the order in which the sites are displayed;

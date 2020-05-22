@@ -219,7 +219,7 @@ function onMarkerClick(e) {
         updateFilters();
         resetScaleMenu();
         // initializeDatePanel();
-        currentScale = 'linear';
+        currentScale = 'log';
 
         // initialize popovers after they have been added, popovers must be visible
         // jquery selectors required for popover
@@ -296,12 +296,12 @@ function onMarkerClick(e) {
         
         function changeScale() {
             if (currentScale === 'linear') {
-                document.getElementById('linear-button').classList.remove('active');
-                document.getElementById('log-button').classList.add('active');
+                resetScaleMenu();
                 currentScale = 'log';
                 chart.redraw();
             } else if (currentScale === 'log') {
-                resetScaleMenu();
+                document.getElementById('log-button').classList.remove('active');
+                document.getElementById('linear-button').classList.add('active');
                 currentScale = 'linear';
                 chart.redraw();
             }
@@ -373,7 +373,7 @@ function addFilterMenu() {
 
 function addScaleMenu() {
     var scaleContainer = document.getElementById('scale-container');
-    var content = '<div class="btn-group btn-group-sm" role="group"><button type="button" id="linear-button" class="btn btn-default active">Linear Scale</button><button type="button" id="log-button" class="btn btn-default">Log Scale</button></div>';
+    var content = '<div class="btn-group btn-group-sm" role="group"><button type="button" id="log-button" class="btn btn-default active">Log Scale</button><button type="button" id="linear-button" class="btn btn-default">Linear Scale</button></div>';
     scaleContainer.innerHTML = content;
 }
 
@@ -579,8 +579,8 @@ function resetPanel() {
 }
 
 function resetScaleMenu() {
-    document.getElementById('log-button').classList.remove('active');
-    document.getElementById('linear-button').classList.add('active');
+    document.getElementById('log-button').classList.add('active');
+    document.getElementById('linear-button').classList.remove('active');
 }
 
 function showPanelError(message) {
@@ -948,7 +948,7 @@ map.getPane('monthPane').style.zIndex = 670;
 
 var chartOpacity = 0.8;
 var currentAnalyte; 
-var currentScale = 'linear';
+var currentScale = 'log';
 var lastSite = new Object();
 // var mainColor = '#1f78b4', secColor = '#ff7f0e';
 var mainColor = '#145785', secColor = '#e86348';

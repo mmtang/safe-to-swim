@@ -142,7 +142,6 @@ Chart.prototype.createBrushScales = function() {
 Chart.prototype.createScales = function(threshold) {
     // calculate min and max for data
     var xExtent = d3.extent(this.data, function(d,i) { return d.SampleDate; });
-    var yExtent = d3.extent(this.data, function(d,i) { return d.Result; });
     var xBuffered = bufferX(xExtent, 35);  
     // compare the max Y to the threshold and pick the greater value
     var yMax = d3.max(this.data, function(d) { return d.Result }); 
@@ -161,7 +160,7 @@ Chart.prototype.createScales = function(threshold) {
         .domain([0.1, yLogBuffered])
         .range([this.height, 0]);
     // set to linear on creation
-    this.yScale = this.linearScale;
+    this.yScale = this.logScale;
 
     function bufferX(extent, days) {
         var min = convertToTimestamp(extent[0]);

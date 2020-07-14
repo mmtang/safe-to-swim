@@ -655,8 +655,6 @@ function addMapControls() {
 }
 
 function addSiteLayer() {
-    var siteListPath = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=4f41c529-a33f-4006-9cfc-71b6944cb951&limit=' + recordLimit;
-
     // assign to global scope for highlight functions
     siteLayer = L.geoJson([], {
         onEachFeature: function(feature, layer) {
@@ -729,12 +727,15 @@ function addSiteLayer() {
             var siteData = res1[0]['result']['records'];
             // convert to date objects
             siteData.forEach(function(d) { d.LastSampleDate = parseDate(d.LastSampleDate); });
+            
             var r5Data = res2[0]['result']['records'];
             var r5Sites = processR5SiteData(r5Data);
             // join R5 data to main site list
             siteData.forEach(function(d) {
                 if (d.SiteCode in r5Sites) {
-                    d.LastSampleDate = r5Sites[d.SiteCode];
+                    if (d.LastSampleDate < r5Sites[d.SiteCode]) {
+                        d.LastSampleDate = r5Sites[d.SiteCode];
+                    }
                 }
             });
             processSites(siteData);
@@ -776,6 +777,7 @@ function addSiteLayer() {
     }
 
     function processSites(data) {
+        console.log(data);
         var today = new Date();
         features = [];
         for (var i = 0; i < data.length; i++) {
@@ -783,7 +785,7 @@ function addSiteLayer() {
             // check for missing values
             // filter out site 'Leona Creek at Brommer Trailer Park' for inaccurate coordinates
             // this is a temporary solution until we correct the coordinates
-            if (!(data[i].Longitude) || !(data[i].Latitude) || !(data[i].StationName) || !(data[i].SiteCode) || (data[i].SiteCode === '304-LEONA-21')) { 
+            if ((data[i].Longitude === 'NaN') || (data[i].Latitude === 'NaN') || !(data[i].StationName) || !(data[i].SiteCode) || (data[i].SiteCode === '304-LEONA-21')) { 
                 continue; 
             } else {
                 // reformat as geojson
@@ -953,7 +955,7 @@ var lastSite = new Object();
 // var mainColor = '#1f78b4', secColor = '#ff7f0e';
 var mainColor = '#145785', secColor = '#e86348';
 var MS_PER_DAY = (24 * 60 * 60 * 1000);
-var parseDate = d3.timeParse('%Y-%m-%d %H:%M:%S');
+var parseDate = d3.timeParse('%Y-%m-%dT%H:%M:%S');
 var recordLimit = 10000;
 var siteLayer; // accessed globally for highlight functions
 

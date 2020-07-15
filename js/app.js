@@ -16,20 +16,25 @@ function onMarkerClick(e) {
 
     function getSiteData() {
         $.when(
-            getCEDENData(site),
+            // prior to 2010
+            getCEDENData('270c628e-e0cd-42ab-b694-3f01c9b29559', site),
+            // 2010 and after
+            getCEDENData('442a2628-92bd-4d83-aab6-6fde5eeeb56c', site),
             getR5Data(site)
-        ).done(function(res1, res2) {
+        ).done(function(res11, res12, res2) {
             // checks that the returned site matches the last site clicked 
             // this is in case the user clicks multiple sites in succession
             if (site === lastSite.code) {
-                var allData = [];
-                var cedenData = processCEDENData(res1[0].result.records);
-                allData = cedenData;
+                // merge the two CEDEN data responses
+                var cedenPart1 = processCEDENData(res11[0].result.records);
+                var cedenPart2 = processCEDENData(res12[0].result.records);
+                var allData = cedenPart1.concat(cedenPart2);
+                // merge R5 data with CEDEN data
                 // can add more if statements for other datasets we bring in, following the same pattern
                 if (res2) {
                     var r5Data = processR5Data(res2[0].result.records);
-                    var uniqueR5Data = compareData(cedenData, r5Data);
-                    allData.push.apply(allData, uniqueR5Data);
+                    var uniqueR5Data = compareData(allData, r5Data);
+                    Array.prototype.push.apply(allData, r5Data);
                 }
                 addPanelContent(allData);
             } else {
@@ -47,6 +52,7 @@ function onMarkerClick(e) {
             var analyte = targetData[i]['Analyte'];
             var sampleDate = convertToTimestamp(targetData[i]['SampleDate']);
             var result = targetData[i]['Result'];
+            // console.log(analyte, sampleDate, result);
             // determine whether record already exists in the first dataset, will return a match if it does
             var matches = data.filter(function(rec) {
                 return ((rec['Analyte'] === analyte) && (convertToTimestamp(rec['SampleDate']) === sampleDate) && (rec['Result'] === result));
@@ -63,10 +69,10 @@ function onMarkerClick(e) {
         return newData;
     }
 
-    function getCEDENData(site) {
-        var resource = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fd2d24ee-3ca9-4557-85ab-b53aa375e9fc';
+    function getCEDENData(resource, site) {
+        var baseURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=';
         var cedenColumns = ['Analyte', 'DataQuality', 'MDL', 'Program', 'Result', 'ResultQualCode', 'SampleDate', 'StationCode', 'StationName', 'Unit'];
-        var cedenURL = createURL(resource, cedenColumns, site);
+        var cedenURL = createURL(baseURL + resource, cedenColumns, site);
         return $.ajax({
             type: 'GET',
             url: cedenURL,
@@ -777,7 +783,6 @@ function addSiteLayer() {
     }
 
     function processSites(data) {
-        console.log(data);
         var today = new Date();
         features = [];
         for (var i = 0; i < data.length; i++) {

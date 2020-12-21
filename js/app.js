@@ -128,7 +128,7 @@ function onMarkerClick(e) {
             handleND(chartData[i]);
         }
         // filter to keep all results above 0
-        chartData = chartData.filter(function(d) { return d.Result > 0; });
+        chartData = chartData.filter(function(d) { return d.Result >= 0; });
         return chartData;
 
         function handleND(d) {
@@ -143,7 +143,8 @@ function onMarkerClick(e) {
             }
         
             function isND(d) {
-                if ((d.Result <= 0) || (d.ResultQualCode === 'ND')) { 
+                if ((d.Result <= 0) || (d.ResultQualCode === 'ND') || (d.ResultQualCode === '<')) { 
+                    console.log(d);
                     return true;
                 } else {
                     return false;

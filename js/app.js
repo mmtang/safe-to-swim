@@ -71,7 +71,7 @@ function onMarkerClick(e) {
 
     function getCEDENData(resource, site) {
         var baseURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=';
-        var cedenColumns = ['Analyte', 'DataQuality', 'MDL', 'Program', 'Result', 'ResultQualCode', 'SampleDate', 'StationCode', 'StationName', 'Unit'];
+        var cedenColumns = ['Analyte', 'DataQuality', 'MDL', 'Program', 'Result', 'ResultQualCode', 'SampleDate', 'MethodName', 'StationCode', 'StationName', 'Unit'];
         var cedenURL = createURL(baseURL + resource, cedenColumns, site);
         return $.ajax({
             type: 'GET',
@@ -119,36 +119,47 @@ function onMarkerClick(e) {
             if (d.DataQuality === dataQuality1 || d.DataQuality === dataQuality2 || d.DataQuality === dataQuality3 || d.DataQuality === dataQuality4 || d.DataQuality === dataQuality5) {
                 return d;
             }
+        }).filter(function(d) {
+            if (d.Result != 'NaN') {
+                return d;
+            }
         });
         // force data types and handle NDs
         for (var i = 0; i < chartData.length; i++) { 
             chartData[i].MDL = +chartData[i].MDL;
             chartData[i].Result = +chartData[i].Result;
+            // New column: Treat result less than the MDL as being one half the MDL
+            chartData[i].CalculatedResult = calculateND(chartData[i]);
+            // New column: Assign a new value to results that are 0 (cannot be shown on log scale graph)
+            chartData[i].ChartResult = checkDisplay(chartData[i].CalculatedResult);
             chartData[i].SampleDate = parseDate(chartData[i].SampleDate);
-            handleND(chartData[i]);
         }
-        // filter to keep all results above 0
-        chartData = chartData.filter(function(d) { return d.Result >= 0; });
         return chartData;
 
-        function handleND(d) {
+        function calculateND(d) {
             if (isND(d)) {
-                d.Result = calculateND(d);
+                var calculated = 0.5 * d.MDL;
+                return calculated;
             } else {
-                d.Result = d.Result;
+                return d.Result;
             }
-        
-            function calculateND(d) {
-                return d.MDL * 0.5;
+        }
+
+        // Assign new values for censored data with results of 0. For chart display (log scale) only. 
+        function checkDisplay(d) {
+            if (d === 0) {
+                return 0.1;
+            } else {
+                return d;
             }
-        
-            function isND(d) {
-                if ((d.Result <= 0) || (d.ResultQualCode === 'ND') || (d.ResultQualCode === '<')) { 
-                    console.log(d);
-                    return true;
-                } else {
-                    return false;
-                }
+        }
+
+        // For handling censored data
+        function isND(d) {
+            if ((d.Result < d.MDL) || ((d.Result === d.MDL) && (d.ResultQualCode === '<')) || (d.ResultQualCode === 'ND')) { 
+                return true;
+            } else {
+                return false;
             }
         }
     }  
@@ -522,16 +533,18 @@ function formatSampleData(data) {
     var formatDate = d3.timeFormat("%Y-%m-%d");
     var selected = data.map(function(d) {
         return {
-            'Analyte': '"' + d.Analyte + '"',
-            'DataQuality': '"' + d.DataQuality + '"',
-            'MDL': d.MDL,
             'Program': '"' + d.Program + '"',
-            'Result': d.Result,
-            'ResultQualCode': d.ResultQualCode,
-            'SampleDate': '"' + formatDate(d.SampleDate) + '"',
-            'StationCode': '"' + d.StationCode + '"',
             'StationName': '"' + d.StationName + '"',
-            'Unit': '"' + d.Unit + '"'
+            'StationCode': '"' + d.StationCode + '"',
+            'SampleDate': '"' + formatDate(d.SampleDate) + '"',
+            'MethodName': '"' + d.MethodName + '"',
+            'Analyte': '"' + d.Analyte + '"',
+            'Unit': '"' + d.Unit + '"',
+            'OriginalResult': d.Result,
+            'CalculatedResult': d.CalculatedResult,
+            'MDL': d.MDL,
+            'ResultQualCode': d.ResultQualCode,
+            'DataQuality': '"' + d.DataQuality + '"'
         };
     });
     return selected;

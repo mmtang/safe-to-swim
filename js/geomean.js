@@ -66,7 +66,7 @@ function getGeomeans(data) {
         else {
             var product = 1;
             data.forEach(function(d) {
-                product *= d.Result;
+                product *= d.CalculatedResult;
             });
             var geomean = Math.pow(product, (1 / data.length)); // nth root
             return geomean;

@@ -103,7 +103,7 @@ Chart.prototype.brushed = function(parent) {
     // redraw graph elements
     parent.focus.selectAll('.circle')
         .attr('cx', function(d) { return parent.xScale(d.SampleDate); })
-        .attr('cy', function(d) { return parent.yScale(d.Result); });
+        .attr('cy', function(d) { return parent.yScale(d.ChartResult); });
     parent.focus.selectAll('.triangle')
         .attr('transform', function(d) { return 'translate(' + parent.xScale(d.enddate) + ',' + parent.yScale(d.geomean) + ')'; })
     parent.focus.select('.x-axis').call(parent.xAxis);
@@ -144,7 +144,7 @@ Chart.prototype.createScales = function(threshold) {
     var xExtent = d3.extent(this.data, function(d,i) { return d.SampleDate; });
     var xBuffered = bufferX(xExtent, 35);  
     // compare the max Y to the threshold and pick the greater value
-    var yMax = d3.max(this.data, function(d) { return d.Result }); 
+    var yMax = d3.max(this.data, function(d) { return d.ChartResult }); 
     var yDisplay = Math.max(yMax, threshold);
     // add arbitrary buffer to y axis
     var yLinearBuffered = Math.ceil(roundHundred(yDisplay + (yDisplay / 3)));
@@ -190,7 +190,7 @@ Chart.prototype.drawBrushPoints = function() {
         .attr('r', 3)
         .attr('fill', mainColor)
         .attr('cx', function(d) { return _this.xBrushScale(d.SampleDate); })
-        .attr('cy', function(d) { return _this.yBrushScale(d.Result); })
+        .attr('cy', function(d) { return _this.yBrushScale(d.ChartResult); })
         .style('opacity', chartOpacity);
 }
 
@@ -266,7 +266,7 @@ Chart.prototype.drawPoints = function() {
         .attr('class', 'circle')
         .attr('r', 6)
         .attr('cx', function(d) { return _this.xScale(d.SampleDate); })
-        .attr('cy', function(d) { return _this.yScale(d.Result); })
+        .attr('cy', function(d) { return _this.yScale(d.ChartResult); })
         .attr('fill', mainColor)
         .style('opacity', chartOpacity)
         .on('mouseover', function(d) {
@@ -285,7 +285,7 @@ Chart.prototype.drawPoints = function() {
         })
         .merge(points)
         .attr('cx', function(d) { return _this.xScale(d.SampleDate); })
-        .attr('cy', function(d) { return _this.yScale(d.Result); })
+        .attr('cy', function(d) { return _this.yScale(d.ChartResult); })
     points.exit()
         .remove();
 }
@@ -380,7 +380,7 @@ Chart.prototype.updatePoints = function() {
         .transition()
         .duration(1000)
         .attr('cx', function(d) { return _this.xScale(d.SampleDate); })
-        .attr('cy', function(d) { return _this.yScale(d.Result); });
+        .attr('cy', function(d) { return _this.yScale(d.ChartResult); });
     points.exit()
         .remove();
 }
@@ -456,7 +456,7 @@ function toggleTooltip (id, opacity) {
 
 function tooltipResult(d) {;
     var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var resultContent = '<strong>' + tooltipDate(d.SampleDate) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + d['Result'].toString() + ' ' + d.Unit;
+    var resultContent = '<strong>' + tooltipDate(d.SampleDate) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + d['CalculatedResult'].toString() + ' ' + d.Unit;
     return resultContent;
 }
 

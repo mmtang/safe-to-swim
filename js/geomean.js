@@ -40,9 +40,24 @@ function getGeomeans(data) {
         var rangeData = getRangeData(refDate, cutoffDate); 
         if (rangeData.length >= 2) {
             var geomean = calculateGeomean(rangeData).toFixed(2);
-            return {enddate: convertToDateObj(refDate), startdate: convertToDateObj(cutoffDate), geomean: geomean, count: rangeData.length};
+            var chartGeomean = checkForZero(geomean);
+            return {
+                enddate: convertToDateObj(refDate), 
+                startdate: convertToDateObj(cutoffDate), 
+                geomean: geomean,  // the actual calculated value based off the calculated result values
+                chartGeomean: chartGeomean,  // the value for use in the chart, zeroes are converted to 0.1 so that they can be graphed using a log scale
+                count: rangeData.length
+            };
         } else {
             return null;
+        }
+    }
+
+    function checkForZero(d) {
+        if (d === 0) {
+            return 0.1;
+        } else {
+            return d;
         }
     }
 

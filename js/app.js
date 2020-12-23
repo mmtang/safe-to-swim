@@ -129,40 +129,40 @@ function onMarkerClick(e) {
             chartData[i].MDL = +chartData[i].MDL;
             chartData[i].Result = +chartData[i].Result;
             // New column: Treat result less than the MDL as being one half the MDL
-            chartData[i].CalculatedResult = calculateND(chartData[i]);
+            chartData[i].CalculatedResult = calculateResult(chartData[i]);
             // New column: Assign a new value to results that are 0 (cannot be shown on log scale graph)
             chartData[i].ChartResult = checkDisplay(chartData[i].CalculatedResult);
             chartData[i].SampleDate = parseDate(chartData[i].SampleDate);
         }
         return chartData;
-
-        function calculateND(d) {
-            if (isND(d)) {
-                var calculated = 0.5 * d.MDL;
-                return calculated;
-            } else {
-                return d.Result;
-            }
-        }
-
-        // Assign new values for censored data with results of 0. For chart display (log scale) only. 
-        function checkDisplay(d) {
-            if (d === 0) {
-                return 0.1;
-            } else {
-                return d;
-            }
-        }
-
-        // For handling censored data
-        function isND(d) {
-            if ((d.Result < d.MDL) || ((d.Result === d.MDL) && (d.ResultQualCode === '<')) || (d.ResultQualCode === 'ND')) { 
-                return true;
-            } else {
-                return false;
-            }
-        }
     }  
+
+    function calculateResult(d) {
+        if (isND(d)) {
+            var calculated = 0.5 * d.MDL;
+            return calculated;
+        } else {
+            return d.Result;
+        }
+    }
+
+    // Assign new values for censored data with results of 0. For chart display (log scale) only. 
+    function checkDisplay(d) {
+        if (d === 0) {
+            return 0.1;
+        } else {
+            return d;
+        }
+    }
+
+    // For handling censored data
+    function isND(d) {
+        if ((d.Result < d.MDL) || ((d.Result === d.MDL) && (d.ResultQualCode === '<')) || (d.ResultQualCode === 'ND')) { 
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     function processR5Data(data) {
         // shaping R5's data to look like CEDEN's
@@ -173,6 +173,9 @@ function onMarkerClick(e) {
             data[d]['MDL'] = 1;
             data[d]['ResultQualCode'] = null;
             data[d]['SampleDate'] = parseDate(data[d]['SampleDate']);
+            // Add new columns to store modified result values
+            data[d]['CalculatedResult'] = calculateResult(data[d]);  // any calculations for 1/2 the detection limit are stored here
+            data[d]['ChartResult'] = checkDisplay(data[d]['CalculatedResult']);  // zeroes are changed to 0.1 so that they can be graph using a log scale
         }
         return data;
     }
@@ -281,6 +284,7 @@ function onMarkerClick(e) {
         // calculate geomeans based on analyte selected
         if (analyte === ecoli.name) {
             chart.createScales(ecoli.stv);
+            console.log(chartData);
             chart.gData = getGeomeans(chartData);
         } else if (analyte === enterococcus.name) {
             chart.createScales(enterococcus.stv);

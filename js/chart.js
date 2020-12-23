@@ -105,7 +105,7 @@ Chart.prototype.brushed = function(parent) {
         .attr('cx', function(d) { return parent.xScale(d.SampleDate); })
         .attr('cy', function(d) { return parent.yScale(d.ChartResult); });
     parent.focus.selectAll('.triangle')
-        .attr('transform', function(d) { return 'translate(' + parent.xScale(d.enddate) + ',' + parent.yScale(d.geomean) + ')'; })
+        .attr('transform', function(d) { return 'translate(' + parent.xScale(d.enddate) + ',' + parent.yScale(d.chartGeomean) + ')'; })
     parent.focus.select('.x-axis').call(parent.xAxis);
     // update date placeholders
     var formatDate = d3.timeFormat("%b %e, %Y");
@@ -203,7 +203,7 @@ Chart.prototype.drawGPoints = function() {
         .enter().append('path')
         .attr('class', 'triangle')
         .attr('d', d3.symbol().type(d3.symbolTriangle))
-        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.geomean) + ')'; })
+        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.chartGeomean) + ')'; })
         .style('fill', secColor)
         .style('opacity', chartOpacity)
         .on('mouseover', function(d) {
@@ -223,7 +223,7 @@ Chart.prototype.drawGPoints = function() {
             hideRect();
         })
         .merge(gPoints)
-        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.geomean) + ')'; });
+        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.chartGeomean) + ')'; });
     gPoints.exit()
         .remove();
 
@@ -356,7 +356,7 @@ Chart.prototype.updateGPoints = function() {
         .merge(gPoints)
         .transition()
         .duration(1000)
-        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.geomean) + ')'; });
+        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.chartGeomean) + ')'; });
     gPoints.exit()
         .remove();
 }

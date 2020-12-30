@@ -19,12 +19,16 @@ var Chart = function(opts) {
 }
 
 Chart.prototype.addAxes = function() {
+    var _this = this;
     this.xAxis = d3.axisBottom()
         .scale(this.xScale)
         .ticks(5);
     this.yAxis = d3.axisLeft()
         .scale(this.yScale)
-        .ticks(5);
+        .ticks(5)
+        .tickFormat(function (d) {
+            return _this.yScale.tickFormat(4, d3.format(",d"))(d)
+        });
     this.focus.append('g')
         .attr('class', 'x-axis')
         .attr('transform', 'translate(0,' + this.height + ')')
@@ -159,7 +163,7 @@ Chart.prototype.createScales = function(threshold) {
     this.logScale = d3.scaleLog() 
         .domain([0.1, yLogBuffered])
         .range([this.height, 0]);
-    // set to linear on creation
+    // set to log on creation
     this.yScale = this.logScale;
 
     function bufferX(extent, days) {

@@ -140,7 +140,7 @@ Chart.prototype.createBrushScales = function() {
     this.logBrushScale = d3.scaleLog()
         .domain(this.yScale.domain())
         .range([this.brushHeight, 0]);
-    this.yBrushScale = this.linearBrushScale;
+    this.yBrushScale = this.logBrushScale;
 }
 
 Chart.prototype.createScales = function(threshold) {
@@ -344,6 +344,7 @@ Chart.prototype.redraw = function() {
     this.updatePoints();
     this.updateGPoints();
     this.updateObjectives();
+    this.updateBrushPoints();
 }
 
 Chart.prototype.updateAxis = function() {
@@ -385,6 +386,19 @@ Chart.prototype.updatePoints = function() {
         .duration(1000)
         .attr('cx', function(d) { return _this.xScale(d.SampleDate); })
         .attr('cy', function(d) { return _this.yScale(d.ChartResult); });
+    points.exit()
+        .remove();
+}
+
+Chart.prototype.updateBrushPoints = function() {
+    var _this = this;
+    var points = this.svg.selectAll('.bCircle');
+    points.enter()
+        .merge(points)
+        .transition()
+        .duration(1000)
+        .attr('cx', function(d) { return _this.xBrushScale(d.SampleDate); })
+        .attr('cy', function(d) { return _this.yBrushScale(d.ChartResult); })
     points.exit()
         .remove();
 }

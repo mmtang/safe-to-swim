@@ -18,7 +18,8 @@ function getGeomeans(data) {
         firstDate = sortedData[sortedData.length - 1].SampleDate,
         lastDateUNIX = convertToTimestamp(lastDate),
         firstDateUNIX = convertToTimestamp(firstDate);
-    return compileGeomeans();
+    var all_geomeans = compileGeomeans();
+    return all_geomeans;
     
     // create objects for all date ranges
     function compileGeomeans() {
@@ -39,8 +40,8 @@ function getGeomeans(data) {
     function createGeomeanObject(refDate, cutoffDate) {
         var rangeData = getRangeData(refDate, cutoffDate); 
         if (rangeData.length >= 2) {
-            var geomean = calculateGeomean(rangeData).toFixed(2);
-            var chartGeomean = checkForZero(geomean);
+            var geomean = +calculateGeomean(rangeData).toFixed(2);
+            var chartGeomean = +checkForZero(geomean);
             return {
                 enddate: convertToDateObj(refDate), 
                 startdate: convertToDateObj(cutoffDate), 

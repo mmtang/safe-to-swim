@@ -284,7 +284,6 @@ function onMarkerClick(e) {
         // calculate geomeans based on analyte selected
         if (analyte === ecoli.name) {
             chart.createScales(ecoli.stv);
-            console.log(chartData);
             chart.gData = getGeomeans(chartData);
         } else if (analyte === enterococcus.name) {
             chart.createScales(enterococcus.stv);

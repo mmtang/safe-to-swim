@@ -45,6 +45,22 @@ Chart.prototype.addBrush = function() {
         .call(this.brush.move, this.xScale.range());
 }
 
+Chart.prototype.setInitialView = function() {
+    // get unique years to survey depth of data
+    var years = [...new Set(this.data.map(d => d.SampleDate.getFullYear()))].sort((a, b) => b - a);
+    // find difference between two ending years
+    var difference = years[0] - years[years.length - 1];
+    // only apply default year view if there are enough data points that are temporally distant
+    // otherwise, show all points by default
+    if ((years.length > 1) && (difference > 2)) {
+        var lastDate = this.xExtent[1];
+        var year = lastDate.getFullYear();
+        // make a copy of the date object and change the year
+        var oneYearBack = new Date(new Date(+lastDate).setFullYear(year - 1));
+        this.setBrushPosition(oneYearBack, lastDate);
+    }
+}
+
 Chart.prototype.addBrushAxis = function() {
     this.xBrushAxis = d3.axisBottom(this.xBrushScale)
         .ticks(5)
@@ -145,8 +161,8 @@ Chart.prototype.createBrushScales = function() {
 
 Chart.prototype.createScales = function(threshold) {
     // calculate min and max for data
-    var xExtent = d3.extent(this.data, function(d,i) { return d.SampleDate; });
-    var xBuffered = bufferX(xExtent, 35);  
+    this.xExtent = d3.extent(this.data, function(d,i) { return d.SampleDate; });
+    var xBuffered = bufferX(this.xExtent, 35);  
     // compare the max Y to the threshold and pick the greater value
     var yMax = d3.max(this.data, function(d) { return d.ChartResult }); 
     var yDisplay = Math.max(yMax, threshold);
@@ -181,6 +197,7 @@ Chart.prototype.drawBrush = function() {
     this.createBrush();
     this.addBrushAxis();
     this.addBrush();
+    this.setInitialView();
 }
 
 Chart.prototype.drawBrushPoints = function() {
@@ -322,7 +339,7 @@ Chart.prototype.initializeChart = function() {
     this.focus = this.svg.append('g')
         .attr('class', 'focus')
         .attr('transform', 'translate(' + this.margin.left + ', ' + (this.margin.top + 10) + ')');
-    // add geometry for clipping chart elements
+    // add geometry for clipping chart elements (lines)
     this.svg.append('defs').append('clipPath')
             .attr('id', 'clip')
         .append('rect')
@@ -345,6 +362,10 @@ Chart.prototype.redraw = function() {
     this.updateGPoints();
     this.updateObjectives();
     this.updateBrushPoints();
+}
+
+Chart.prototype.setBrushPosition = function(dateObj1, dateObj2) {
+    d3.select('.brush').call(this.brush.move, [dateObj1, dateObj2].map(this.xScale));
 }
 
 Chart.prototype.updateAxis = function() {

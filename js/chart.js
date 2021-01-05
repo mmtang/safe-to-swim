@@ -49,7 +49,18 @@ Chart.prototype.addBrush = function() {
 
 Chart.prototype.setInitialView = function() {
     // get unique years to survey depth of data
-    var years = [...new Set(this.data.map(d => d.SampleDate.getFullYear()))].sort((a, b) => b - a);
+    // IE11 no longer supports sets
+    var years = [];
+    for (var i = 0; i < this.data.length; i++) {
+        var year = this.data[i].SampleDate.getFullYear();
+        if (years.indexOf(year) < 0) {
+            years.push(year);
+        }
+    }
+    // sort years by descending order
+    years.sort(function(a,b) {
+        return b - a;
+    });
     // find difference between two ending years
     var difference = years[0] - years[years.length - 1];
     // only apply default year view if there are enough data points that are temporally distant

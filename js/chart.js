@@ -15,6 +15,8 @@ var Chart = function(opts) {
     this.margin = opts.margin;
     this.width = opts.width;
     this.height = opts.height;
+    // padding so that the point elements aren't cut off to the right of the chart 
+    this.elementPadding = 6;
     this.initializeChart();
 }
 
@@ -85,7 +87,7 @@ Chart.prototype.addLine = function(val, type, color) {
         .style('stroke', color)
         .style('stroke-width', 3)
         .attr('x1', 0)
-        .attr('x2', _this.width)
+        .attr('x2', _this.width + _this.elementPadding)
         .attr('y1', _this.yScale(val))
         .attr('y2', _this.yScale(val))
         .style('opacity', chartOpacity)
@@ -162,7 +164,6 @@ Chart.prototype.createBrushScales = function() {
 Chart.prototype.createScales = function(threshold) {
     // calculate min and max for data
     this.xExtent = d3.extent(this.data, function(d,i) { return d.SampleDate; });
-    var xBuffered = bufferX(this.xExtent, 35);  
     // compare the max Y to the threshold and pick the greater value
     var yMax = d3.max(this.data, function(d) { return d.ChartResult }); 
     var yDisplay = Math.max(yMax, threshold);
@@ -171,7 +172,7 @@ Chart.prototype.createScales = function(threshold) {
     var yLogBuffered = Math.ceil(roundHundred(yDisplay + (yDisplay / 2)));
 
     this.xScale = d3.scaleTime()
-        .domain(xBuffered)
+        .domain(this.xExtent)
         .range([0, this.width]);
     this.linearScale = d3.scaleLinear()
         .domain([0, yLinearBuffered])
@@ -181,14 +182,6 @@ Chart.prototype.createScales = function(threshold) {
         .range([this.height, 0]);
     // set to log on creation
     this.yScale = this.logScale;
-
-    function bufferX(extent, days) {
-        var min = convertToTimestamp(extent[0]);
-        var max = convertToTimestamp(extent[1]);
-        var newMin = min - MS_PER_DAY * days; 
-        var newMax = max + MS_PER_DAY * days;
-        return [convertToDateObj(newMin), convertToDateObj(newMax)];
-    }
 }
 
 Chart.prototype.drawBrush = function() {
@@ -218,7 +211,7 @@ Chart.prototype.drawBrushPoints = function() {
 Chart.prototype.drawGPoints = function() {
     var _this = this;
     var gPoints = this.focus.append('g')
-        .attr('clip-path', 'url(#clip)');
+        .attr('clip-path', 'url(#clipBuffered)');
     gPoints.selectAll('.triangle')
         .data(this.gData, function(d) { return d; })
         .enter().append('path')
@@ -280,7 +273,7 @@ Chart.prototype.drawLines = function(analyte) {
 Chart.prototype.drawPoints = function() {
     var _this = this;
     var points = this.focus.append('g')
-        .attr('clip-path', 'url(#clip)');
+        .attr('clip-path', 'url(#clipBuffered)');
     points.selectAll('.circle')
         .data(this.data)
         .enter().append('circle')
@@ -339,11 +332,18 @@ Chart.prototype.initializeChart = function() {
     this.focus = this.svg.append('g')
         .attr('class', 'focus')
         .attr('transform', 'translate(' + this.margin.left + ', ' + (this.margin.top + 10) + ')');
-    // add geometry for clipping chart elements (lines)
+    // clip path for clipping to the exact width of the chart element
     this.svg.append('defs').append('clipPath')
             .attr('id', 'clip')
         .append('rect')
             .attr('width', this.width)
+            .attr('height', this.height);
+    // clip path for clipping to the width of the chart element + an extra buffer to the right for point elements
+    // used for the points, gm triangles, and objective lines
+    this.svg.append('defs').append('clipPath')
+            .attr('id', 'clipBuffered')
+        .append('rect')
+            .attr('width', this.width + this.elementPadding)
             .attr('height', this.height);
     // initialize tooltips
     createTooltip('tooltipLine');

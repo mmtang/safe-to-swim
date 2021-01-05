@@ -385,6 +385,7 @@ body {
 
 .line {
     shape-rendering: crispEdges;
+    clip-path: url(#clipBuffered);
 }
 
 .xAxis, .yAxis, .xAxis2 {

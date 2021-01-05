@@ -271,7 +271,7 @@ function onMarkerClick(e) {
             var panelHeight = Math.min(349, Math.round((windowHeight * 0.5)));
         }
 
-        var chartMargin = {top: 10, right: 20, bottom: 100, left: 50};
+        var chartMargin = {top: 10, right: 30, bottom: 100, left: 50};
         var chart = new Chart({
             element: document.getElementById('chart-space'),
             margin: chartMargin,

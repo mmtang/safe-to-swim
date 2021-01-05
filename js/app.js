@@ -442,45 +442,9 @@ function convertToCSV(data) {
     });
     var body = values.join('\r\n');
     csvString += header + '\r\n' + body;
-
-    // we need special cases for ie and edge because they handle data file exports differently
-    // firefox, chrome, and safari seem to be covered under the else case
-    if (checkIE()) {
-        var IEwindow = window.open();
-        IEwindow.document.write(csvString);
-        IEwindow.document.close();
-        IEwindow.document.execCommand('SaveAs', true, fileName);
-        IEwindow.close();
-    } else if (checkEdge()) {
-        var blob = new Blob([csvString], { type: 'data:text/csv;charset=utf-8;' });
-        var linkElement = document.createElement('a');
-        var url = URL.createObjectURL(blob);
-        linkElement.setAttribute('href', url);
-        linkElement.setAttribute('download', fileName);
-        var clickEvent = new MouseEvent('click', {
-            'view': window,
-            'bubbles': true,
-            'cancelable': false
-        });
-        linkElement.dispatchEvent(clickEvent);
-    } else {
-        var csv = document.createElement('a');
-        csv.href = 'data:text/csv;charset=utf-8,' +  encodeURIComponent(csvString);
-        csv.target = '_blank';
-        csv.download = fileName;
-        document.body.appendChild(csv);
-        csv.click();
-    }
-
-    function checkEdge() {
-        var ua = window.navigator.userAgent;
-        return (/edge/i.test(ua)) ? true : false;
-    }
-    
-    function checkIE() {
-        var ua = window.navigator.userAgent;
-        return (/msie\s|trident\//i.test(ua)) ? true : false;
-    }
+    // use filesaver.js to export data as csv file (cross-browser support)
+    var blob = new Blob([csvString], { type: 'text/plain;charset=utf-8' });
+    window.saveAs(blob, fileName);
 }
 
 function createURL(baseURL, columns, site) {

@@ -443,7 +443,7 @@ function convertToCSV(data) {
     var body = values.join('\r\n');
     csvString += header + '\r\n' + body;
     // use filesaver.js to export data as csv file (cross-browser support)
-    var blob = new Blob([csvString], { type: 'text/plain;charset=utf-8' });
+    var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8' });
     window.saveAs(blob, fileName);
 }
 

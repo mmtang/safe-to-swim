@@ -62,10 +62,15 @@ Chart.prototype.setInitialView = function() {
         return b - a;
     });
     // find difference between two ending years
-    var difference = years[0] - years[years.length - 1];
+    if (years.length > 1) {
+        var difference = years[0] - years[years.length - 1];
+    } else if (years.length === 1) {
+        var difference = 0;
+    }
+    
     // only apply default year view if there are enough data points that are temporally distant
     // otherwise, show all points by default
-    if ((years.length > 1) && (difference > 2)) {
+    if (this.data.length > 2 && difference > 2) {
         var lastDate = this.xExtent[1];
         var year = lastDate.getFullYear();
         // make a copy of the date object and change the year
@@ -175,12 +180,24 @@ Chart.prototype.createBrushScales = function() {
 Chart.prototype.createScales = function(threshold) {
     // calculate min and max for data
     this.xExtent = d3.extent(this.data, function(d,i) { return d.SampleDate; });
+    if (this.data.length === 1) {
+        this.xExtent = bufferX(this.xExtent, 35);  
+    }
+
     // compare the max Y to the threshold and pick the greater value
     var yMax = d3.max(this.data, function(d) { return d.ChartResult }); 
     var yDisplay = Math.max(yMax, threshold);
     // add arbitrary buffer to y axis
     var yLinearBuffered = Math.ceil(roundHundred(yDisplay + (yDisplay / 3)));
     var yLogBuffered = Math.ceil(roundHundred(yDisplay + (yDisplay / 2)));
+
+    function bufferX(extent, days) {
+        var min = convertToTimestamp(extent[0]);
+        var max = convertToTimestamp(extent[1]);
+        var newMin = min - MS_PER_DAY * days; 
+        var newMax = max + MS_PER_DAY * days;
+        return [convertToDateObj(newMin), convertToDateObj(newMax)];
+    }
 
     this.xScale = d3.scaleTime()
         .domain(this.xExtent)

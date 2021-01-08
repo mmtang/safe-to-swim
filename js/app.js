@@ -168,10 +168,11 @@ function onMarkerClick(e) {
         // shaping R5's data to look like CEDEN's
         var parseDate = d3.timeParse('%Y-%m-%d');
         for (d = 0; d < data.length; d++) {
-            data[d]['DataQuality'] = null;
+            data[d]['DataQuality'] = 'NA';
             // MDL for E. coli = 1
             data[d]['MDL'] = 1;
-            data[d]['ResultQualCode'] = null;
+            data[d]['MethodName'] = 'NA';
+            data[d]['ResultQualCode'] = 'NA';
             data[d]['SampleDate'] = parseDate(data[d]['SampleDate']);
             // Add new columns to store modified result values
             data[d]['CalculatedResult'] = calculateResult(data[d]);  // any calculations for 1/2 the detection limit are stored here

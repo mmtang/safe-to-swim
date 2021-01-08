@@ -34,7 +34,7 @@ function onMarkerClick(e) {
                 if (res2) {
                     var r5Data = processR5Data(res2[0].result.records);
                     var uniqueR5Data = compareData(allData, r5Data);
-                    Array.prototype.push.apply(allData, r5Data);
+                    Array.prototype.push.apply(allData, uniqueR5Data);
                 }
                 addPanelContent(allData);
             } else {
@@ -714,7 +714,6 @@ function addSiteLayer() {
             var siteData = res1[0]['result']['records'];
             // convert to date objects
             siteData.forEach(function(d) { d.LastSampleDate = parseDate(d.LastSampleDate); });
-            
             var r5Data = res2[0]['result']['records'];
             var r5Sites = processR5SiteData(r5Data);
             // join R5 data to main site list

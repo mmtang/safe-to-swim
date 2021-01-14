@@ -239,9 +239,10 @@ Chart.prototype.drawBrushPoints = function() {
 Chart.prototype.drawGPoints = function() {
     var _this = this;
     var gPoints = this.focus.append('g')
-        .attr('clip-path', 'url(#clipBuffered)');
+        .attr('clip-path', 'url(#clipBuffered)')
+        .attr('id', 'gMask');
     gPoints.selectAll('.triangle')
-        .data(this.gData, function(d) { return d; })
+        .data(this.gData.filter(function(d) { return d.count >= gmLimit }), function(d) { return d.key; })
         .enter().append('path')
         .attr('class', 'triangle')
         .attr('d', d3.symbol().type(d3.symbolTriangle))
@@ -331,6 +332,28 @@ Chart.prototype.drawPoints = function() {
     points.exit()
         .remove();
 }
+
+Chart.prototype.filterGPoints = function() {
+    d3.selectAll('.triangle').remove();
+    d3.select('#gMask').remove();
+    this.drawGPoints();
+}
+
+// could potentially use this for the geomean updates instead of straight out clearing the elements as done above, but i don't like how the code is duplicated with the original code that initializes the points. maybe we could refactor some of this.
+// you have to select the mask before you append so that the new appended elements reside within the mask. This part works if you add the attribute lines back in.
+/*
+Chart.prototype.filterGPoints = function() {
+    var _this = this;
+    var filtered = this.gData.filter(function(d) { return d.count >= gmLimit });
+    var mask = d3.select('#gMask');
+    var gPoints = mask.selectAll('.triangle')
+        .data(filtered);
+    gPoints.enter().append('path')
+        .merge(gPoints);
+    gPoints.exit()
+        .remove();
+}
+*/
 
 Chart.prototype.initializeBrush = function() {
     this.brushHeight = 25;

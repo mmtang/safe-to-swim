@@ -379,8 +379,17 @@ body {
     font-size: 12px;
 }
 
+#filter-container {
+    display: flex;
+    flex-direction: column;
+}
+
 #filter-menu {
     flex-basis: auto;
+}
+
+#geomean-container {
+    padding-left: 20px;
 }
 
 .line {

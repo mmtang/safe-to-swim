@@ -214,6 +214,7 @@ function onMarkerClick(e) {
             addAnalyteMenu(analytes);
             addAnalyteListener(data);
             addScaleMenu(); 
+            addGeomeanMenu();
             addFilterMenu(); 
             addChart(data, currentAnalyte);
         } else {
@@ -308,13 +309,29 @@ function onMarkerClick(e) {
         d3.select('#filter-geomean').on('change', function() { 
             toggleElement(this, '.triangle'); 
             toggleElement(this, '.line.gm');
+            refreshGeomeanMenu();
         });
 
         // scale listeners
         d3.select('#linear-button').on('click', function() { changeScale(); });
         d3.select('#log-button').on('click', function() { changeScale(); });
 
+        // geomean listener
+        addGeomeanListener();
+
         updateDownloadMenu();
+
+        function addGeomeanListener() {
+            document.getElementById('geomean-menu').addEventListener('change', function() {
+                selected = Number(this.value);
+                if (selected === 2) {
+                    gmLimit = 2;
+                } else if (selected === 5) {
+                    gmLimit = 5;
+                }
+                chart.filterGPoints();
+            })
+        }
         
         function changeScale() {
             if (currentScale === 'linear') {
@@ -387,10 +404,17 @@ $('#nav-btn').click(function() {
 });
 
 function addFilterMenu() {
-    var filterContainer = document.getElementById('filter-container');
+    var filterContainer = document.getElementById('checkbox-container');
     var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;&nbsp;Samples</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-left" data-toggle="popover" title="Geometric Mean" data-content="For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. At least two sample results are required for the calculation. Position the mouse cursor over a geometric mean chart element to highlight the date period used in the calculation."></i></a></label></div></div>';
     filterContainer.innerHTML = content;
     updateFilters();
+}
+
+function addGeomeanMenu() {
+    gmLimit = 2;
+    var gmContainer = document.getElementById('geomean-container');
+    var content = '<select id="geomean-menu" class="bootstrap-select"><option value="2" selected="selected">2 sample minimum</option><option value="5">5 sample minimum</option></select>';
+    gmContainer.innerHTML = content;
 }
 
 function addScaleMenu() {
@@ -538,7 +562,7 @@ function hidePanelArrow() {
 }
 
 function initializeChartPanel() {
-    var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"></div></div>' + '<div id="chart-space"></div><div id="date-container" class="panel-container"></div><div id="download-container"></div>';
+    var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"><div id="checkbox-container"></div><div id="geomean-container" class="popup-container"></div></div></div>' + '<div id="chart-space"></div><div id="date-container" class="panel-container"></div><div id="download-container"></div>';
     document.getElementById('panel-content').innerHTML = featureContent;
 }
 
@@ -608,14 +632,28 @@ function setPanelContent(html) {
 function updateFilters() {
     var sampleFilter = document.getElementById('filter-result');
     sampleFilter.checked = true;
-
     var gmFilter = document.getElementById('filter-geomean');
+    // configuration based on analyte selection
     if ((currentAnalyte === ecoli.name) || (currentAnalyte === enterococcus.name)) {
         gmFilter.disabled = false;
         gmFilter.checked = true;
     } else {
         gmFilter.disabled = true;
         gmFilter.checked = false;
+    }
+    updateGeomeanMenu();
+}
+
+function updateGeomeanMenu() {
+    var gmFilter = document.getElementById('filter-geomean');
+    var gmContainer = document.getElementById('geomean-container');
+    var gmMenu = document.getElementById('geomean-menu');
+    if (gmFilter.checked === true) {
+        gmMenu.disabled = false;
+        gmContainer.style.display = 'inline';
+    } else if (gmFilter.checked === false) {
+        gmMenu.disabled = true;
+        gmContainer.style.display = 'none';
     }
 }
 
@@ -937,6 +975,7 @@ map.getPane('monthPane').style.zIndex = 670;
 var chartOpacity = 0.8;
 var currentAnalyte; 
 var currentScale = 'log';
+var gmLimit = 2;
 var lastSite = new Object();
 // var mainColor = '#1f78b4', secColor = '#ff7f0e';
 var mainColor = '#145785', secColor = '#e86348';

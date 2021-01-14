@@ -19,7 +19,8 @@ function getGeomeans(data) {
         lastDateUNIX = convertToTimestamp(lastDate),
         firstDateUNIX = convertToTimestamp(firstDate);
     var all_geomeans = compileGeomeans();
-    return all_geomeans;
+    var final_geomeans = addKey(all_geomeans);
+    return final_geomeans;
     
     // create objects for all date ranges
     function compileGeomeans() {
@@ -87,6 +88,13 @@ function getGeomeans(data) {
             var geomean = Math.pow(product, (1 / data.length)); // nth root
             return geomean;
         }
+    }
+
+    function addKey(data) {
+        for (var i = 0; i < data.length; i++) {
+            data[i].key = i + 1;
+        }
+        return data;
     }
 }
 

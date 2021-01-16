@@ -382,7 +382,7 @@ Chart.prototype.initializeChart = function() {
         .call(responsive);
     this.focus = this.svg.append('g')
         .attr('class', 'focus')
-        .attr('transform', 'translate(' + this.margin.left + ', ' + (this.margin.top + 10) + ')');
+        .attr('transform', 'translate(' + this.margin.left + ', ' + (this.margin.top) + ')');
     // clip path for clipping to the exact width of the chart element
     this.svg.append('defs').append('clipPath')
             .attr('id', 'clip')

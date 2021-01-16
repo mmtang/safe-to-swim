@@ -309,7 +309,7 @@ function onMarkerClick(e) {
         d3.select('#filter-geomean').on('change', function() { 
             toggleElement(this, '.triangle'); 
             toggleElement(this, '.line.gm');
-            refreshGeomeanMenu();
+            updateGeomeanMenu();
         });
 
         // scale listeners
@@ -413,7 +413,7 @@ function addFilterMenu() {
 function addGeomeanMenu() {
     gmLimit = 2;
     var gmContainer = document.getElementById('geomean-container');
-    var content = '<select id="geomean-menu" class="bootstrap-select"><option value="2" selected="selected">2 sample minimum</option><option value="5">5 sample minimum</option></select>';
+    var content = '<select id="geomean-menu" class="bootstrap-select"><option value="2" selected="selected">2 sample min.</option><option value="5">5 sample min.</option></select>';
     gmContainer.innerHTML = content;
 }
 

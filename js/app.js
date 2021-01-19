@@ -650,10 +650,12 @@ function updateGeomeanMenu() {
     var gmMenu = document.getElementById('geomean-menu');
     if (gmFilter.checked === true) {
         gmMenu.disabled = false;
-        gmContainer.style.display = 'inline';
+        // for hiding the gm menu checkbox when unchecked
+        // not using this for now because i think the change is too dramatic
+        // gmContainer.style.display = 'inline';
     } else if (gmFilter.checked === false) {
         gmMenu.disabled = true;
-        gmContainer.style.display = 'none';
+        // gmContainer.style.display = 'none';
     }
 }
 

@@ -398,6 +398,10 @@ body {
     padding-left: 20px;
 }
 
+#geomean-menu:disabled {
+    cursor: not-allowed;
+}
+
 .line {
     shape-rendering: crispEdges;
     clip-path: url(#clipBuffered);
@@ -432,7 +436,7 @@ rect.pane {
 }
 
 #chart-space {
-    padding: 0px 0px 5px 0px;
+    padding: 5px 0px 5px 0px;
 }
 
 #download-well {

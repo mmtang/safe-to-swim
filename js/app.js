@@ -270,7 +270,7 @@ function onMarkerClick(e) {
             var panelHeight = 349;
         } else {
             var panelWidth = 745;
-            var panelHeight = Math.min(349, Math.round((windowHeight * 0.5)));
+            var panelHeight = Math.min(349, Math.round((windowHeight * 0.47)));
         }
 
         var chartMargin = {top: 10, right: 30, bottom: 100, left: 50};

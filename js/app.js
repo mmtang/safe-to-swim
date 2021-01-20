@@ -251,9 +251,9 @@ function onMarkerClick(e) {
             placement: 'top',
             template: '<div class="popover"><div class="arrow"></div><div class="popover-content"></div></div>'
         });
-        $('.pop-left').popover({ 
+        $('.pop-bottom').popover({ 
             trigger: 'hover', 
-            placement : 'left',
+            placement : 'bottom',
             template: '<div class="popover"><div class="arrow"></div><div class="popover-content"></div></div>' 
         });
 
@@ -405,7 +405,7 @@ $('#nav-btn').click(function() {
 
 function addFilterMenu() {
     var filterContainer = document.getElementById('checkbox-container');
-    var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;&nbsp;Samples</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-left" data-toggle="popover" title="Geometric Mean" data-content="For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. At least two sample results are required for the calculation. Position the mouse cursor over a geometric mean chart element to highlight the date period used in the calculation."></i></a></label></div></div>';
+    var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;&nbsp;Samples</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-bottom" data-toggle="popover" data-html="true" title="Geometric Mean" data-content="<p>The geometric mean is a type of mean or average that indicates the central tendency or typical value of a set of numbers by using the product of their values (as opposed to the arithmetic mean which uses their sum). It is defined as the nth root of the product of n numbers.</p><p>For E. coli and enterococci only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. The minimum number of samples required for the calculation is two but can be changed to five using the dropdown menu below. Position your mouse cursor over a geometric mean triangle on the chart to highlight the six-week date period used for the calculation.</p>"></i></a></label></div></div>';
     filterContainer.innerHTML = content;
     updateFilters();
 }
@@ -569,7 +569,7 @@ function initializeChartPanel() {
 function initializeDatePanel() {
     var datePanel = document.getElementById('date-container');
     datePanel.innerHTML = '';
-    datePanel.innerHTML = '<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold the left or right side of the gray box and drag it towards the center of the timeline."></i></a></p>';
+    datePanel.innerHTML = '<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold your mouse cursor on the left or right outside side of the gray box. Drag it across the timeline area to change the viewable date range of the chart."></i></a></p>';
 }
 
 function initializeDownloadMenu() {

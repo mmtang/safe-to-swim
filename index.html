@@ -93,33 +93,38 @@ https://github.com/mmtang
                     </ul>
                     <div class="tab-content">
                         <div class="tab-pane fade active in" id="about">
-                            <br><a href="https://mywaterquality.ca.gov/index.html" target="_blank"><img style="float: right; padding-bottom: 10px; padding-left: 10px;" src="assets\cwqmc-logo.jpg"></a>
-                            <h5><strong>What are the trends of bacteria at my coastal or inland beach?</strong></h5>
+                            <br><a href="https://mywaterquality.ca.gov/index.html" target="_blank"><img style="float: right; padding: 20px 0 10px 10px" src="assets\cwqmc-logo.jpg"></a>
+                            <h5 class="about-header">What are the trends of bacteria at my coastal or inland beach?</h5>
                             <p>This interactive map displays bacterial sampling results (E. coli, enterococci, fecal coliforms, and total coliforms) for coastal and inland monitoring locations over time.</p>
                             <p>The data are sourced from the <a href="http://www.ceden.org" target="_blank">California Environmental Data Exchange Network</a> (CEDEN) and <a href="http://arcg.is/0CWWbC" target="_blank">Central Valley E. coli Monitoring Results</a> interactive map. The data are accessed using the public API on the <a href="https://data.ca.gov/dataset/central-valley-water-board-e-coli-monitoring-results/resource/fc450fb6-e997-4bcf-b824-1b3ed0f06045" target="_blank">California Open Data Portal</a>. The <a href="https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results" target="_blank">CEDEN</a> dataset is updated weekly. The <a href="https://data.ca.gov/dataset/central-valley-water-board-e-coli-monitoring-results" target="_blank">Central Valley Water Board E. coli Monitoring</a> dataset is updated weekly.</p>
-                            <br><h5><strong>Disclaimer & Access Use</strong></h5>
-                            <p>This data can change at any time and should not be used for any particular purpose other than general reference.</p>
+                            <h5 class="about-header">Disclaimer & Access Use</h5>
+                            <p>The data can change at any time and should not be used for any particular purpose other than general reference.</p>
+                            <h5 class="about-header">Contact</h5>
+                            <p>Send questions, comments, and suggestions about this application to <a href="mailto:swamp@waterboards.ca.gov">swamp@waterboards.ca.gov</a>.</p>
                         </div>
                         <div id="how-to-use" class="tab-pane fade">
-                            <br><h5><strong>Using the interactive map:</strong></h5>
+                            <h5><strong>Using the interactive map:</strong></h5>
                             <div class="well well-sm">
+                                <img class="about-image" style="max-width: 90%;" src="assets\search.jpg">
                                 <ul>
-                                    <li>To find sample results for a particular site, locate a site on the map or search for a site using the search bar at the upper right of the application.</li>
-                                    <li>Click on a site location. The sample results will appear on a chart to the right. Results may take time to appear depending on the network connection and the amount of data being loaded. </li>
+                                    <li>To find sample results for a particular site, locate a site on the map or search for a site by station name or station code using the search bar at the upper right of the application.</li>
+                                    <li>Click on the site. The sample results will appear to the right. The data may take time to appear depending on the network connection and the volume of data being loaded. </li>
                                 </ul>
                             </div>
                             <h5><strong>Using the interactive chart:</strong></h5>
                             <div class="well well-sm">
+                                <img class="about-image" style="max-width: 90%;" src="assets\site-view.jpg">
                                 <ul>
-                                    <li>Use the dropdown menu located at the upper left of the panel to view sample results for E. coli, enterococci, fecal coliforms, or total coliforms. Not all sites have results for all indicators.</li>
+                                    <li>Use the dropdown menu located at the upper left of the panel to view the sample results for E. coli, enterococci, fecal coliforms, or total coliforms. Not all sites will have results for all of the indicators.</li>
+                                    <li>Change what elements are displayed on the chart by using the menus at the upper right of the panel. Change the minimum number of samples used in calculating the geometric mean by using the dropdown menu under the geometric mean checkbox. A two sample minimum is selected by default.</li>
                                     <li>Place the mouse cursor over a blue point to see the agency, date, and result associated with a particular sample event.</li>
-                                    <li>Place the mouse cursor over an orange triangle to see the six-week rolling geometric mean and to highlight the date range used in the calculation.</li>
-                                    <li>Horizontal lines on the chart represent the State Water Resources Control Board statewide bacteria water quality objectives outlined in the <a href="https://www.waterboards.ca.gov/bacterialobjectives/" target="_blank">Water Quality Control Plan for Inland Surface Waters, Enclosed Bays, and Estuaries of California</a>.</li>
+                                    <li>Place the mouse cursor over an orange triangle to see the six-week rolling geometric mean and to highlight the date range used in the calculation.<img class="about-image" style="max-width: 90%;" src="assets\geomean-box.jpg"></li>
+                                    <li>The horizontal lines on the chart represent the State Water Resources Control Board statewide bacteria water quality objectives outlined in the <a href="https://www.waterboards.ca.gov/bacterialobjectives/" target="_blank">Water Quality Control Plan for Inland Surface Waters, Enclosed Bays, and Estuaries of California</a>.</li>
                                         <ul>
-                                            <li>The blue dashed line is the statistical threshold value for single samples. Sample points above this line represent violations of the objective.</li>
-                                            <li>The orange dashed line is the six-week geometric mean objective. Geometric mean points above this line represent violations of the objective. </li>
+                                            <li>The blue dashed line is the statistical threshold value for single samples. Sample points above this line represent exceedances of the objective.</li>
+                                            <li>The orange dashed line is the six-week geometric mean objective. Geometric mean points above this line represent exceedances of the objective. </li>
                                         </ul>
-                                    <li>Use the timeline below the chart to change the date view. Click and hold the left or right side of the gray box and drag it towards the center of the timeline.</li>
+                                    <li>Use the timeline below the chart to change the date view of the chart. Click and hold your mouse cursor on the left or right outside side of the gray box. Drag it across the timeline area to change the viewable date range of the chart.<br><img class="about-image" style="max-width: 90%;" src="assets\timeline.jpg"></li>
                                 </ul>
                             </div>
                         </div>

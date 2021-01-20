@@ -53,6 +53,18 @@ body {
     padding-top: 10px;
 }
 
+.about-header {
+    margin: 20px 0 10px 0;
+    font-weight: bold;
+}
+
+.about-image {
+    display: block; 
+    margin: auto;
+    height: auto;
+    padding: 20px 10px 20px 0;
+}
+
 .background-mask {
     display: flex;
     position: fixed;
@@ -556,6 +568,7 @@ rect.pane {
 }
 
 .popover {
+    max-width: 450px;
     box-shadow: none;
 }
 

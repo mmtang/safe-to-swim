@@ -22,6 +22,9 @@ function onMarkerClick(e) {
             getCEDENData('442a2628-92bd-4d83-aab6-6fde5eeeb56c', site),
             getR5Data(site)
         ).done(function(res11, res12, res2) {
+            console.log(res11);
+            console.log(res12);
+            console.log(res2);
             // checks that the returned site matches the last site clicked 
             // this is in case the user clicks multiple sites in succession
             if (site === lastSite.code) {
@@ -87,8 +90,7 @@ function onMarkerClick(e) {
     }
 
     function getR5Data(site) {
-        var r5Sites = ['519AMNSAC', '519AMNDVY', '514SAC009', '519SAC106', '519SAC104', '519SAC105', '519LSAC53', '519SAC102', '519LSAC52', '519SAC000', '519SAC001'];
-        if (r5Sites.indexOf(site) >= 0) {
+        if (_r5Sites.indexOf(site) >= 0) {
             var resource = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fc450fb6-e997-4bcf-b824-1b3ed0f06045';
             var columns = ['StationCode', 'StationName', 'SampleDate', 'Analyte', 'Result', 'Unit', 'Program'];
             var r5URL = createURL(resource, columns, site);
@@ -795,6 +797,7 @@ function addSiteLayer() {
                 uniqueSites.push(stationCode);
             }
         }
+        _r5Sites = uniqueSites;
         for (var i = 0; i < uniqueSites.length; i++) {
             var dates = data.filter(function(d) { return d.StationCode === uniqueSites[i]; });
             var maxDate = d3.max(dates.map(function(d) { return parseR5Date(d.SampleDate); }));
@@ -985,6 +988,7 @@ var MS_PER_DAY = (24 * 60 * 60 * 1000);
 var parseDate = d3.timeParse('%Y-%m-%dT%H:%M:%S');
 var recordLimit = 10000;
 var siteLayer; // accessed globally for highlight functions
+var _r5Sites; // accessed globally for checking if a site is an R5 site
 
 clearSearch();
 addMapTiles();

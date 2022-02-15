@@ -17,21 +17,22 @@ function onMarkerClick(e) {
     function getSiteData() {
         $.when(
             // prior to 2010
-            getCEDENData('270c628e-e0cd-42ab-b694-3f01c9b29559', site),
-            // 2010 and after
-            getCEDENData('442a2628-92bd-4d83-aab6-6fde5eeeb56c', site),
+            getCEDENData('18c57345-bf87-4c46-b358-b634d36be4d2', site),
+            // 2010-2020
+            getCEDENData('7639446f-8c62-43d9-a526-8bc7952dd8bd', site),
+            // 2020-present
+            getCEDENData('1987c159-ce07-47c6-8d4f-4483db6e6460', site),
             getR5Data(site)
-        ).done(function(res11, res12, res2) {
-            console.log(res11);
-            console.log(res12);
-            console.log(res2);
+        ).done(function(res11, res12, res13, res2) {
+            // Results are returned in order of the functions listed above in the when statement
             // checks that the returned site matches the last site clicked 
             // this is in case the user clicks multiple sites in succession
             if (site === lastSite.code) {
-                // merge the two CEDEN data responses
+                // merge the CEDEN data responses
                 var cedenPart1 = processCEDENData(res11[0].result.records);
                 var cedenPart2 = processCEDENData(res12[0].result.records);
-                var allData = cedenPart1.concat(cedenPart2);
+                var cedenPart3 = processCEDENData(res13[0].result.records);
+                var allData = cedenPart1.concat(cedenPart2, cedenPart3);
                 // merge R5 data with CEDEN data
                 // can add more if statements for other datasets we bring in, following the same pattern
                 if (res2) {
@@ -439,6 +440,49 @@ function clearSearch() {
     document.getElementById('searchbox').value = '';
 }
 
+function addResourceDates() {
+    // This URL points to the Safe to Swim sites dataset on the portal. Any of the other datasets can be used with the same result.
+    // https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results/resource/848d2e3f-2846-449c-90e0-9aaf5c45853e
+    var cedenResourceId = '848d2e3f-2846-449c-90e0-9aaf5c45853e';
+    var r5ResourceId = 'fc450fb6-e997-4bcf-b824-1b3ed0f06045';
+    $.when(
+        getResourceInfo(cedenResourceId),
+        getResourceInfo(r5ResourceId)
+    ).done(function(res1, res2) {
+        // Date helper functions
+        var parseDate = d3.timeParse('%Y-%m-%dT%H:%M:%S.%f');
+        var formatDate = d3.timeFormat("%b %e, %Y");
+        // Process CEDEN dataset date
+        var cedenResult = res1[0].result['last_modified'];
+        var cedenDate = formatDate(parseDate(cedenResult));
+        // Process R5 dataset date
+        var r5Result = res2[0].result['last_modified'];
+        var r5Date = formatDate(parseDate(r5Result));
+        // Contruct HTML and set div content
+        var content = 'CEDEN/BeachWatch data updated: ' + cedenDate + '<br>' + 'Central Valley E. coli data updated: ' + r5Date;
+        document.getElementById('update-date-container').innerHTML = content;
+    });
+}
+
+function getResourceInfo(resource) {
+    if (resource) {
+        var baseUrl = 'https://data.ca.gov/api/3/action/resource_show?id=';
+        var resourceUrl = baseUrl + resource;
+        return $.ajax({
+            type: 'GET',
+            url: resourceUrl,
+            dataType: 'json',
+            error: function(xhr, textStatus, error) {
+                console.log(xhr.statusText);
+                console.log(textStatus);
+                console.log(error);
+            }
+        });
+    } else {
+        console.log('Missing resource ID')
+    }
+}
+
 function openPanel() {
     document.getElementById('chart-container').style.display = 'inline-block';
     document.getElementById('panel-content').style.display = 'block';
@@ -749,7 +793,7 @@ function addSiteLayer() {
     }
 
     function getSiteList() {
-        var siteListURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=4f41c529-a33f-4006-9cfc-71b6944cb951&limit=' + recordLimit;
+        var siteListURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=848d2e3f-2846-449c-90e0-9aaf5c45853e&limit=' + recordLimit;
         var r5URL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fc450fb6-e997-4bcf-b824-1b3ed0f06045&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
         var call1 = $.get(siteListURL);
         var call2 = $.get(r5URL);
@@ -761,9 +805,9 @@ function addSiteLayer() {
             var r5Sites = processR5SiteData(r5Data);
             // join R5 data to main site list
             siteData.forEach(function(d) {
-                if (d.SiteCode in r5Sites) {
-                    if (d.LastSampleDate < r5Sites[d.SiteCode]) {
-                        d.LastSampleDate = r5Sites[d.SiteCode];
+                if (d.StationCode in r5Sites) {
+                    if (d.LastSampleDate < r5Sites[d.StationCode]) {
+                        d.LastSampleDate = r5Sites[d.StationCode];
                     }
                 }
             });
@@ -814,14 +858,14 @@ function addSiteLayer() {
             // check for missing values
             // filter out site 'Leona Creek at Brommer Trailer Park' for inaccurate coordinates
             // this is a temporary solution until we correct the coordinates
-            if ((data[i].Longitude === 'NaN') || (data[i].Latitude === 'NaN') || !(data[i].StationName) || !(data[i].SiteCode) || (data[i].SiteCode === '304-LEONA-21')) { 
+            if ((data[i].TargetLongitude === 'NaN') || (data[i].TargetLatitude === 'NaN') || !(data[i].StationName) || !(data[i].StationCode) || (data[i].StationCode === '304-LEONA-21')) { 
                 continue; 
             } else {
                 // reformat as geojson
                 var site = {};
                 site.type = 'Feature';
-                site.geometry = { 'type': 'Point', 'coordinates': [+data[i].Longitude, +data[i].Latitude] };
-                site.properties = { 'StationName': data[i].StationName, 'StationCode': data[i].SiteCode, 'LastSampleDate': sampleDate, 'DateDifference': daysBetween(sampleDate, today) };
+                site.geometry = { 'type': 'Point', 'coordinates': [+data[i].TargetLongitude, +data[i].TargetLatitude] };
+                site.properties = { 'StationName': data[i].StationName, 'StationCode': data[i].StationCode, 'LastSampleDate': sampleDate, 'DateDifference': daysBetween(sampleDate, today) };
                 features.push(site);
             }
         }
@@ -991,6 +1035,7 @@ var siteLayer; // accessed globally for highlight functions
 var _r5Sites; // accessed globally for checking if a site is an R5 site
 
 clearSearch();
+addResourceDates();
 addMapTiles();
 addMapControls(); 
 addSiteLayer(); 

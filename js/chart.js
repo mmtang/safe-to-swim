@@ -546,7 +546,14 @@ function toggleTooltip (id, opacity) {
 
 function tooltipResult(d) {;
     var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var resultContent = '<strong>' + tooltipDate(d.SampleDate) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + d['CalculatedResult'].toString() + ' ' + d.Unit;
+    var displayCodes = ['<', '<=', '>', '>='];
+    var resultQualCode = ''
+    if (d.ResultQualCode) {
+        if (displayCodes.includes(d.ResultQualCode)) {
+            resultQualCode = d.ResultQualCode + ' ';
+        }
+    }
+    var resultContent = '<strong>' + tooltipDate(d.SampleDate) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + resultQualCode + d['CalculatedResult'].toString() + ' ' + d.Unit;
     return resultContent;
 }
 

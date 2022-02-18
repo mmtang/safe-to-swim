@@ -544,8 +544,9 @@ function toggleTooltip (id, opacity) {
         .style('opacity', opacity);
 }
 
-function tooltipResult(d) {;
-    var tooltipDate = d3.timeFormat('%b %e, %Y');
+function tooltipResult(d) {
+    var formatDate = d3.timeFormat('%b %e, %Y');
+    var formatNum = d3.format(',');
     var displayCodes = ['<', '<=', '>', '>='];
     var resultQualCode = ''
     if (d.ResultQualCode) {
@@ -553,7 +554,7 @@ function tooltipResult(d) {;
             resultQualCode = d.ResultQualCode + ' ';
         }
     }
-    var resultContent = '<strong>' + tooltipDate(d.SampleDate) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + resultQualCode + d['CalculatedResult'].toString() + ' ' + d.Unit;
+    var resultContent = '<strong>' + formatDate(d.SampleDate) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + resultQualCode + formatNum(d['CalculatedResult']).toString() + ' ' + d.Unit;
     return resultContent;
 }
 

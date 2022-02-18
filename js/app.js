@@ -33,6 +33,7 @@ function onMarkerClick(e) {
                 var cedenPart2 = processCEDENData(res12[0].result.records);
                 var cedenPart3 = processCEDENData(res13[0].result.records);
                 var allData = cedenPart1.concat(cedenPart2, cedenPart3);
+                allData = filterCedenData(allData);
                 // merge R5 data with CEDEN data
                 // can add more if statements for other datasets we bring in, following the same pattern
                 if (res2) {
@@ -75,7 +76,7 @@ function onMarkerClick(e) {
 
     function getCEDENData(resource, site) {
         var baseURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=';
-        var cedenColumns = ['Analyte', 'DataQuality', 'MDL', 'Program', 'Result', 'ResultQualCode', 'SampleDate', 'MethodName', 'StationCode', 'StationName', 'Unit'];
+        var cedenColumns = ['Analyte', 'DataQuality', 'RL', 'Program', 'Result', 'ResultQualCode', 'SampleDate', 'MethodName', 'StationCode', 'StationName', 'Unit'];
         var cedenURL = createURL(baseURL + resource, cedenColumns, site);
         return $.ajax({
             type: 'GET',
@@ -118,20 +119,14 @@ function onMarkerClick(e) {
 
     function processCEDENData(data) { 
         // filter on data quality category
-        var chartData = data.filter(function(d) {
-            if (d.DataQuality === dataQuality1 || d.DataQuality === dataQuality2 || d.DataQuality === dataQuality3 || d.DataQuality === dataQuality4 || d.DataQuality === dataQuality5) {
-                return d;
-            }
-        }).filter(function(d) {
-            if (d.Result != 'NaN') {
-                return d;
-            }
-        });
+        var chartData = data.filter(d => dqCategories.includes(d.DataQuality));
+        // Filter out null values
+        chartData = chartData.filter(d => d.Result != 'NaN');
         // force data types and handle NDs
         for (var i = 0; i < chartData.length; i++) { 
-            chartData[i].MDL = +chartData[i].MDL;
+            chartData[i].RL = +chartData[i].RL;
             chartData[i].Result = +chartData[i].Result;
-            // New column: Treat result less than the MDL as being one half the MDL
+            // New column: Treat result less than the RL as being one half the RL
             chartData[i].CalculatedResult = calculateResult(chartData[i]);
             // New column: Assign a new value to results that are 0 (cannot be shown on log scale graph)
             chartData[i].ChartResult = checkDisplay(chartData[i].CalculatedResult);
@@ -140,16 +135,32 @@ function onMarkerClick(e) {
         return chartData;
     }  
 
+    function filterCedenData(data) {
+        // Filter out records where record is ND/DNQ and RL < 0
+        var filteredData = data.filter(function(d) {
+            if (!((d.ResultQualCode === 'DNQ' || d.ResultQualCode === 'ND') && (d.RL < 0))) {
+                return d;
+            }
+        });
+        // Filter out records where Result < 0 and RL < 0
+        filteredData = filteredData.filter(function(d) {
+            if (!((d.Result < 0) && (d.RL < 0))) {
+                return d;
+            }
+        });
+        return filteredData;
+    }
+
     function calculateResult(d) {
         if (isND(d)) {
-            var calculated = 0.5 * d.MDL;
+            var calculated = 0.5 * d.RL;
             return calculated;
         } else {
             return d.Result;
         }
     }
 
-    // Assign new values for censored data with results of 0. For chart display (log scale) only. 
+    // Assign new values if result is 0 or negative. For chart display (log scale) only. 
     function checkDisplay(d) {
         if (d === 0) {
             return 0.1;
@@ -160,7 +171,7 @@ function onMarkerClick(e) {
 
     // For handling censored data
     function isND(d) {
-        if ((d.Result < d.MDL) || ((d.Result === d.MDL) && (d.ResultQualCode === '<')) || (d.ResultQualCode === 'ND')) { 
+        if ((d.ResultQualCode === 'DNQ') || (d.ResultQualCode === 'ND')) { 
             return true;
         } else {
             return false;
@@ -172,8 +183,8 @@ function onMarkerClick(e) {
         var parseDate = d3.timeParse('%Y-%m-%d');
         for (d = 0; d < data.length; d++) {
             data[d]['DataQuality'] = 'NA';
-            // MDL for E. coli = 1
-            data[d]['MDL'] = 1;
+            // RL for E. coli = 1
+            data[d]['RL'] = 1;
             data[d]['MethodName'] = 'NA';
             data[d]['ResultQualCode'] = 'NA';
             data[d]['SampleDate'] = parseDate(data[d]['SampleDate']);
@@ -580,7 +591,7 @@ function formatSampleData(data) {
             'Unit': '"' + d.Unit + '"',
             'OriginalResult': d.Result,
             'CalculatedResult': d.CalculatedResult,
-            'MDL': d.MDL,
+            'RL': d.RL,
             'ResultQualCode': d.ResultQualCode,
             'DataQuality': '"' + d.DataQuality + '"'
         };
@@ -732,8 +743,9 @@ function addSiteLayer() {
     // assign to global scope for highlight functions
     siteLayer = L.geoJson([], {
         onEachFeature: function(feature, layer) {
-            if (feature.properties.StationName) {
-                layer.bindPopup(feature.properties.StationName, {closeButton: false, offset: L.point(0, 0)});
+            if (feature.properties) {
+                var popupContent = feature.properties.StationName + ' (' + feature.properties.StationCode + ')';
+                layer.bindPopup(popupContent, {closeButton: false, offset: L.point(0, 0)});
                 layer.on('mouseover', function(e) { 
                     highlightMarker(e);
                     layer.openPopup(); 
@@ -1001,6 +1013,9 @@ var dataQuality0 = "MetaData",
     dataQuality5 = "Unknown data quality",
     dataQuality6 = "Reject record",
     dataQuality7 = "Error";
+
+// Which data quality categories to include
+var dqCategories = [dataQuality1, dataQuality2, dataQuality3, dataQuality4, dataQuality5];
 
 var downloadOp1 = 'Download monitoring data (.csv)',
     downloadOp2 = 'Download geometric mean data (.csv)';

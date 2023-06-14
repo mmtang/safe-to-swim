@@ -451,15 +451,20 @@ function clearSearch() {
     document.getElementById('searchbox').value = '';
 }
 
-function addResourceDates() {
+function addMessages() {
+    // This function adds the last updated dates for the CEDEN and R5 datasets.
+    // It also adds a message to the top of the welcome modal. This message (if available/present) is queried from the open data portal dataset description using the keyword "__Attention__": https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results
     // This URL points to the Safe to Swim sites dataset on the portal. Any of the other datasets can be used with the same result.
     // https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results/resource/848d2e3f-2846-449c-90e0-9aaf5c45853e
     var cedenResourceId = '848d2e3f-2846-449c-90e0-9aaf5c45853e';
     var r5ResourceId = 'fc450fb6-e997-4bcf-b824-1b3ed0f06045';
+    var datasetId = 'surface-water-fecal-indicator-bacteria-results'; // the main dataset with metadata for all resources
     $.when(
         getResourceInfo(cedenResourceId),
-        getResourceInfo(r5ResourceId)
-    ).done(function(res1, res2) {
+        getResourceInfo(r5ResourceId),
+        getPackageInfo(datasetId)
+    ).done(function(res1, res2, res3) {
+        // Add data last updated dates to the popup that shows when the map is loaded
         // Date helper functions
         var parseDate = d3.timeParse('%Y-%m-%dT%H:%M:%S.%f');
         var formatDate = d3.timeFormat("%b %e, %Y");
@@ -472,7 +477,39 @@ function addResourceDates() {
         // Contruct HTML and set div content
         var content = 'CEDEN/BeachWatch data updated: ' + cedenDate + '<br>' + 'Central Valley E. coli data updated: ' + r5Date;
         document.getElementById('update-date-container').innerHTML = content;
+
+        // Add message from portal (if present/available)
+        // Locate if the keyword 'Attention' appears in the dataset description
+        var packageDescription = res3[0].result['notes'];
+        if (packageDescription.includes('Attention')) {
+            // Extract text using regular expressions and add text to the update message
+            var regEx = /<p>__Attention__:(.*?)<\/p>/g;
+            var found = regEx.exec(packageDescription);
+            if (found[1]) {
+                var message = '<p><div class="alert alert-info" role="alert">' + found[1] + '</div></p>';
+                document.getElementById('message-container').innerHTML = message;
+            }
+        }
     });
+}
+
+function getPackageInfo(package) {
+    if (package) {
+        var baseUrl = 'https://data.ca.gov/api/3/action/package_show?id=';
+        var packageUrl = baseUrl + package;
+        return $.ajax({
+            type: 'GET',
+            url: packageUrl,
+            dataType: 'json',
+            error: function(xhr, textStatus, error) {
+                console.log(xhr.statusText);
+                console.log(textStatus);
+                console.log(error);
+            }
+        });
+    } else {
+        console.log('Missing package ID');
+    }
 }
 
 function getResourceInfo(resource) {
@@ -1050,7 +1087,7 @@ var siteLayer; // accessed globally for highlight functions
 var _r5Sites; // accessed globally for checking if a site is an R5 site
 
 clearSearch();
-addResourceDates();
+addMessages();
 addMapTiles();
 addMapControls(); 
 addSiteLayer(); 

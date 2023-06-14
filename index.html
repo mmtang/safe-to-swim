@@ -3,6 +3,7 @@
 California State Water Resources Control Board (SWRCB)
 Office of Information Management and Analysis (OIMA) 
 
+Main contact:
 Michelle Tang (michelle.tang@waterboards.ca.gov)
 https://github.com/mmtang
 
@@ -11,6 +12,17 @@ https://github.com/mmtang
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        <!-- Global site tag (gtag.js) - Google Analytics -->
+        <script async src=https://www.googletagmanager.com/gtag/js?id=UA-46982004-1></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+
+            function gtag() {
+                    dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
+            gtag('config', 'UA-46982004-1');
+        </script>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
@@ -25,6 +37,9 @@ https://github.com/mmtang
         crossorigin=""/>
         <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"
         integrity="sha512-lInM/apFSqyy1o6s89K4iQUKg6ppXEgsVxT35HbzUupEVRh2Eu9Wdl4tHj7dZO0s1uvplcYGmt3498TtHq+log=="
+        crossorigin=""></script>
+        <script src="https://unpkg.com/esri-leaflet@3.0.4/dist/esri-leaflet.js"
+        integrity="sha512-oUArlxr7VpoY7f/dd3ZdUL7FGOvS79nXVVQhxlg6ij4Fhdc4QID43LUFRs7abwHNJ0EYWijiN5LP2ZRR2PY4hQ=="
         crossorigin=""></script>
         <link href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Condensed" rel="stylesheet">  
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
@@ -93,7 +108,8 @@ https://github.com/mmtang
                     </ul>
                     <div class="tab-content">
                         <div class="tab-pane fade active in" id="about">
-                            <br><a href="https://mywaterquality.ca.gov/index.html" target="_blank"><img style="float: right; padding: 20px 0 10px 10px" src="assets\cwqmc-logo.jpg" alt="California Water Quality Monitoring Council"></a>
+                            <div id="message-container"></div>
+                            <a href="https://mywaterquality.ca.gov/index.html" target="_blank"><img style="float: right; padding: 20px 0 10px 10px" src="assets\cwqmc-logo.jpg" alt="California Water Quality Monitoring Council"></a>
                             <h5 class="about-header">What are the trends of bacteria at my coastal or inland beach?</h5>
                             <p>This interactive map displays bacterial sampling results (E. coli, enterococcus, fecal coliforms, and total coliforms) for coastal and inland monitoring locations over time.</p>
                             <p>The data shown on this map are sourced from the <a href="http://www.ceden.org" target="_blank">California Environmental Data Exchange Network</a> (CEDEN), BeachWatch database, and <a href="http://arcg.is/0CWWbC" target="_blank">Central Valley E. coli Monitoring Results</a> interactive map. The data are accessed using the public API on the <a href="https://data.ca.gov/" target="_blank">California Open Data Portal</a>. The <a href="https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results" target="_blank">CEDEN/BeachWatch</a> dataset is updated daily on weekdays. The <a href="https://data.ca.gov/dataset/central-valley-water-board-e-coli-monitoring-results" target="_blank">Central Valley Water Board E. coli Monitoring</a> dataset is updated weekly.</p>

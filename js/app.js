@@ -67,8 +67,6 @@ function onMarkerClick(e) {
             if (matches.length === 0) {
                 // if no matches, then keep it
                 newData.push(targetData[i]);
-            } else {
-                break;
             }
         }
         return newData;

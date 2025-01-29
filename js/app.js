@@ -273,6 +273,10 @@ function onMarkerClick(e) {
             return d.Analyte === analyte;
         });
 
+        var hasDdpcrData = chartData.filter(function(d) {
+            return d.Unit === 'copies/100 mL';
+        }).length > 0;
+
         var windowSize = getWindowSize(),
             windowWidth = windowSize[0],
             windowHeight = windowSize[1];
@@ -307,7 +311,7 @@ function onMarkerClick(e) {
         }
 
         chart.addAxes();
-        chart.drawLines(analyte);
+        chart.drawLines(analyte, hasDdpcrData);
         chart.drawPoints();
         chart.drawGPoints();
         chart.drawBrush();

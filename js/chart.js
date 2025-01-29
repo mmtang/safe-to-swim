@@ -289,14 +289,16 @@ Chart.prototype.drawGPoints = function() {
     }
 }
 
-Chart.prototype.drawLines = function(analyte) {
-    if (analyte === ecoli.name) {
-        this.addLine(ecoli.stv, 'stv');
-        this.addLine(ecoli.geomean, 'gm');
-    } else if (analyte === enterococcus.name) {
-        this.addLine(enterococcus.stv, 'stv');
-        this.addLine(enterococcus.geomean, 'gm');
-    }
+Chart.prototype.drawLines = function(analyte, hasDdpcrData) {
+    if (!hasDdpcrData) {
+        if (analyte === ecoli.name) {
+            this.addLine(ecoli.stv, 'stv');
+            this.addLine(ecoli.geomean, 'gm');
+        } else if (analyte === enterococcus.name) {
+            this.addLine(enterococcus.stv, 'stv');
+            this.addLine(enterococcus.geomean, 'gm');
+        }
+    } 
 }
 
 Chart.prototype.drawPoints = function() {

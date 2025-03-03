@@ -16,31 +16,22 @@ function onMarkerClick(e) {
 
     function getSiteData() {
         $.when(
-            // prior to 2010
-            getCEDENData('18c57345-bf87-4c46-b358-b634d36be4d2', site),
+            // before 2010
+            getData('1d333989-559a-433f-b93f-bb43d21da2b9', site),
             // 2010-2020
-            getCEDENData('7639446f-8c62-43d9-a526-8bc7952dd8bd', site),
+            getData('04d98c22-5523-4cc1-86e7-3a6abf40bb60', site),
             // 2020-present
-            getCEDENData('1987c159-ce07-47c6-8d4f-4483db6e6460', site),
-            getR5Data(site)
-        ).done(function(res11, res12, res13, res2) {
+            getData('15a63495-8d9f-4a49-b43a-3092ef3106b9', site)
+        ).done(function(res11, res12, res13) {
             // Results are returned in order of the functions listed above in the when statement
             // checks that the returned site matches the last site clicked 
             // this is in case the user clicks multiple sites in succession
             if (site === lastSite.code) {
                 // merge the CEDEN data responses
-                var cedenPart1 = processCEDENData(res11[0].result.records);
-                var cedenPart2 = processCEDENData(res12[0].result.records);
-                var cedenPart3 = processCEDENData(res13[0].result.records);
-                var allData = cedenPart1.concat(cedenPart2, cedenPart3);
-                allData = filterCedenData(allData);
-                // merge R5 data with CEDEN data
-                // can add more if statements for other datasets we bring in, following the same pattern
-                if (res2) {
-                    var r5Data = processR5Data(res2[0].result.records);
-                    var uniqueR5Data = compareData(allData, r5Data);
-                    Array.prototype.push.apply(allData, uniqueR5Data);
-                }
+                var dataPart1 = processData(res11[0].result.records);
+                var dataPart2 = processData(res12[0].result.records);
+                var dataPart3 = processData(res13[0].result.records);
+                var allData = dataPart1.concat(dataPart2, dataPart3);
                 addPanelContent(allData);
             } else {
                 console.log('Ignored request for ' + site);
@@ -48,6 +39,7 @@ function onMarkerClick(e) {
         });
     }
 
+    // DELETE
     function compareData(data, targetData) {
         // returns the unique records found in the second argument "targetData"
         // this is being used to extract the records from the R5 dataset that are not already in CEDEN
@@ -72,13 +64,12 @@ function onMarkerClick(e) {
         return newData;
     }
 
-    function getCEDENData(resource, site) {
+    function getData(resource, site) {
         var baseURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=';
-        var cedenColumns = ['Analyte', 'DataQuality', 'RL', 'Program', 'Result', 'ResultQualCode', 'SampleDate', 'MethodName', 'StationCode', 'StationName', 'Unit'];
-        var cedenURL = createURL(baseURL + resource, cedenColumns, site);
+        var requestURL = createURL(baseURL + resource, site);
         return $.ajax({
             type: 'GET',
-            url: cedenURL,
+            url: requestURL,
             dataType: 'json',
             error: function(xhr, textStatus, error) {
                 handleSiteError(site);
@@ -115,24 +106,24 @@ function onMarkerClick(e) {
         }
     }
 
-    function processCEDENData(data) { 
+    function processData(data) { 
         // filter on data quality category
         var chartData = data.filter(d => dqCategories.includes(d.DataQuality));
         // Filter out null values
-        chartData = chartData.filter(d => d.Result != 'NaN');
+        chartData = chartData.filter(d => d.ResultSub != 'NaN');
         // force data types and handle NDs
         for (var i = 0; i < chartData.length; i++) { 
-            chartData[i].RL = +chartData[i].RL;
-            chartData[i].Result = +chartData[i].Result;
-            // New column: Treat result less than the RL as being one half the RL
-            chartData[i].CalculatedResult = calculateResult(chartData[i]);
+            chartData[i].ResultSub = +chartData[i].ResultSub;
             // New column: Assign a new value to results that are 0 (cannot be shown on log scale graph)
-            chartData[i].ChartResult = checkDisplay(chartData[i].CalculatedResult);
+            chartData[i].ResultDisplay = checkDisplay(chartData[i].ResultSub);
             chartData[i].SampleDate = parseDate(chartData[i].SampleDate);
+            chartData[i]['6WeekCutoffDate'] = parseDate(chartData[i]['6WeekCutoffDate']);
+            chartData[i]['30DayCutoffDate'] = parseDate(chartData[i]['30DayCutoffDate']);
         }
         return chartData;
     }  
 
+    // DELETE
     function filterCedenData(data) {
         // Filter out records where record is ND/DNQ and RL < 0
         var filteredData = data.filter(function(d) {
@@ -176,6 +167,7 @@ function onMarkerClick(e) {
         }
     }
 
+    // DELETE
     function processR5Data(data) {
         // shaping R5's data to look like CEDEN's
         var parseDate = d3.timeParse('%Y-%m-%d');
@@ -187,8 +179,7 @@ function onMarkerClick(e) {
             data[d]['ResultQualCode'] = 'NA';
             data[d]['SampleDate'] = parseDate(data[d]['SampleDate']);
             // Add new columns to store modified result values
-            data[d]['CalculatedResult'] = calculateResult(data[d]);  // any calculations for 1/2 the detection limit are stored here
-            data[d]['ChartResult'] = checkDisplay(data[d]['CalculatedResult']);  // zeroes are changed to 0.1 so that they can be graph using a log scale
+            data[d]['ChartResult'] = checkDisplay(data[d]['ResultSub']);  // zeroes are changed to 0.1 so that they can be graph using a log scale
         }
         return data;
     }
@@ -197,7 +188,7 @@ function onMarkerClick(e) {
         document.getElementById('analyte-menu').addEventListener('change', function() {
             currentAnalyte = this.value;
             updateFilters();
-            addChart(data, this.value);
+            addChart(data, this.value, 'chart-space-1');
         });
     }
 
@@ -217,6 +208,11 @@ function onMarkerClick(e) {
                 else if (a > b) { return -1; }
                 else { return 0; }
             });
+
+            // intake data and return the non-ddpcr data and ddpcr data
+            // first item in array will have non-ddpcr data, second item will have ddpcr data
+            var separatedData = separateData(data);
+
             // assigned to global env.
             currentAnalyte = analytes[0];
             clearPanelContent();
@@ -228,10 +224,33 @@ function onMarkerClick(e) {
             addScaleMenu(); 
             addGeomeanMenu();
             addFilterMenu(); 
-            addChart(data, currentAnalyte);
+            if (separatedData[0].length > 0) {
+                addChart(separatedData[0], currentAnalyte, 'chart-space-1');
+            }
+            /*
+            if (separatedData[1].length > 0) {
+                addChart(separatedData[1], currentAnalyte, 'chart-space-2');
+            }
+            */
         } else {
             showDataError();
             console.log('ERROR: Dataset is empty');
+        }
+    }
+
+    // a function for separating ddPCR data and non-ddPCR data and returning them separately
+    // first item returned in the array is an array of the non-ddpcr data; second item is an array of the ddpcr data
+    function separateData(data) {
+        if (data && data.length > 0) {
+            var tradData = data.filter(function(d) {
+                return d.MethodName !== 'ddPCR';
+            });
+            var ddPcrData = data.filter(function(d) {
+                return d.MethodName === 'ddPCR';
+            });
+            return [tradData, ddPcrData];
+        } else {
+            return [[], []];
         }
     }
 
@@ -250,7 +269,7 @@ function onMarkerClick(e) {
         analyteContainer.appendChild(analyteMenu);
     }
 
-    function addChart(data, analyte) {
+    function addChart(data, analyte, divId) {
         updateFilters();
         resetScaleMenu();
         // initializeDatePanel();
@@ -289,9 +308,9 @@ function onMarkerClick(e) {
             var panelHeight = Math.min(349, Math.round((windowHeight * 0.47)));
         }
 
-        var chartMargin = {top: 10, right: 30, bottom: 100, left: 50};
+        var chartMargin = {top: 10, right: 30, bottom: 100, left: 60};
         var chart = new Chart({
-            element: document.getElementById('chart-space'),
+            element: document.getElementById(divId),
             margin: chartMargin,
             data: chartData,
             width: panelWidth - chartMargin.left - chartMargin.right,
@@ -299,13 +318,10 @@ function onMarkerClick(e) {
         });
 
         // calculate axis buffers based on analyte-specific objectives
-        // calculate geomeans based on analyte selected
         if (analyte === ecoli.name) {
             chart.createScales(ecoli.stv);
-            chart.gData = getGeomeans(chartData);
         } else if (analyte === enterococcus.name) {
             chart.createScales(enterococcus.stv);
-            chart.gData = getGeomeans(chartData);
         } else {
             chart.createScales(null);
         }
@@ -314,8 +330,8 @@ function onMarkerClick(e) {
         chart.drawLines(analyte, hasDdpcrData);
         chart.drawPoints();
         chart.drawGPoints();
-        chart.drawBrush();
-        chart.drawBrushPoints();
+        //chart.drawBrush();
+        //chart.drawBrushPoints();
 
         // chart filter listeners
         d3.select('#filter-result').on('change', function() { 
@@ -568,11 +584,10 @@ function convertToCSV(data) {
     window.saveAs(blob, fileName);
 }
 
-function createURL(baseURL, columns, site) {
+function createURL(baseURL, site) {
     // url encoding for site code, add more as needed
     var cleanSite = encode(site);
     var url = baseURL;
-    url += '&fields=' + columns.join();
     url += '&limit=' + recordLimit;
     url += '&filters={%22StationCode%22:%22' + cleanSite + '%22}';
     return url;
@@ -658,7 +673,7 @@ function hidePanelArrow() {
 }
 
 function initializeChartPanel() {
-    var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"><div id="checkbox-container"></div><div id="geomean-container" class="popup-container"></div></div></div>' + '<div id="chart-space"></div><div id="date-container" class="panel-container"></div><div id="download-container"></div>';
+    var featureContent = '<div id="popup-menu"><div id="analyte-container" class="popup-container"></div><div id="scale-container" class="popup-container"></div><div id="filter-container" class="popup-container"><div id="checkbox-container"></div><div id="geomean-container" class="popup-container"></div></div></div>' + '<div id="chart-space-2"></div><div id="chart-space-1"></div><div id="date-container" class="panel-container"></div><div id="download-container"></div>';
     document.getElementById('panel-content').innerHTML = featureContent;
 }
 
@@ -844,24 +859,25 @@ function addSiteLayer() {
     }
 
     function getSiteList() {
-        var siteListURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=848d2e3f-2846-449c-90e0-9aaf5c45853e&limit=' + recordLimit;
-        var r5URL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fc450fb6-e997-4bcf-b824-1b3ed0f06045&fields=StationCode,SampleDate&sort=%22SampleDate%22%20desc&limit=' + recordLimit;
-        var call1 = $.get(siteListURL);
-        var call2 = $.get(r5URL);
-        $.when(call1, call2).then(function (res1, res2) {
-            var siteData = res1[0]['result']['records'];
+        var url = 'https://data.ca.gov/api/3/action/datastore_search_sql?sql=';
+        var queryBefore2010 = `SELECT DISTINCT ON ("StationCode") "StationCode", "StationName", "TargetLatitude", "TargetLongitude", "RegionNumber", MAX("SampleDate") OVER (PARTITION BY "StationCode") FROM "1d333989-559a-433f-b93f-bb43d21da2b9"`;
+        var query2010To2020 = `SELECT DISTINCT ON ("StationCode") "StationCode", "StationName", "TargetLatitude", "TargetLongitude", "RegionNumber", MAX("SampleDate") OVER (PARTITION BY "StationCode") FROM "04d98c22-5523-4cc1-86e7-3a6abf40bb60"`;
+        var query2020Present = `SELECT DISTINCT ON ("StationCode") "StationCode", "StationName", "TargetLatitude", "TargetLongitude", "RegionNumber", MAX("SampleDate") OVER (PARTITION BY "StationCode") FROM "15a63495-8d9f-4a49-b43a-3092ef3106b9"`
+        var call1 = $.get(url + queryBefore2010);
+        var call2 = $.get(url + query2010To2020);
+        var call3 = $.get(url + query2020Present);
+        $.when(call1, call2, call3).then(function (res1, res2, res3) {
+            var siteData1 = res1[0]['result']['records'];
+            var siteData2 = res2[0]['result']['records'];
+            var siteData3 = res3[0]['result']['records'];
+            var siteData = siteData1.concat(siteData2, siteData3);
             // convert to date objects
-            siteData.forEach(function(d) { d.LastSampleDate = parseDate(d.LastSampleDate); });
-            var r5Data = res2[0]['result']['records'];
-            var r5Sites = processR5SiteData(r5Data);
-            // join R5 data to main site list
-            siteData.forEach(function(d) {
-                if (d.StationCode in r5Sites) {
-                    if (d.LastSampleDate < r5Sites[d.StationCode]) {
-                        d.LastSampleDate = r5Sites[d.StationCode];
-                    }
-                }
-            });
+            siteData.forEach(function(d) { d.LastSampleDate = parseDate(d.max); });
+            // sort descending by sample date
+            siteData.sort(function(a,b) { return b['LastSampleDate'] - a['LastSampleDate'] });
+            // drop duplicates
+            var siteData = siteData.filter((elem, index, self) => self.findIndex(
+                (t) => {return (t.StationCode === elem.StationCode)}) === index)
             processSites(siteData);
         });
     }
@@ -1078,6 +1094,7 @@ map.getPane('monthPane').style.zIndex = 670;
 var chartOpacity = 0.8;
 var currentAnalyte; 
 var currentScale = 'log';
+var gmLength = 41; // define geomean length (6 weeks = 42 - 1 days = 41 days)
 var gmLimit = 2;
 var lastSite = new Object();
 // var mainColor = '#1f78b4', secColor = '#ff7f0e';

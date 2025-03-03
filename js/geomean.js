@@ -43,12 +43,14 @@ function getGeomeans(data) {
         if (rangeData.length >= 2) {
             var geomean = +calculateGeomean(rangeData).toFixed(2);
             var chartGeomean = +checkForZero(geomean);
+            var unit = getUnit(rangeData);
             return {
                 enddate: convertToDateObj(refDate), 
                 startdate: convertToDateObj(cutoffDate), 
                 geomean: geomean,  // the actual calculated value based off the calculated result values
                 chartGeomean: chartGeomean,  // the value for use in the chart, zeroes are converted to 0.1 so that they can be graphed using a log scale
-                count: rangeData.length
+                count: rangeData.length,
+                unit: unit
             };
         } else {
             return null;
@@ -76,6 +78,25 @@ function getGeomeans(data) {
             }
         }
         return rangeData;
+    }
+
+    // SE-060, 09/13/23 
+    function getUnit(data) {
+        var units = data.map(function(d) {
+            return d.Unit;
+        });
+        var uniqueUnits = Array.from(new Set(units));
+        if (uniqueUnits.length === 1) {
+            return uniqueUnits[0]
+        } else if (uniqueUnits.length > 0) {
+            if (uniqueUnits.includes('copies/100 mL')) {
+                return '';
+            } else {
+                return uniqueUnits[0];
+            }
+        } else {
+            return '';
+        }
     }
 
     function calculateGeomean(data) {

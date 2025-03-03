@@ -185,7 +185,7 @@ Chart.prototype.createScales = function(threshold) {
     }
 
     // compare the max Y to the threshold and pick the greater value
-    var yMax = d3.max(this.data, function(d) { return d.ChartResult }); 
+    var yMax = d3.max(this.data, function(d) { return d.ResultDisplay }); 
     var yDisplay = Math.max(yMax, threshold);
     // add arbitrary buffer to y axis
     var yLinearBuffered = Math.ceil(roundHundred(yDisplay + (yDisplay / 3)));
@@ -242,11 +242,11 @@ Chart.prototype.drawGPoints = function() {
         .attr('clip-path', 'url(#clipBuffered)')
         .attr('id', 'gMask');
     gPoints.selectAll('.triangle')
-        .data(this.gData.filter(function(d) { return d.count >= gmLimit }), function(d) { return d.key; })
+        .data(this.data.filter(function(d) { return d['6WeekCount'] >= gmLimit }), function(d) { return d.key; })
         .enter().append('path')
         .attr('class', 'triangle')
         .attr('d', d3.symbol().type(d3.symbolTriangle))
-        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.chartGeomean) + ')'; })
+        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.SampleDate) + ',' + _this.yScale(d['6WeekGeoMean']) + ')'; })
         .style('fill', secColor)
         .style('opacity', chartOpacity)
         .on('mouseover', function(d) {
@@ -266,7 +266,7 @@ Chart.prototype.drawGPoints = function() {
             hideRect();
         })
         .merge(gPoints)
-        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.chartGeomean) + ')'; });
+        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.SampleDate) + ',' + _this.yScale(d['6WeekGeoMean']) + ')'; });
     gPoints.exit()
         .remove();
 
@@ -274,9 +274,9 @@ Chart.prototype.drawGPoints = function() {
         var _d = d;
         _this.gmRect
             .attr('visibility', 'visible')
-            .attr('x', function() { return _this.xScale(_d.startdate); })
+            .attr('x', function() { return _this.xScale(_d['6WeekCutoffDate']); })
             .attr('y', 0)
-            .attr('width', function() { return _this.xScale(_d.enddate) - _this.xScale(_d.startdate); })
+            .attr('width', function() { return _this.xScale(_d.SampleDate) - _this.xScale(_d['6WeekCutoffDate']); })
             .attr('height', _this.height)
             .attr('fill', '#d6d6d6')
             .style('opacity', 0.5);
@@ -311,7 +311,7 @@ Chart.prototype.drawPoints = function() {
         .attr('class', 'circle')
         .attr('r', 6)
         .attr('cx', function(d) { return _this.xScale(d.SampleDate); })
-        .attr('cy', function(d) { return _this.yScale(d.ChartResult); })
+        .attr('cy', function(d) { return _this.yScale(d.ResultDisplay); })
         .attr('fill', mainColor)
         .style('opacity', chartOpacity)
         .on('mouseover', function(d) {
@@ -330,7 +330,7 @@ Chart.prototype.drawPoints = function() {
         })
         .merge(points)
         .attr('cx', function(d) { return _this.xScale(d.SampleDate); })
-        .attr('cy', function(d) { return _this.yScale(d.ChartResult); })
+        .attr('cy', function(d) { return _this.yScale(d.ResultDisplay); })
     points.exit()
         .remove();
 }
@@ -435,7 +435,7 @@ Chart.prototype.updateGPoints = function() {
         .merge(gPoints)
         .transition()
         .duration(1000)
-        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.enddate) + ',' + _this.yScale(d.chartGeomean) + ')'; });
+        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.SampleDate) + ',' + _this.yScale(d['6WeekGeoMean']) + ')'; });
     gPoints.exit()
         .remove();
 }
@@ -459,7 +459,7 @@ Chart.prototype.updatePoints = function() {
         .transition()
         .duration(1000)
         .attr('cx', function(d) { return _this.xScale(d.SampleDate); })
-        .attr('cy', function(d) { return _this.yScale(d.ChartResult); });
+        .attr('cy', function(d) { return _this.yScale(d.ResultDisplay); });
     points.exit()
         .remove();
 }
@@ -472,7 +472,7 @@ Chart.prototype.updateBrushPoints = function() {
         .transition()
         .duration(1000)
         .attr('cx', function(d) { return _this.xBrushScale(d.SampleDate); })
-        .attr('cy', function(d) { return _this.yBrushScale(d.ChartResult); })
+        .attr('cy', function(d) { return _this.yBrushScale(d.ResultDisplay); })
     points.exit()
         .remove();
 }
@@ -509,7 +509,7 @@ var positionLineTooltipY = function(tooltipID) {
 
 var positionTooltipX = function(tooltipID) {
     var eventPos = d3.event.pageX; // get mouse position
-    var divExtent = document.getElementById('chart-space').offsetWidth; // get width of container holding chart
+    var divExtent = document.getElementById('chart-space-2').offsetWidth; // get width of container holding chart
     var divOffset = document.getElementById('chart-container').offsetLeft; // get offset of chart container from left (parent container)
     var tooltipExtent = document.getElementById(tooltipID).offsetWidth; // get tooltip div width
     // calculate element position within container
@@ -554,16 +554,21 @@ function tooltipResult(d) {
     if (d.ResultQualCode) {
         if (displayCodes.includes(d.ResultQualCode)) {
             resultQualCode = d.ResultQualCode + ' ';
+        } else if (d.ResultQualCode === 'ND') {
+            resultQualCode = 'Non-detect';
         }
     }
-    var resultContent = '<strong>' + formatDate(d.SampleDate) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + resultQualCode + formatNum(d['CalculatedResult']).toString() + ' ' + d.Unit;
-    return resultContent;
+    if (resultQualCode === 'Non-detect') {
+        return '<strong>' + formatDate(d.SampleDate) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + resultQualCode;
+    } else {
+        return '<strong>' + formatDate(d.SampleDate) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + resultQualCode + formatNum(d['ResultSub']).toString() + ' ' + d.Unit;
+    }
 }
 
 function tooltipGM(d) {
     var tooltipNumber = d3.format(",.1f");
     var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var content = "<strong>" + tooltipDate(d.startdate) + ' - ' + tooltipDate(d.enddate) + "</strong><br>Geometric Mean: " + tooltipNumber(d.geomean) + " MPN/100 mL<br>Sample Count: " + d.count;
+    var content = "<strong>" + tooltipDate(d['6WeekCutoffDate']) + ' - ' + tooltipDate(d.SampleDate) + "</strong><br>Geometric Mean: " + tooltipNumber(d['6WeekGeoMean']) + " " + d.Unit + "<br>Sample Count: " + d['6WeekCount'];
     return content;
 }
 

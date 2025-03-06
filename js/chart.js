@@ -104,8 +104,10 @@ Chart.prototype.addLine = function(val, type, color) {
         .style('stroke-width', 3)
         .attr('x1', 0)
         .attr('x2', _this.width + _this.elementPadding)
-        .attr('y1', _this.yScale(val))
-        .attr('y2', _this.yScale(val))
+        //.attr('y1', _this.yScale(val))
+        //.attr('y2', _this.yScale(val))
+        .attr('y1', function() { return _this.yScale(val); })
+        .attr('y2', function() { return _this.yScale(val); })
         .style('opacity', chartOpacity)
         .on('mousemove', function(d) {
             toggleTooltip(tooltipLine, 1);
@@ -141,9 +143,9 @@ Chart.prototype.brushed = function(parent) {
     // redraw graph elements
     parent.focus.selectAll('.circle')
         .attr('cx', function(d) { return parent.xScale(d.SampleDate); })
-        .attr('cy', function(d) { return parent.yScale(d.ChartResult); });
+        .attr('cy', function(d) { return parent.yScale(d.ResultDisplay); });
     parent.focus.selectAll('.triangle')
-        .attr('transform', function(d) { return 'translate(' + parent.xScale(d.enddate) + ',' + parent.yScale(d.chartGeomean) + ')'; })
+        .attr('transform', function(d) { return 'translate(' + parent.xScale(d.SampleDate) + ',' + parent.yScale(d['6WeekGeoMean']) + ')'; })
     parent.focus.select('.x-axis').call(parent.xAxis);
     // update date placeholders
     var formatDate = d3.timeFormat("%b %e, %Y");
@@ -178,7 +180,7 @@ Chart.prototype.createBrushScales = function() {
 }
 
 Chart.prototype.createScales = function(threshold) {
-    // calculate min and max for data
+    // calculate min and max dates for data
     this.xExtent = d3.extent(this.data, function(d,i) { return d.SampleDate; });
     if (this.data.length === 1) {
         this.xExtent = bufferX(this.xExtent, 35);  
@@ -232,7 +234,7 @@ Chart.prototype.drawBrushPoints = function() {
         .attr('r', 3)
         .attr('fill', mainColor)
         .attr('cx', function(d) { return _this.xBrushScale(d.SampleDate); })
-        .attr('cy', function(d) { return _this.yBrushScale(d.ChartResult); })
+        .attr('cy', function(d) { return _this.yBrushScale(d.ResultDisplay); })
         .style('opacity', chartOpacity);
 }
 
@@ -298,7 +300,11 @@ Chart.prototype.drawLines = function(analyte, hasDdpcrData) {
             this.addLine(enterococcus.stv, 'stv');
             this.addLine(enterococcus.geomean, 'gm');
         }
-    } 
+    } else {
+        if (analyte === enterococcusDdpcr.name) {
+            this.addLine(enterococcusDdpcr.stv, 'stv');
+        }
+    }
 }
 
 Chart.prototype.drawPoints = function() {
@@ -509,7 +515,7 @@ var positionLineTooltipY = function(tooltipID) {
 
 var positionTooltipX = function(tooltipID) {
     var eventPos = d3.event.pageX; // get mouse position
-    var divExtent = document.getElementById('chart-space-2').offsetWidth; // get width of container holding chart
+    var divExtent = document.getElementById('chart-space-1').offsetWidth; // get width of container holding chart
     var divOffset = document.getElementById('chart-container').offsetLeft; // get offset of chart container from left (parent container)
     var tooltipExtent = document.getElementById(tooltipID).offsetWidth; // get tooltip div width
     // calculate element position within container

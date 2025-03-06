@@ -39,31 +39,6 @@ function onMarkerClick(e) {
         });
     }
 
-    // DELETE
-    function compareData(data, targetData) {
-        // returns the unique records found in the second argument "targetData"
-        // this is being used to extract the records from the R5 dataset that are not already in CEDEN
-        // could be reused for any other datasets that we bring in
-        var newData = [];
-        for (var i = 0; i < targetData.length; i++) {
-            var analyte = targetData[i]['Analyte'];
-            var sampleDate = convertToTimestamp(targetData[i]['SampleDate']);
-            var result = targetData[i]['Result'];
-            // console.log(analyte, sampleDate, result);
-            // determine whether record already exists in the first dataset, will return a match if it does
-            var matches = data.filter(function(rec) {
-                return ((rec['Analyte'] === analyte) && (convertToTimestamp(rec['SampleDate']) === sampleDate) && (rec['Result'] === result));
-            });
-            // testing: use to examine the found duplicate records
-            // console.log(matches);
-            if (matches.length === 0) {
-                // if no matches, then keep it
-                newData.push(targetData[i]);
-            }
-        }
-        return newData;
-    }
-
     function getData(resource, site) {
         var baseURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=';
         var requestURL = createURL(baseURL + resource, site);
@@ -78,25 +53,6 @@ function onMarkerClick(e) {
                 console.log(error);
             }
         });
-    }
-
-    function getR5Data(site) {
-        if (_r5Sites.indexOf(site) >= 0) {
-            var resource = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=fc450fb6-e997-4bcf-b824-1b3ed0f06045';
-            var columns = ['StationCode', 'StationName', 'SampleDate', 'Analyte', 'Result', 'Unit', 'Program'];
-            var r5URL = createURL(resource, columns, site);
-            return $.ajax({
-                type: 'GET',
-                url: r5URL,
-                dataType: 'json',
-                error: function(xhr, textStatus, error) {
-                    handleSiteError(site);
-                    console.log(xhr.statusText);
-                    console.log(textStatus);
-                    console.log(error);
-                }
-            });
-        }
     }
     
     function handleSiteError(siteCode) {
@@ -167,28 +123,11 @@ function onMarkerClick(e) {
         }
     }
 
-    // DELETE
-    function processR5Data(data) {
-        // shaping R5's data to look like CEDEN's
-        var parseDate = d3.timeParse('%Y-%m-%d');
-        for (d = 0; d < data.length; d++) {
-            data[d]['DataQuality'] = 'NA';
-            // RL for E. coli = 1
-            data[d]['RL'] = 1;
-            data[d]['MethodName'] = 'NA';
-            data[d]['ResultQualCode'] = 'NA';
-            data[d]['SampleDate'] = parseDate(data[d]['SampleDate']);
-            // Add new columns to store modified result values
-            data[d]['ChartResult'] = checkDisplay(data[d]['ResultSub']);  // zeroes are changed to 0.1 so that they can be graph using a log scale
-        }
-        return data;
-    }
-
     function addAnalyteListener(data) {
         document.getElementById('analyte-menu').addEventListener('change', function() {
             currentAnalyte = this.value;
             updateFilters();
-            addChart(data, this.value, 'chart-space-1');
+            addChart(data, currentAnalyte, 'chart-space-1');
         });
     }
 
@@ -209,10 +148,6 @@ function onMarkerClick(e) {
                 else { return 0; }
             });
 
-            // intake data and return the non-ddpcr data and ddpcr data
-            // first item in array will have non-ddpcr data, second item will have ddpcr data
-            var separatedData = separateData(data);
-
             // assigned to global env.
             currentAnalyte = analytes[0];
             clearPanelContent();
@@ -224,14 +159,7 @@ function onMarkerClick(e) {
             addScaleMenu(); 
             addGeomeanMenu();
             addFilterMenu(); 
-            if (separatedData[0].length > 0) {
-                addChart(separatedData[0], currentAnalyte, 'chart-space-1');
-            }
-            /*
-            if (separatedData[1].length > 0) {
-                addChart(separatedData[1], currentAnalyte, 'chart-space-2');
-            }
-            */
+            addChart(data, currentAnalyte, 'chart-space-1');
         } else {
             showDataError();
             console.log('ERROR: Dataset is empty');
@@ -296,6 +224,17 @@ function onMarkerClick(e) {
             return d.Unit === 'copies/100 mL';
         }).length > 0;
 
+        // separate the data and return the non-ddpcr data and ddpcr data
+        // first item in array will have non-ddpcr data, second item will have ddpcr data
+        var separatedData = separateData(chartData);
+
+        // if there is ddpcr data, use the ddPCR
+        if (separatedData[1].length > 0) {
+            chartData = separatedData[1];
+        } else {
+            chartData = separatedData[0];
+        }
+
         var windowSize = getWindowSize(),
             windowWidth = windowSize[0],
             windowHeight = windowSize[1];
@@ -318,20 +257,28 @@ function onMarkerClick(e) {
         });
 
         // calculate axis buffers based on analyte-specific objectives
-        if (analyte === ecoli.name) {
-            chart.createScales(ecoli.stv);
-        } else if (analyte === enterococcus.name) {
-            chart.createScales(enterococcus.stv);
+        if (hasDdpcrData) {
+            if (analyte === enterococcusDdpcr.name) {
+                chart.createScales(enterococcusDdpcr.stv);
+            } else {
+                chart.createScales(null);
+            }
         } else {
-            chart.createScales(null);
+            if (analyte === ecoli.name) {
+                chart.createScales(ecoli.stv);
+            } else if (analyte === enterococcus.name) {
+                chart.createScales(enterococcus.stv);
+            } else {
+                chart.createScales(null);
+            }
         }
 
         chart.addAxes();
         chart.drawLines(analyte, hasDdpcrData);
         chart.drawPoints();
         chart.drawGPoints();
-        //chart.drawBrush();
-        //chart.drawBrushPoints();
+        chart.drawBrush();
+        chart.drawBrushPoints();
 
         // chart filter listeners
         d3.select('#filter-result').on('change', function() { 
@@ -678,9 +625,12 @@ function initializeChartPanel() {
 }
 
 function initializeDatePanel() {
+    // Format dates to YYYY-MM-DD
+    var endDate = chartEndDate.toISOString().split('T')[0] 
+    var startDate = chartStartDate.toISOString().split('T')[0]
     var datePanel = document.getElementById('date-container');
     datePanel.innerHTML = '';
-    datePanel.innerHTML = '<p class="js-date-range">Currently viewing: <span class="js-start-date"></span> to <span class="js-end-date"></span>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold your mouse cursor on the left or right outside side of the gray box. Drag it across the timeline area to change the viewable date range of the chart."></i></a></p>';
+    datePanel.innerHTML = '<p class="js-date-range">Currently viewing: <div><div><input type="date" id="view-start-date" name="view-start" value="' + startDate + '" min="' + startDate + '" max="' + endDate + '"/></div>' + ' to ' + '<div><input type="date" id="view-end-date" name="view-end" value="' + endDate + '"min="' + startDate + '" max="' + endDate + '" /></div></div>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold your mouse cursor on the left or right outside side of the gray box. Drag it across the timeline area to change the viewable date range of the chart."></i></a></p>';
 }
 
 function initializeDownloadMenu() {
@@ -896,27 +846,6 @@ function addSiteLayer() {
         }
     }
 
-    // outputs a dictionary of the R5 sites with last sample date
-    function processR5SiteData(data) {
-        var parseR5Date = d3.timeParse('%Y-%m-%d');
-        var r5Sites = {};
-        // IE11 no longer supports sets
-        var uniqueSites = [];
-        for (var i = 0; i < data.length; i++) {
-            var stationCode = data[i]['StationCode'];
-            if (uniqueSites.indexOf(stationCode) < 0) {
-                uniqueSites.push(stationCode);
-            }
-        }
-        _r5Sites = uniqueSites;
-        for (var i = 0; i < uniqueSites.length; i++) {
-            var dates = data.filter(function(d) { return d.StationCode === uniqueSites[i]; });
-            var maxDate = d3.max(dates.map(function(d) { return parseR5Date(d.SampleDate); }));
-            r5Sites[uniqueSites[i]] = maxDate;
-        }
-        return r5Sites;
-    }
-
     function processSites(data) {
         var today = new Date();
         features = [];
@@ -1057,6 +986,7 @@ function roundHundred(value) {
 
 var ecoli = new Analyte('E. coli', 320, 100),
     enterococcus = new Analyte('Enterococcus', 110, 30),
+    enterococcusDdpcr = new Analyte('Enterococcus', 1413);
     coliformtotal = new Analyte('Coliform, Total'),
     coliformfecal = new Analyte('Coliform, Fecal');
 
@@ -1091,6 +1021,8 @@ map.getPane('otherPane').style.zIndex = 650;
 map.getPane('yearPane').style.zIndex = 660;
 map.getPane('monthPane').style.zIndex = 670;
 
+var chartEndDate = new Date();
+var chartStartDate = new Date();
 var chartOpacity = 0.8;
 var currentAnalyte; 
 var currentScale = 'log';

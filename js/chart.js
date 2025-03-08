@@ -9,6 +9,7 @@ https://github.com/mmtang
 */
 
 var Chart = function(opts) {
+    this.id = opts.id;
     this.element = opts.element;
     this.data = opts.data;
     this.gData = [];
@@ -36,6 +37,7 @@ Chart.prototype.addAxes = function() {
         .attr('transform', 'translate(0,' + this.height + ')')
         .call(this.xAxis);
     this.focus.append('g')
+        .attr('id', this.id === 'chart-1' ? 'y-axis-1' : 'y-axis-2')
         .attr('class', 'y-axis')
         .call(this.yAxis);
 }
@@ -75,7 +77,10 @@ Chart.prototype.setInitialView = function() {
         var year = lastDate.getFullYear();
         // make a copy of the date object and change the year
         var oneYearBack = new Date(new Date(+lastDate).setFullYear(year - 1));
+        // change brush position
         this.setBrushPosition(oneYearBack, lastDate);
+    } else {
+        console.log('full view');
     }
 }
 
@@ -128,6 +133,25 @@ Chart.prototype.addLine = function(val, type, color) {
         });
 }
 
+Chart.prototype.addTitle = function() {
+    var titleText;
+    if (this.id === 'chart-1') {
+        titleText = 'Culture-based Testing Methods';
+    } else if (this.id === 'chart-2') {
+        titleText = 'Droplet Digital Polymerase Chain Reaction (ddPCR) Testing Method'
+    }
+    console.log(titleText);
+    this.svg.append('text')
+        .attr('class', 'chart-title')
+        .attr('x', this.margin.left + (this.width / 2))             
+        .attr('y', 0 + (this.margin.top / 2))
+        .attr('text-anchor', 'middle')  
+        .style('fill', '#333333')
+        .style('font-size', '1.6rem') 
+        //.style('text-decoration', 'bold')  
+        .text(titleText);
+}
+
 Chart.prototype.brushed = function(parent) {
     // save brush start and end values
     var selection = d3.event.selection;
@@ -147,10 +171,9 @@ Chart.prototype.brushed = function(parent) {
     parent.focus.selectAll('.triangle')
         .attr('transform', function(d) { return 'translate(' + parent.xScale(d.SampleDate) + ',' + parent.yScale(d['6WeekGeoMean']) + ')'; })
     parent.focus.select('.x-axis').call(parent.xAxis);
-    // update date placeholders
-    var formatDate = d3.timeFormat("%b %e, %Y");
-    $(".js-start-date").text(formatDate(this.xBrushScale.invert(selection[0])));
-    $(".js-end-date").text(formatDate(this.xBrushScale.invert(selection[1])));
+    // update date pickers
+    var newXDate = this.xBrushScale.invert(selection[0]);
+    var newYDate = this.xBrushScale.invert(selection[1]);
 }
 
 Chart.prototype.clearChart = function() {
@@ -239,10 +262,11 @@ Chart.prototype.drawBrushPoints = function() {
 }
 
 Chart.prototype.drawGPoints = function() {
+    var maskId = this.id === 'chart-1' ? 'gMask-1' : 'gMask-2';
     var _this = this;
     var gPoints = this.focus.append('g')
         .attr('clip-path', 'url(#clipBuffered)')
-        .attr('id', 'gMask');
+        .attr('id', maskId);
     gPoints.selectAll('.triangle')
         .data(this.data.filter(function(d) { return d['6WeekCount'] >= gmLimit }), function(d) { return d.key; })
         .enter().append('path')
@@ -342,8 +366,10 @@ Chart.prototype.drawPoints = function() {
 }
 
 Chart.prototype.filterGPoints = function() {
-    d3.selectAll('.triangle').remove();
-    d3.select('#gMask').remove();
+    var elementId = this.id === 'chart-1' ? '#gMask-1' : '#gMask-2';
+    var comboId = elementId + ' .triangle';
+    d3.selectAll(comboId).remove(); // select all gpoints in the specified element
+    d3.select(elementId).remove();
     this.drawGPoints();
 }
 
@@ -384,10 +410,10 @@ Chart.prototype.initializeChart = function() {
     this.clearChart();
     // initialize chart space
     this.svg = d3.select(this.element).append('svg')
-        .attr('id', 'graph')
+        .attr('id', this.id)
         .attr('width', this.width + this.margin.left + this.margin.right)
         .attr('height', this.height + this.margin.top + this.margin.bottom)
-        .call(responsive);
+        .call(this.id === 'chart-1' ? responsive : responsive2);
     this.focus = this.svg.append('g')
         .attr('class', 'focus')
         .attr('transform', 'translate(' + this.margin.left + ', ' + (this.margin.top) + ')');
@@ -412,6 +438,7 @@ Chart.prototype.initializeChart = function() {
     this.gmRect = this.focus.append('rect')
         .attr('clip-path', 'url(#clip)')
         .attr('class', 'gm-rect');
+    this.addTitle();
 }
 
 Chart.prototype.redraw = function() {
@@ -424,11 +451,14 @@ Chart.prototype.redraw = function() {
 }
 
 Chart.prototype.setBrushPosition = function(dateObj1, dateObj2) {
-    d3.select('.brush').call(this.brush.move, [dateObj1, dateObj2].map(this.xScale));
+    if (isValidDate(dateObj1) && isValidDate(dateObj2)) {
+        d3.select('.brush').call(this.brush.move, [dateObj1, dateObj2].map(this.xScale));
+    }
 }
 
 Chart.prototype.updateAxis = function() {
-    d3.selectAll('.y-axis')
+    var selectId = this.id === 'chart-1' ? '#y-axis-1' : '#y-axis-2';
+    d3.select(selectId)
         .transition()
         .duration(1000)
         .call(this.yAxis.scale(this.yScale));

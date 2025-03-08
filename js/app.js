@@ -79,23 +79,6 @@ function onMarkerClick(e) {
         return chartData;
     }  
 
-    // DELETE
-    function filterCedenData(data) {
-        // Filter out records where record is ND/DNQ and RL < 0
-        var filteredData = data.filter(function(d) {
-            if (!((d.ResultQualCode === 'DNQ' || d.ResultQualCode === 'ND') && (d.RL < 0))) {
-                return d;
-            }
-        });
-        // Filter out records where Result < 0 and RL < 0
-        filteredData = filteredData.filter(function(d) {
-            if (!((d.Result < 0) && (d.RL < 0))) {
-                return d;
-            }
-        });
-        return filteredData;
-    }
-
     function calculateResult(d) {
         if (isND(d)) {
             var calculated = 0.5 * d.RL;
@@ -127,7 +110,7 @@ function onMarkerClick(e) {
         document.getElementById('analyte-menu').addEventListener('change', function() {
             currentAnalyte = this.value;
             updateFilters();
-            addChart(data, currentAnalyte, 'chart-space-1');
+            addChart(data, currentAnalyte);
         });
     }
 
@@ -159,7 +142,7 @@ function onMarkerClick(e) {
             addScaleMenu(); 
             addGeomeanMenu();
             addFilterMenu(); 
-            addChart(data, currentAnalyte, 'chart-space-1');
+            addChart(data, currentAnalyte);
         } else {
             showDataError();
             console.log('ERROR: Dataset is empty');
@@ -197,7 +180,7 @@ function onMarkerClick(e) {
         analyteContainer.appendChild(analyteMenu);
     }
 
-    function addChart(data, analyte, divId) {
+    function addChart(data, analyte) {
         updateFilters();
         resetScaleMenu();
         // initializeDatePanel();
@@ -220,6 +203,9 @@ function onMarkerClick(e) {
             return d.Analyte === analyte;
         });
 
+        // calculate x-extent of all analyte data
+
+
         var hasDdpcrData = chartData.filter(function(d) {
             return d.Unit === 'copies/100 mL';
         }).length > 0;
@@ -228,7 +214,106 @@ function onMarkerClick(e) {
         // first item in array will have non-ddpcr data, second item will have ddpcr data
         var separatedData = separateData(chartData);
 
+        // chart 1: draw graph for non-ddpcr data
+        if (separatedData[0].length > 0) {
+            var chartData1 = separatedData[0];
+            var windowSize = getWindowSize(),
+                windowWidth = windowSize[0],
+                windowHeight = windowSize[1];
+            if (windowWidth < 768) {
+                var panelWidth = 620;
+                var panelHeight = 349;
+            } else {
+                var panelWidth = 745;
+                var panelHeight = Math.min(349, Math.round((windowHeight * 0.47)));
+            }
+            var chartMargin = {top: 60, right: 30, bottom: 50, left: 60};
+            var chart1 = new Chart({
+                id: 'chart-1',
+                element: document.getElementById('chart-space-1'),
+                margin: chartMargin,
+                data: chartData1,
+                width: panelWidth - chartMargin.left - chartMargin.right,
+                height: panelHeight - chartMargin.top - chartMargin.bottom
+            });
+            // calculate axis buffers based on analyte-specific objectives
+            if (hasDdpcrData) {
+                if (analyte === enterococcusDdpcr.name) {
+                    chart1.createScales(enterococcusDdpcr.stv);
+                } else {
+                    chart1.createScales(null);
+                }
+            } else {
+                if (analyte === ecoli.name) {
+                    chart1.createScales(ecoli.stv);
+                } else if (analyte === enterococcus.name) {
+                    chart1.createScales(enterococcus.stv);
+                } else {
+                    chart1.createScales(null);
+                }
+            }
+            chart1.addAxes();
+            chart1.drawLines(analyte, hasDdpcrData);
+            chart1.drawPoints();
+            chart1.drawGPoints();
+            //chart1.drawBrush();
+            //chart1.drawBrushPoints();
+        } else {
+           var chartElement = d3.select('chart-1');
+           chartElement.selectAll('*').remove();
+        }
+
+        // chart 2: draw graph for ddpcr data
+        if (separatedData[1].length > 0) {
+            var chartData2 = separatedData[1];
+            var windowSize = getWindowSize(),
+                windowWidth = windowSize[0],
+                windowHeight = windowSize[1];
+            if (windowWidth < 768) {
+                var panelWidth = 620;
+                var panelHeight = 349;
+            } else {
+                var panelWidth = 745;
+                var panelHeight = Math.min(349, Math.round((windowHeight * 0.47)));
+            }
+            var chartMargin = {top: 60, right: 30, bottom: 50, left: 60};
+            var chart2 = new Chart({
+                id: 'chart-2',
+                element: document.getElementById('chart-space-2'),
+                margin: chartMargin,
+                data: chartData2,
+                width: panelWidth - chartMargin.left - chartMargin.right,
+                height: panelHeight - chartMargin.top - chartMargin.bottom
+            });
+            // calculate axis buffers based on analyte-specific objectives
+            if (hasDdpcrData) {
+                if (analyte === enterococcusDdpcr.name) {
+                    chart2.createScales(enterococcusDdpcr.stv);
+                } else {
+                    chart2.createScales(null);
+                }
+            } else {
+                if (analyte === ecoli.name) {
+                    chart2.createScales(ecoli.stv);
+                } else if (analyte === enterococcus.name) {
+                    chart2.createScales(enterococcus.stv);
+                } else {
+                    chart2.createScales(null);
+                }
+            }
+            chart2.addAxes();
+            chart2.drawLines(analyte, hasDdpcrData);
+            chart2.drawPoints();
+            chart2.drawGPoints();
+            //chart2.drawBrush();
+            //chart2.drawBrushPoints();
+        } else {
+            d3.select('#chart-space-2').selectAll('*').remove();
+        }
+
+        //// Copy everything below
         // if there is ddpcr data, use the ddPCR
+        /*
         if (separatedData[1].length > 0) {
             chartData = separatedData[1];
         } else {
@@ -249,7 +334,7 @@ function onMarkerClick(e) {
 
         var chartMargin = {top: 10, right: 30, bottom: 100, left: 60};
         var chart = new Chart({
-            element: document.getElementById(divId),
+            element: document.getElementById('chart-space-1'),
             margin: chartMargin,
             data: chartData,
             width: panelWidth - chartMargin.left - chartMargin.right,
@@ -279,6 +364,8 @@ function onMarkerClick(e) {
         chart.drawGPoints();
         chart.drawBrush();
         chart.drawBrushPoints();
+        */
+        // copy everything above
 
         // chart filter listeners
         d3.select('#filter-result').on('change', function() { 
@@ -297,8 +384,24 @@ function onMarkerClick(e) {
 
         // geomean listener
         addGeomeanListener();
-
         updateDownloadMenu();
+        addPickerStartDateListener();
+        addPickerEndDateListener();
+
+        function addPickerEndDateListener() {
+            document.getElementById('picker-end-date').addEventListener('change', function() {
+                //console.log('end date changed');
+            });
+        }
+        
+        function addPickerStartDateListener() {
+            document.getElementById('picker-start-date').addEventListener('change', function() {
+                var input = this.value; // format is YYYY-MM-DD
+                // there is a bug(?) with the parsed date being off by about 8 hours (it shows up as one day earlier), add time value here
+                input = input + 'T00:00:00'; 
+                var newDate = new Date(input);
+            });
+        }
 
         function addGeomeanListener() {
             document.getElementById('geomean-menu').addEventListener('change', function() {
@@ -308,7 +411,8 @@ function onMarkerClick(e) {
                 } else if (selected === 5) {
                     gmLimit = 5;
                 }
-                chart.filterGPoints();
+                if (chart1) { chart1.filterGPoints() };
+                if (chart2) { chart2.filterGPoints() };
             })
         }
         
@@ -316,12 +420,14 @@ function onMarkerClick(e) {
             if (currentScale === 'linear') {
                 resetScaleMenu();
                 currentScale = 'log';
-                chart.redraw();
+                if (chart1) { chart1.redraw() };
+                if (chart2) { chart2.redraw() };
             } else if (currentScale === 'log') {
                 document.getElementById('log-button').classList.remove('active');
                 document.getElementById('linear-button').classList.add('active');
                 currentScale = 'linear';
-                chart.redraw();
+                if (chart1) { chart1.redraw() };
+                if (chart2) { chart2.redraw() };
             }
         }
 
@@ -625,12 +731,10 @@ function initializeChartPanel() {
 }
 
 function initializeDatePanel() {
-    // Format dates to YYYY-MM-DD
-    var endDate = chartEndDate.toISOString().split('T')[0] 
-    var startDate = chartStartDate.toISOString().split('T')[0]
+    var todayText = convertDateObjToPickerDate(today);
     var datePanel = document.getElementById('date-container');
     datePanel.innerHTML = '';
-    datePanel.innerHTML = '<p class="js-date-range">Currently viewing: <div><div><input type="date" id="view-start-date" name="view-start" value="' + startDate + '" min="' + startDate + '" max="' + endDate + '"/></div>' + ' to ' + '<div><input type="date" id="view-end-date" name="view-end" value="' + endDate + '"min="' + startDate + '" max="' + endDate + '" /></div></div>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold your mouse cursor on the left or right outside side of the gray box. Drag it across the timeline area to change the viewable date range of the chart."></i></a></p>';
+    datePanel.innerHTML = '<p class="js-date-range">Currently viewing: <div><div><input type="date" id="picker-start-date" name="view-start" value="' + todayText + '"/></div>' + ' to ' + '<div><input type="date" id="picker-end-date" name="view-end" value="' + todayText + '" /></div></div>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold your mouse cursor on the left or right outside side of the gray box. Drag it across the timeline area to change the viewable date range of the chart."></i></a></p>';
 }
 
 function initializeDownloadMenu() {
@@ -952,9 +1056,13 @@ function daysBetween(a, b) {
     return Math.floor((utc2 - utc1) / MS_PER_DAY);
 }
 
+function isValidDate(d) {
+    return d instanceof Date && !isNaN(d);
+}
+
 function responsive() {
     // get container + svg aspect ratio
-    var svg = d3.select('#graph'),
+    var svg = d3.select('#chart-1'),
         container = svg.node().parentNode,
         width = parseInt(svg.style('width')),
         height = parseInt(svg.style('height')),
@@ -980,8 +1088,71 @@ function responsive() {
     }
 }
 
+function responsive2() {
+    // get container + svg aspect ratio
+    var svg = d3.select('#chart-2'),
+        container = svg.node().parentNode,
+        width = parseInt(svg.style('width')),
+        height = parseInt(svg.style('height')),
+        aspect = width / height;
+    
+    // add viewBox and preserveAspectRatio properties,
+    // and call resize so that svg resizes on inital page load
+    svg.attr('viewBox', '0 0 ' + width + ' ' + height)
+        .attr('perserveAspectRatio', 'xMinYMid')
+        .call(resize);
+
+    // to register multiple listeners for same event type, 
+    // you need to add namespace, i.e., 'click.foo'
+    // necessary if you call invoke this function for multiple svgs
+    // api docs: https://github.com/mbostock/d3/wiki/Selections#on
+    d3.select(window).on('resize.' + container.id, resize);
+
+    // get width of container and resize svg to fit it
+    function resize() {
+        var targetWidth = parseInt(container.offsetWidth);
+        svg.attr('width', targetWidth);
+        svg.attr('height', Math.round(targetWidth / aspect));
+    }
+}
+
+
 function roundHundred(value) {
     return (value / 100) * 100
+}
+
+function convertDateObjToPickerDate(date) {
+    // Format dates to YYYY-MM-DD
+    if (date instanceof Date) {
+        var convertedDate = date.toISOString().slice(0, 10);
+        return convertedDate;
+    } else {
+        return null;
+    }
+}
+
+// date as a date object
+function setPickerEndDate(date) {
+    if (date && date <= pickerMaxDate) {
+        pickerEndDate = date;
+        var datepicker = document.getElementById('picker-end-date');
+        var dateString = convertDateObjToPickerDate(date);
+        datepicker.value = dateString;
+    } else {
+        return null;
+    }
+}
+
+// date as a date object
+function setPickerStartDate(date) {
+    if (date && date >= pickerMinDate) {
+        pickerStartDate = date;
+        var datepicker = document.getElementById('picker-start-date');
+        var dateString = convertDateObjToPickerDate(date);
+        datepicker.value = dateString;
+    } else {
+        return null;
+    }
 }
 
 var ecoli = new Analyte('E. coli', 320, 100),
@@ -1021,8 +1192,6 @@ map.getPane('otherPane').style.zIndex = 650;
 map.getPane('yearPane').style.zIndex = 660;
 map.getPane('monthPane').style.zIndex = 670;
 
-var chartEndDate = new Date();
-var chartStartDate = new Date();
 var chartOpacity = 0.8;
 var currentAnalyte; 
 var currentScale = 'log';
@@ -1033,8 +1202,13 @@ var lastSite = new Object();
 var mainColor = '#145785', secColor = '#e86348';
 var MS_PER_DAY = (24 * 60 * 60 * 1000);
 var parseDate = d3.timeParse('%Y-%m-%dT%H:%M:%S');
+var pickerEndDate = null;
+var pickerMaxDate = null;
+var pickerMinDate = null;
+var pickerStartDate = null;
 var recordLimit = 10000;
 var siteLayer; // accessed globally for highlight functions
+var today = new Date();
 var _r5Sites; // accessed globally for checking if a site is an R5 site
 
 clearSearch();

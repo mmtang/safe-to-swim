@@ -13,6 +13,7 @@ var Chart = function(opts) {
     this.element = opts.element;
     this.data = opts.data;
     this.gData = [];
+    this.hasDdpcrData = opts.hasDdpcrData;
     this.margin = opts.margin;
     this.width = opts.width;
     this.height = opts.height;
@@ -109,10 +110,8 @@ Chart.prototype.addLine = function(val, type, color) {
         .style('stroke-width', 3)
         .attr('x1', 0)
         .attr('x2', _this.width + _this.elementPadding)
-        //.attr('y1', _this.yScale(val))
-        //.attr('y2', _this.yScale(val))
-        .attr('y1', function() { return _this.yScale(val); })
-        .attr('y2', function() { return _this.yScale(val); })
+        .attr('y1', _this.yScale(val))
+        .attr('y2', _this.yScale(val))
         .style('opacity', chartOpacity)
         .on('mousemove', function(d) {
             toggleTooltip(tooltipLine, 1);
@@ -134,22 +133,22 @@ Chart.prototype.addLine = function(val, type, color) {
 }
 
 Chart.prototype.addTitle = function() {
-    var titleText;
-    if (this.id === 'chart-1') {
-        titleText = 'Culture-based Testing Methods';
-    } else if (this.id === 'chart-2') {
-        titleText = 'Droplet Digital Polymerase Chain Reaction (ddPCR) Testing Method'
-    }
-    console.log(titleText);
-    this.svg.append('text')
-        .attr('class', 'chart-title')
-        .attr('x', this.margin.left + (this.width / 2))             
-        .attr('y', 0 + (this.margin.top / 2))
-        .attr('text-anchor', 'middle')  
-        .style('fill', '#333333')
-        .style('font-size', '1.6rem') 
-        //.style('text-decoration', 'bold')  
-        .text(titleText);
+    if (this.hasDdpcrData) {
+        var titleText;
+        if (this.id === 'chart-1') {
+            titleText = 'Culture-based Testing Method';
+        } else if (this.id === 'chart-2') {
+            titleText = 'Droplet Digital Polymerase Chain Reaction (ddPCR) Testing Method'
+        }
+        this.svg.append('text')
+            .attr('class', 'chart-title')
+            .attr('x', this.margin.left + (this.width / 2))             
+            .attr('y', 0 + (this.margin.top / 2))
+            .attr('text-anchor', 'middle')  
+            .style('fill', '#333333')
+            .style('font-size', '1.6rem') 
+            .text(titleText);
+        }
 }
 
 Chart.prototype.brushed = function(parent) {
@@ -204,10 +203,12 @@ Chart.prototype.createBrushScales = function() {
 
 Chart.prototype.createScales = function(threshold) {
     // calculate min and max dates for data
+    /*
     this.xExtent = d3.extent(this.data, function(d,i) { return d.SampleDate; });
     if (this.data.length === 1) {
         this.xExtent = bufferX(this.xExtent, 35);  
     }
+    */
 
     // compare the max Y to the threshold and pick the greater value
     var yMax = d3.max(this.data, function(d) { return d.ResultDisplay }); 
@@ -225,7 +226,8 @@ Chart.prototype.createScales = function(threshold) {
     }
 
     this.xScale = d3.scaleTime()
-        .domain(this.xExtent)
+        //.domain(this.xExtent)
+        .domain([minDate, today])
         .range([0, this.width]);
     this.linearScale = d3.scaleLinear()
         .domain([0, yLinearBuffered])
@@ -315,8 +317,8 @@ Chart.prototype.drawGPoints = function() {
     }
 }
 
-Chart.prototype.drawLines = function(analyte, hasDdpcrData) {
-    if (!hasDdpcrData) {
+Chart.prototype.drawLines = function(analyte, isDdpcrData) {
+    if (!isDdpcrData) {
         if (analyte === ecoli.name) {
             this.addLine(ecoli.stv, 'stv');
             this.addLine(ecoli.geomean, 'gm');

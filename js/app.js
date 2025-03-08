@@ -204,8 +204,19 @@ function onMarkerClick(e) {
         });
 
         // calculate x-extent of all analyte data
+        var xExtent = d3.extent(chartData, function(d) { return d.SampleDate; });
+        minDate = xExtent[0];
+        maxDate = today;
 
-
+        // set values and min/max values of the date selectors
+        var minDateString = convertDateObjToPickerDate(minDate);
+        var maxDateString = convertDateObjToPickerDate(today);
+        setPickerMinDate(minDateString);
+        setPickerMaxDate(maxDateString);
+        setPickerStartDate(minDateString);
+        setPickerEndDate(maxDateString);
+        
+        // does the entire dataset for this analyte have ddpcr data?
         var hasDdpcrData = chartData.filter(function(d) {
             return d.Unit === 'copies/100 mL';
         }).length > 0;
@@ -231,13 +242,20 @@ function onMarkerClick(e) {
             var chart1 = new Chart({
                 id: 'chart-1',
                 element: document.getElementById('chart-space-1'),
+                hasDdpcrData: hasDdpcrData,
                 margin: chartMargin,
                 data: chartData1,
                 width: panelWidth - chartMargin.left - chartMargin.right,
                 height: panelHeight - chartMargin.top - chartMargin.bottom
             });
+
+            // does the separated data have ddpcr data?
+            var isDdpcrData = chartData1.filter(function(d) {
+                return d.Unit === 'copies/100 mL';
+            }).length > 0;
+
             // calculate axis buffers based on analyte-specific objectives
-            if (hasDdpcrData) {
+            if (isDdpcrData) {
                 if (analyte === enterococcusDdpcr.name) {
                     chart1.createScales(enterococcusDdpcr.stv);
                 } else {
@@ -253,7 +271,7 @@ function onMarkerClick(e) {
                 }
             }
             chart1.addAxes();
-            chart1.drawLines(analyte, hasDdpcrData);
+            chart1.drawLines(analyte, isDdpcrData);
             chart1.drawPoints();
             chart1.drawGPoints();
             //chart1.drawBrush();
@@ -280,13 +298,20 @@ function onMarkerClick(e) {
             var chart2 = new Chart({
                 id: 'chart-2',
                 element: document.getElementById('chart-space-2'),
+                hasDdpcrData: hasDdpcrData,
                 margin: chartMargin,
                 data: chartData2,
                 width: panelWidth - chartMargin.left - chartMargin.right,
                 height: panelHeight - chartMargin.top - chartMargin.bottom
             });
+
+            // does the separated data have ddpcr data?
+            var isDdpcrData = chartData2.filter(function(d) {
+                return d.Unit === 'copies/100 mL';
+            }).length > 0;
+
             // calculate axis buffers based on analyte-specific objectives
-            if (hasDdpcrData) {
+            if (isDdpcrData) {
                 if (analyte === enterococcusDdpcr.name) {
                     chart2.createScales(enterococcusDdpcr.stv);
                 } else {
@@ -302,7 +327,7 @@ function onMarkerClick(e) {
                 }
             }
             chart2.addAxes();
-            chart2.drawLines(analyte, hasDdpcrData);
+            chart2.drawLines(analyte, isDdpcrData);
             chart2.drawPoints();
             chart2.drawGPoints();
             //chart2.drawBrush();
@@ -310,62 +335,6 @@ function onMarkerClick(e) {
         } else {
             d3.select('#chart-space-2').selectAll('*').remove();
         }
-
-        //// Copy everything below
-        // if there is ddpcr data, use the ddPCR
-        /*
-        if (separatedData[1].length > 0) {
-            chartData = separatedData[1];
-        } else {
-            chartData = separatedData[0];
-        }
-
-        var windowSize = getWindowSize(),
-            windowWidth = windowSize[0],
-            windowHeight = windowSize[1];
-            
-        if (windowWidth < 768) {
-            var panelWidth = 620;
-            var panelHeight = 349;
-        } else {
-            var panelWidth = 745;
-            var panelHeight = Math.min(349, Math.round((windowHeight * 0.47)));
-        }
-
-        var chartMargin = {top: 10, right: 30, bottom: 100, left: 60};
-        var chart = new Chart({
-            element: document.getElementById('chart-space-1'),
-            margin: chartMargin,
-            data: chartData,
-            width: panelWidth - chartMargin.left - chartMargin.right,
-            height: panelHeight - chartMargin.top - chartMargin.bottom
-        });
-
-        // calculate axis buffers based on analyte-specific objectives
-        if (hasDdpcrData) {
-            if (analyte === enterococcusDdpcr.name) {
-                chart.createScales(enterococcusDdpcr.stv);
-            } else {
-                chart.createScales(null);
-            }
-        } else {
-            if (analyte === ecoli.name) {
-                chart.createScales(ecoli.stv);
-            } else if (analyte === enterococcus.name) {
-                chart.createScales(enterococcus.stv);
-            } else {
-                chart.createScales(null);
-            }
-        }
-
-        chart.addAxes();
-        chart.drawLines(analyte, hasDdpcrData);
-        chart.drawPoints();
-        chart.drawGPoints();
-        chart.drawBrush();
-        chart.drawBrushPoints();
-        */
-        // copy everything above
 
         // chart filter listeners
         d3.select('#filter-result').on('change', function() { 
@@ -734,7 +703,7 @@ function initializeDatePanel() {
     var todayText = convertDateObjToPickerDate(today);
     var datePanel = document.getElementById('date-container');
     datePanel.innerHTML = '';
-    datePanel.innerHTML = '<p class="js-date-range">Currently viewing: <div><div><input type="date" id="picker-start-date" name="view-start" value="' + todayText + '"/></div>' + ' to ' + '<div><input type="date" id="picker-end-date" name="view-end" value="' + todayText + '" /></div></div>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold your mouse cursor on the left or right outside side of the gray box. Drag it across the timeline area to change the viewable date range of the chart."></i></a></p>';
+    datePanel.innerHTML = '<p class="js-date-range">Currently viewing: </p><div class="picker-container"><div><input type="date" id="picker-start-date" name="view-start" value="' + todayText + '"/></div>' + ' to ' + '<div><input type="date" id="picker-end-date" name="view-end" value="' + todayText + '" /></div>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold your mouse cursor on the left or right outside side of the gray box. Drag it across the timeline area to change the viewable date range of the chart."></i></a></div>';
 }
 
 function initializeDownloadMenu() {
@@ -1131,28 +1100,28 @@ function convertDateObjToPickerDate(date) {
     }
 }
 
-// date as a date object
-function setPickerEndDate(date) {
-    if (date && date <= pickerMaxDate) {
-        pickerEndDate = date;
-        var datepicker = document.getElementById('picker-end-date');
-        var dateString = convertDateObjToPickerDate(date);
-        datepicker.value = dateString;
-    } else {
-        return null;
-    }
+// date as a date string YYYY-MM-DD
+function setPickerStartDate(date) {
+    var datepicker = document.getElementById('picker-start-date');
+    datepicker.value = date;
 }
 
-// date as a date object
-function setPickerStartDate(date) {
-    if (date && date >= pickerMinDate) {
-        pickerStartDate = date;
-        var datepicker = document.getElementById('picker-start-date');
-        var dateString = convertDateObjToPickerDate(date);
-        datepicker.value = dateString;
-    } else {
-        return null;
-    }
+// date as a date string YYYY-MM-DD
+function setPickerEndDate(date) {
+    var datepicker = document.getElementById('picker-end-date');
+    datepicker.value = date;
+}
+
+// date as a date string YYYY-MM-DD
+function setPickerMinDate(date) {
+    var datepicker = document.getElementById('picker-start-date');
+    datepicker.min = date;
+}
+
+// date as a date string YYYY-MM-DD
+function setPickerMaxDate(date) {
+    var datepicker = document.getElementById('picker-end-date');
+    datepicker.max = date;
 }
 
 var ecoli = new Analyte('E. coli', 320, 100),
@@ -1202,10 +1171,10 @@ var lastSite = new Object();
 var mainColor = '#145785', secColor = '#e86348';
 var MS_PER_DAY = (24 * 60 * 60 * 1000);
 var parseDate = d3.timeParse('%Y-%m-%dT%H:%M:%S');
-var pickerEndDate = null;
-var pickerMaxDate = null;
-var pickerMinDate = null;
-var pickerStartDate = null;
+var maxDate = null;
+var minDate = null;
+var viewEndDate = null;
+var viewStartDate = null;
 var recordLimit = 10000;
 var siteLayer; // accessed globally for highlight functions
 var today = new Date();

@@ -20,6 +20,21 @@ body {
     font-family: 'Roboto', sans-serif;
 }
 
+.error {
+    display: hidden;
+    padding: 0;
+    font-size: 1em;
+    color: #a94442;
+    background-color: #f2dede;
+    border-radius: 0 0 5px 5px;
+    box-sizing: border-box;
+  }
+
+.error.active {
+    display: block;
+    padding: 0.6em;
+}
+
 .panel-heading {
     width: inherit;
 }
@@ -45,11 +60,17 @@ body {
     text-align: center;
 }
 
-.picker-container {
+.picker-row {
     align-items: center;
     display: flex;
     justify-content: center;
     width: 100%;
+}
+
+.picker-wrapper {
+    display: flex;
+    flex-direction: column;
+    padding: 0.6em;
 }
 
 .white {
@@ -186,7 +207,6 @@ body {
 
 .dropdown-menu a i {
     color: #FFFFFF;
-    }
 }
 
 #tile-menu {

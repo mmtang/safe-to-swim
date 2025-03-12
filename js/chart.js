@@ -50,6 +50,7 @@ Chart.prototype.addBrush = function() {
         .call(this.brush.move, this.xScale.range());
 }
 
+// DELETE
 Chart.prototype.setInitialView = function() {
     // get unique years to survey depth of data
     // IE11 no longer supports sets
@@ -80,8 +81,15 @@ Chart.prototype.setInitialView = function() {
         var oneYearBack = new Date(new Date(+lastDate).setFullYear(year - 1));
         // change brush position
         this.setBrushPosition(oneYearBack, lastDate);
+        // set view dates
+        viewStartDate = oneYearBack;
+        viewEndDate = lastDate;
+        console.log(viewStartDate, viewEndDate);
     } else {
-        console.log('full view');
+        console.log(this.xExtent);
+        viewStartDate = this.xExtent[0];
+        viewEndDate = this.xExtent[1];
+        console.log(viewStartDate, viewEndDate);
     }
 }
 

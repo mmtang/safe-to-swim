@@ -207,6 +207,10 @@ function onMarkerClick(e) {
         var xExtent = d3.extent(chartData, function(d) { return d.SampleDate; });
         minDate = xExtent[0];
         maxDate = today;
+        inputStartDate = xExtent[0];
+        inputEndDate = today;
+        viewStartDate = xExtent[0];
+        viewEndDate = today;
 
         // set values and min/max values of the date selectors
         var minDateString = convertDateObjToPickerDate(minDate);
@@ -359,17 +363,92 @@ function onMarkerClick(e) {
 
         function addPickerEndDateListener() {
             document.getElementById('picker-end-date').addEventListener('change', function() {
-                //console.log('end date changed');
+                var input = this.value; // format is YYYY-MM-DD
+                // there is a bug(?) with the parsed date being off by about 8 hours (it shows up as one day earlier), append time value here
+                input = input + 'T00:00:00'; 
+                var newDate = new Date(input);
+                inputEndDate = newDate;
+                // check if entered date is within acceptable range
+                if (newDate < viewStartDate) {
+                    showPickerError('End date is before start date');
+                } else if (newDate > maxDate || newDate < minDate) {
+                    var formatDate = d3.timeFormat('%m/%d/%Y');
+                    showPickerError('End date must be ' + formatDate(maxDate) + ' or earlier.');
+                } else if (newDate <= maxDate && newDate >= minDate) {
+                    if (isInputStartDateValid(inputStartDate)) {
+                        hidePickerError();
+                        viewEndDate = newDate;
+                    } 
+                } else {
+                    showPickerError('End date not valid');
+                }
             });
         }
         
         function addPickerStartDateListener() {
             document.getElementById('picker-start-date').addEventListener('change', function() {
                 var input = this.value; // format is YYYY-MM-DD
-                // there is a bug(?) with the parsed date being off by about 8 hours (it shows up as one day earlier), add time value here
+                // there is a bug(?) with the parsed date being off by about 8 hours (it shows up as one day earlier), append time value here
                 input = input + 'T00:00:00'; 
                 var newDate = new Date(input);
+                inputStartDate = newDate;
+                // check if entered date is within acceptable range
+                if (newDate > viewEndDate) {
+                    showPickerError('Start date is after end date');
+                } else if (newDate < minDate || newDate > maxDate) {
+                    var formatDate = d3.timeFormat('%m/%d/%Y');
+                    showPickerError('Start date must be ' + formatDate(minDate) + ' or later.');
+                } else if (newDate <= maxDate && newDate >= minDate) {
+                    if (isInputEndDateValid(inputEndDate)) {
+                        hidePickerError();
+                        viewStartDate = newDate;
+                    }
+                } else {
+                    showPickerError('Start date not valid');
+                }
             });
+        }
+
+        function isInputEndDateValid(newDate) {
+            if (newDate < viewStartDate) {
+                showPickerError('End date is before start date');
+                return false;
+            } else if (newDate > maxDate || newDate < minDate) {
+                var formatDate = d3.timeFormat('%m/%d/%Y');
+                showPickerError('End date must be ' + formatDate(maxDate) + ' or earlier.');
+                return false;
+            } else if (newDate <= maxDate && newDate >= minDate) {
+                return true;
+            } else {
+                showPickerError('End date not valid');
+                return false;
+            }
+        }
+
+        function isInputStartDateValid(newDate) {
+            if (newDate > viewEndDate) {
+                showPickerError('Start date is after end date');
+                return false;
+            } else if (newDate < minDate || newDate > maxDate) {
+                var formatDate = d3.timeFormat('%m/%d/%Y');
+                showPickerError('Start date must be ' + formatDate(minDate) + ' or later.');
+                return false;
+            } else if (newDate <= maxDate && newDate >= minDate) {
+                return true;
+            } else {
+                showPickerError('Start date not valid');
+                return false;
+            }
+        }
+
+        function hidePickerError() {
+            var pickerError = document.querySelector('#picker-error-message');
+            pickerError.innerHTML = ''; // Reset the content
+        }
+
+        function showPickerError(message) {
+            var pickerError = document.querySelector('#picker-error-message');
+            pickerError.textContent = message;
         }
 
         function addGeomeanListener() {
@@ -703,7 +782,7 @@ function initializeDatePanel() {
     var todayText = convertDateObjToPickerDate(today);
     var datePanel = document.getElementById('date-container');
     datePanel.innerHTML = '';
-    datePanel.innerHTML = '<p class="js-date-range">Currently viewing: </p><div class="picker-container"><div><input type="date" id="picker-start-date" name="view-start" value="' + todayText + '"/></div>' + ' to ' + '<div><input type="date" id="picker-end-date" name="view-end" value="' + todayText + '" /></div>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Use the timeline above to change the date view of the chart. Click and hold your mouse cursor on the left or right outside side of the gray box. Drag it across the timeline area to change the viewable date range of the chart."></i></a></div>';
+    datePanel.innerHTML = '<p class="js-date-range">Currently viewing: </p><div class="picker-row"><div class="picker-wrapper"><label for="picker-start-date"><input type="date" id="picker-start-date" class="date-picker" name="view-start" value="' + todayText + '"/></label></div>' + ' to ' + '<div class="picker-wrapper"><label for="picker-end-date"><input type="date" id="picker-end-date" class="date-picker" name="view-end" value="' + todayText + '" /></label></div>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Change the viewable time span of the graph."></i></a></div><div class="picker-row"><span id="picker-error-message" class="error" aria-live="polite"></span></div>';
 }
 
 function initializeDownloadMenu() {
@@ -1173,6 +1252,8 @@ var MS_PER_DAY = (24 * 60 * 60 * 1000);
 var parseDate = d3.timeParse('%Y-%m-%dT%H:%M:%S');
 var maxDate = null;
 var minDate = null;
+var inputEndDate = null;
+var inputStartDate = null;
 var viewEndDate = null;
 var viewStartDate = null;
 var recordLimit = 10000;

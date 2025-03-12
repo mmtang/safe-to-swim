@@ -159,6 +159,20 @@ Chart.prototype.addTitle = function() {
         }
 }
 
+Chart.prototype.setDateView = function(dateObj1, dateObj2) {
+    var _this = this;
+    if (isValidDate(dateObj1) && isValidDate(dateObj2)) {
+        _this.xScale.domain([dateObj1, dateObj2]);
+        // redraw graph elements
+        _this.focus.selectAll('.circle')
+            .attr('cx', function(d) { return _this.xScale(d.SampleDate); })
+            .attr('cy', function(d) { return _this.yScale(d.ResultDisplay); });
+        _this.focus.selectAll('.triangle')
+            .attr('transform', function(d) { return 'translate(' + _this.xScale(d.SampleDate) + ',' + _this.yScale(d['6WeekGeoMean']) + ')'; })
+        _this.focus.select('.x-axis').call(_this.xAxis);
+    }
+}
+
 Chart.prototype.brushed = function(parent) {
     // save brush start and end values
     var selection = d3.event.selection;

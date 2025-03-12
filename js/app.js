@@ -377,7 +377,9 @@ function onMarkerClick(e) {
                 } else if (newDate <= maxDate && newDate >= minDate) {
                     if (isInputStartDateValid(inputStartDate)) {
                         hidePickerError();
-                        viewEndDate = newDate;
+                        viewEndDate = newDate; // save to global
+                        if (chart1) { chart1.setDateView(viewStartDate, newDate) };
+                        if (chart2) { chart2.setDateView(viewStartDate, newDate) };
                     } 
                 } else {
                     showPickerError('End date not valid');
@@ -401,7 +403,9 @@ function onMarkerClick(e) {
                 } else if (newDate <= maxDate && newDate >= minDate) {
                     if (isInputEndDateValid(inputEndDate)) {
                         hidePickerError();
-                        viewStartDate = newDate;
+                        viewStartDate = newDate; // save to global
+                        if (chart1) { chart1.setDateView(newDate, viewEndDate) };
+                        if (chart2) { chart2.setDateView(newDate, viewEndDate) };
                     }
                 } else {
                     showPickerError('Start date not valid');

@@ -24,6 +24,7 @@ var Chart = function(opts) {
 
 Chart.prototype.addAxes = function() {
     var _this = this;
+    var unit = this.data[0].Unit;
     this.xAxis = d3.axisBottom()
         .scale(this.xScale)
         .ticks(5);
@@ -40,7 +41,12 @@ Chart.prototype.addAxes = function() {
     this.focus.append('g')
         .attr('id', this.id === 'chart-1' ? 'y-axis-1' : 'y-axis-2')
         .attr('class', 'y-axis')
-        .call(this.yAxis);
+        .call(this.yAxis)
+        .append('text')
+        .attr('fill', '#333333')
+        .attr('transform', 'translate(7, -12)')
+        .style('text-anchor', 'end')
+        .text(unit);
 }
 
 Chart.prototype.addBrush = function() {

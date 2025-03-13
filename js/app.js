@@ -355,31 +355,83 @@ function onMarkerClick(e) {
         d3.select('#linear-button').on('click', function() { changeScale(); });
         d3.select('#log-button').on('click', function() { changeScale(); });
 
-        // geomean listener
         addGeomeanListener();
         updateDownloadMenu();
         addPickerStartDateListener();
         addPickerEndDateListener();
+        addDateButtonListeners();
+
+        function addDateButtonListeners() {
+            var pickerStart = document.getElementById('picker-start-date');
+            var pickerEnd = document.getElementById('picker-end-date');
+            document.getElementById('date-button-all-data').addEventListener('click', function() {
+                hidePickerError(); // reset error if shown
+                inputStartDate = minDate;  
+                inputEndDate = maxDate;
+                viewStartDate = maxDate;
+                viewEndDate = maxDate;
+                pickerStart.value = convertDateObjToPickerDate(minDate);
+                pickerEnd.value = convertDateObjToPickerDate(maxDate);
+                if (chart1) { chart1.setDateView(minDate, maxDate) };
+                if (chart2) { chart2.setDateView(minDate, maxDate) };
+            });
+            document.getElementById('date-button-last-year').addEventListener('click', function() {
+                hidePickerError(); // reset error if shown
+                var refDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+                inputStartDate = refDate;  
+                inputEndDate = maxDate;
+                viewStartDate = refDate;
+                viewEndDate = maxDate;
+                pickerStart.value = convertDateObjToPickerDate(refDate);
+                pickerEnd.value = convertDateObjToPickerDate(today);
+                if (chart1) { chart1.setDateView(refDate, maxDate) };
+                if (chart2) { chart2.setDateView(refDate, maxDate) };
+            });
+            document.getElementById('date-button-30-days').addEventListener('click', function() {
+                hidePickerError(); // reset error if shown
+                var refDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+                inputStartDate = refDate;  
+                inputEndDate = maxDate;
+                viewStartDate = refDate;
+                viewEndDate = maxDate;
+                pickerStart.value = convertDateObjToPickerDate(refDate);
+                pickerEnd.value = convertDateObjToPickerDate(today);
+                if (chart1) { chart1.setDateView(refDate, maxDate) };
+                if (chart2) { chart2.setDateView(refDate, maxDate) };
+            });
+            document.getElementById('date-button-7-days').addEventListener('click', function() {
+                hidePickerError(); // reset error if shown
+                var refDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)  
+                inputStartDate = refDate;  
+                inputEndDate = maxDate;
+                viewStartDate = refDate;
+                viewEndDate = maxDate;
+                pickerStart.value = convertDateObjToPickerDate(refDate);
+                pickerEnd.value = convertDateObjToPickerDate(today);
+                if (chart1) { chart1.setDateView(refDate, maxDate) };
+                if (chart2) { chart2.setDateView(refDate, maxDate) };
+            });
+        }
 
         function addPickerEndDateListener() {
             document.getElementById('picker-end-date').addEventListener('change', function() {
                 var input = this.value; // format is YYYY-MM-DD
                 // there is a bug(?) with the parsed date being off by about 8 hours (it shows up as one day earlier), append time value here
-                input = input + 'T00:00:00'; 
+                input = input + 'T23:59:00'; 
                 var newDate = new Date(input);
                 inputEndDate = newDate;
                 // check if entered date is within acceptable range
-                if (newDate < viewStartDate) {
+                if (newDate < inputStartDate) {
                     showPickerError('End date is before start date');
                 } else if (newDate > maxDate || newDate < minDate) {
                     var formatDate = d3.timeFormat('%m/%d/%Y');
-                    showPickerError('End date must be ' + formatDate(maxDate) + ' or earlier.');
+                    showPickerError('End date must be ' + formatDate(maxDate) + ' or earlier');
                 } else if (newDate <= maxDate && newDate >= minDate) {
                     if (isInputStartDateValid(inputStartDate)) {
                         hidePickerError();
                         viewEndDate = newDate; // save to global
-                        if (chart1) { chart1.setDateView(viewStartDate, newDate) };
-                        if (chart2) { chart2.setDateView(viewStartDate, newDate) };
+                        if (chart1) { chart1.setDateView(inputStartDate, newDate) };
+                        if (chart2) { chart2.setDateView(inputStartDate, newDate) };
                     } 
                 } else {
                     showPickerError('End date not valid');
@@ -395,17 +447,17 @@ function onMarkerClick(e) {
                 var newDate = new Date(input);
                 inputStartDate = newDate;
                 // check if entered date is within acceptable range
-                if (newDate > viewEndDate) {
+                if (newDate > inputEndDate) {
                     showPickerError('Start date is after end date');
                 } else if (newDate < minDate || newDate > maxDate) {
                     var formatDate = d3.timeFormat('%m/%d/%Y');
-                    showPickerError('Start date must be ' + formatDate(minDate) + ' or later.');
+                    showPickerError('Start date must be ' + formatDate(minDate) + ' or later');
                 } else if (newDate <= maxDate && newDate >= minDate) {
                     if (isInputEndDateValid(inputEndDate)) {
                         hidePickerError();
                         viewStartDate = newDate; // save to global
-                        if (chart1) { chart1.setDateView(newDate, viewEndDate) };
-                        if (chart2) { chart2.setDateView(newDate, viewEndDate) };
+                        if (chart1) { chart1.setDateView(newDate, inputEndDate) };
+                        if (chart2) { chart2.setDateView(newDate, inputEndDate) };
                     }
                 } else {
                     showPickerError('Start date not valid');
@@ -786,7 +838,7 @@ function initializeDatePanel() {
     var todayText = convertDateObjToPickerDate(today);
     var datePanel = document.getElementById('date-container');
     datePanel.innerHTML = '';
-    datePanel.innerHTML = '<p class="js-date-range">Currently viewing: </p><div class="picker-row"><div class="picker-wrapper"><label for="picker-start-date"><input type="date" id="picker-start-date" class="date-picker" name="view-start" value="' + todayText + '"/></label></div>' + ' to ' + '<div class="picker-wrapper"><label for="picker-end-date"><input type="date" id="picker-end-date" class="date-picker" name="view-end" value="' + todayText + '" /></label></div>&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Change the viewable time span of the graph."></i></a></div><div class="picker-row"><span id="picker-error-message" class="error" aria-live="polite"></span></div>';
+    datePanel.innerHTML = '<div class="picker-col"><div><p class="js-date-range">Currently viewing:</p></div><div class="picker-col"><div class="picker-row"><div class="picker-wrapper"><label for="picker-start-date"><input type="date" id="picker-start-date" class="date-picker" name="view-start" value="' + todayText + '"/></label></div>' + ' to ' + '<div class="picker-wrapper"><label for="picker-end-date"><input type="date" id="picker-end-date" class="date-picker" name="view-end" value="' + todayText + '" /></label></div>&nbsp;&nbsp;<div><a href="#"><i class="fa fa-question-circle pop-top" data-toggle="popover" data-placement="top" data-html="true" data-content="Change the viewable time span of the graph."></i></a></div></div><div class="picker-row"><span id="picker-error-message" class="error" aria-live="polite"></span></div><div class="picker-row"><div class="btn-group btn-group-sm" role="group" aria-label="Preset date views"><button type="button" id="date-button-all-data" class="btn btn-default">All data</button><button id="date-button-last-year" type="button" class="btn btn-default">Last year</button><button id="date-button-30-days" type="button" class="btn btn-default">Last 30 days</button><button id="date-button-7-days" type="button" class="btn btn-default">Last 7 days</button></div></div></div>';
 }
 
 function initializeDownloadMenu() {

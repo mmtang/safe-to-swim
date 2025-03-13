@@ -60,6 +60,13 @@ body {
     text-align: center;
 }
 
+.picker-col {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
 .picker-row {
     align-items: center;
     display: flex;

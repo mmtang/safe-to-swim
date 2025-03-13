@@ -50,49 +50,6 @@ Chart.prototype.addBrush = function() {
         .call(this.brush.move, this.xScale.range());
 }
 
-// DELETE
-Chart.prototype.setInitialView = function() {
-    // get unique years to survey depth of data
-    // IE11 no longer supports sets
-    var years = [];
-    for (var i = 0; i < this.data.length; i++) {
-        var year = this.data[i].SampleDate.getFullYear();
-        if (years.indexOf(year) < 0) {
-            years.push(year);
-        }
-    }
-    // sort years by descending order
-    years.sort(function(a,b) {
-        return b - a;
-    });
-    // find difference between two ending years
-    if (years.length > 1) {
-        var difference = years[0] - years[years.length - 1];
-    } else if (years.length === 1) {
-        var difference = 0;
-    }
-    
-    // only apply default year view if there are enough data points that are temporally distant
-    // otherwise, show all points by default
-    if (this.data.length > 2 && difference > 2) {
-        var lastDate = this.xExtent[1];
-        var year = lastDate.getFullYear();
-        // make a copy of the date object and change the year
-        var oneYearBack = new Date(new Date(+lastDate).setFullYear(year - 1));
-        // change brush position
-        this.setBrushPosition(oneYearBack, lastDate);
-        // set view dates
-        viewStartDate = oneYearBack;
-        viewEndDate = lastDate;
-        console.log(viewStartDate, viewEndDate);
-    } else {
-        console.log(this.xExtent);
-        viewStartDate = this.xExtent[0];
-        viewEndDate = this.xExtent[1];
-        console.log(viewStartDate, viewEndDate);
-    }
-}
-
 Chart.prototype.addBrushAxis = function() {
     this.xBrushAxis = d3.axisBottom(this.xBrushScale)
         .ticks(5)

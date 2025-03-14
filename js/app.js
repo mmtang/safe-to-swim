@@ -32,6 +32,7 @@ function onMarkerClick(e) {
                 var dataPart2 = processData(res12[0].result.records);
                 var dataPart3 = processData(res13[0].result.records);
                 var allData = dataPart1.concat(dataPart2, dataPart3);
+                // render data
                 addPanelContent(allData);
             } else {
                 console.log('Ignored request for ' + site);
@@ -72,9 +73,10 @@ function onMarkerClick(e) {
             chartData[i].ResultSub = +chartData[i].ResultSub;
             // New column: Assign a new value to results that are 0 (cannot be shown on log scale graph)
             chartData[i].ResultDisplay = checkDisplay(chartData[i].ResultSub);
-            chartData[i].SampleDate = parseDate(chartData[i].SampleDate);
-            chartData[i]['6WeekCutoffDate'] = parseDate(chartData[i]['6WeekCutoffDate']);
-            chartData[i]['30DayCutoffDate'] = parseDate(chartData[i]['30DayCutoffDate']);
+            // parse date fields
+            for (var d = 0; d < dateFields.length; d++) { 
+                chartData[i][dateFields[d]] = parseDate(chartData[i][dateFields[d]]);
+            }
         }
         return chartData;
     }  
@@ -544,14 +546,13 @@ function onMarkerClick(e) {
         }
 
         function updateDownloadMenu() {
-            toggleDownloadMenu();
             d3.selectAll('#download-menu a').on('click', function() { 
                 switch (this.text) {
                     case downloadOp1:
-                        convertToCSV(formatSampleData(chart.data));
+                        downloadCSV(chartData);
                         break;
                     case downloadOp2:
-                        convertToCSV(formatGeomeanData(chart.gData));
+                        console.log('External link clicked.');
                         break;
                     case downloadOp3:
                         console.log('External link clicked.');
@@ -562,17 +563,6 @@ function onMarkerClick(e) {
             });
         }
     } // addChart
-
-    function toggleDownloadMenu() {
-        var menuItem = document.getElementById('geomean-dropdown-op');
-        if ((currentAnalyte === ecoli.name) || (currentAnalyte === enterococcus.name)) {
-            menuItem.classList.remove('disabled');
-        } else {
-            if (!(menuItem.classList.contains('disabled'))) {
-                menuItem.classList.add('disabled');
-            }
-        }
-    }
 } // onMarkerClick
 
 document.getElementById('panel-arrow-container').addEventListener('click', function() {
@@ -728,6 +718,7 @@ function collapsePanel() {
     icon.classList.add('fa-caret-down');
 }
 
+/* DELETE
 function convertToCSV(data) {
     var csvString = '';
     var fileName = 'SafeToSwim_Download_' + Date.now() + '.csv';
@@ -743,6 +734,7 @@ function convertToCSV(data) {
     var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8' });
     window.saveAs(blob, fileName);
 }
+        */
 
 function createURL(baseURL, site) {
     // url encoding for site code, add more as needed
@@ -777,40 +769,61 @@ function encode(str) {
     return str;
 }
 
-function formatGeomeanData(data) {
-    var formatDate = d3.timeFormat("%Y-%m-%d %X");
-    var selected = data.map(function(d) {
-        return {
-            'EndDate': formatDate(d.enddate),
-            'GeoMean': d.geomean,
-            'SampleCount': d.count,
-            'StartDate': formatDate(d.startdate),
-            'StationCode': '"' + lastSite.code + '"',
-            'StationName': '"' + lastSite.name + '"'
-        };
-    });
-    return selected;
+// This function converts an array of JavaScript objects to a tab delimited string.
+function convertArrayOfObjectsToCSV(array, fields, columnDelimiter = ',') {
+    var formatDate = d3.timeFormat('%Y-%m-%d %H:%M:%S'); // Date formatting for open data portal
+    if (array.length > 0) {
+        // Initialize empty string variable
+        // Convert data records to strings and append them
+        let dataString = '';
+        const csvFields = fields ? fields : Object.keys(array[0]);
+        const header = csvFields.join(columnDelimiter);
+        const rows = array.map(obj => {
+            return csvFields.map(fieldName => { 
+                    if (dateFields.includes(fieldName)) {
+                        if (obj[fieldName]) {
+                            //return formatDate(obj[fieldName]); 
+                            return formatDate(new Date(obj[fieldName]));
+                        } else {
+                            return null;
+                        }
+                    } else {
+                        // If text string contains a comma, wrap double quotes around text string
+                        if (obj[fieldName]) {
+                            if (obj[fieldName].toString().includes(',')) {
+                                return `"${obj[fieldName]}"`;
+                            } else {
+                                return obj[fieldName]; 
+                            }
+                        } else {
+                            return null;
+                        }
+                    }
+                })
+                .join(columnDelimiter);
+        });
+        const body = rows.join('\r\n');
+        dataString += header + '\r\n' + body;
+        return dataString;
+    }
 }
 
-function formatSampleData(data) {
-    var formatDate = d3.timeFormat("%Y-%m-%d");
-    var selected = data.map(function(d) {
-        return {
-            'Program': '"' + d.Program + '"',
-            'StationName': '"' + d.StationName + '"',
-            'StationCode': '"' + d.StationCode + '"',
-            'SampleDate': '"' + formatDate(d.SampleDate) + '"',
-            'MethodName': '"' + d.MethodName + '"',
-            'Analyte': '"' + d.Analyte + '"',
-            'Unit': '"' + d.Unit + '"',
-            'OriginalResult': d.Result,
-            'CalculatedResult': d.CalculatedResult,
-            'RL': d.RL,
-            'ResultQualCode': d.ResultQualCode,
-            'DataQuality': '"' + d.DataQuality + '"'
-        };
-    });
-    return selected;
+function downloadCSV(array) {
+    var fields = Object.keys(array[0]); // get field names and order
+    fields = removeItem(fields, '_id');
+    fields = removeItem(fields, 'ResultDisplay');
+    var link = document.createElement('a');
+    var csv = convertArrayOfObjectsToCSV(array, fields);
+    if (csv == null) return;
+    const filename = 'SafeToSwim_Data_Download_' + Date.now() + '.csv';
+    // Two lines below are required to export ALL rows in the file.
+    // https://stackoverflow.com/questions/24610694/export-html-table-to-csv-in-google-chrome-browser/24611096#24611096
+    var csvData = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); 
+    link.setAttribute('href', URL.createObjectURL(csvData));
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link); 
 }
 
 function getWindowSize() {
@@ -846,7 +859,7 @@ function initializeDatePanel() {
 
 function initializeDownloadMenu() {
     var container = document.getElementById('download-container');
-    container.innerHTML = '<div class="dropdown panel-container text-center"><div class="btn-group dropup"><button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data&nbsp;&nbsp;<span class="caret"></span></button><ul id="download-menu" class="dropdown-menu"><li><a href="#">' + downloadOp1 + '</a></li><li id="geomean-dropdown-op"><a href="#">' + downloadOp2 + '</a></li></ul></div>';
+    container.innerHTML = '<div class="dropdown panel-container text-center"><div class="btn-group dropup"><button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data&nbsp;&nbsp;<span class="caret"></span></button><ul id="download-menu" class="dropdown-menu"><li><a href="#">' + downloadOp1 + '</a></li><li id="portal-dropdown-op"><a href="https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results" target="_blank" rel="noopener noreferrer">' + downloadOp2 + '</a></li></ul></div>';
 }
 
 function resendRequest() {
@@ -905,20 +918,12 @@ function updateFilters() {
     var sampleFilter = document.getElementById('filter-result');
     sampleFilter.checked = true;
     var gmFilter = document.getElementById('filter-geomean');
-    // configuration based on analyte selection
-    if ((currentAnalyte === ecoli.name) || (currentAnalyte === enterococcus.name)) {
-        gmFilter.disabled = false;
-        gmFilter.checked = true;
-    } else {
-        gmFilter.disabled = true;
-        gmFilter.checked = false;
-    }
+    gmFilter.checked = true;
     updateGeomeanMenu();
 }
 
 function updateGeomeanMenu() {
     var gmFilter = document.getElementById('filter-geomean');
-    var gmContainer = document.getElementById('geomean-container');
     var gmMenu = document.getElementById('geomean-menu');
     if (gmFilter.checked === true) {
         gmMenu.disabled = false;
@@ -1223,6 +1228,15 @@ function responsive2() {
     }
 }
 
+// removes a single occurrence of a value in an array
+// returns an array with that value removed
+function removeItem(arr, value) {
+    var index = arr.indexOf(value);
+    if (index > -1) {
+      arr.splice(index, 1);
+    }
+    return arr;
+}
 
 function roundHundred(value) {
     return (value / 100) * 100
@@ -1280,8 +1294,8 @@ var dataQuality0 = "MetaData",
 // Which data quality categories to include
 var dqCategories = [dataQuality1, dataQuality2, dataQuality3, dataQuality4, dataQuality5];
 
-var downloadOp1 = 'Download monitoring data (.csv)',
-    downloadOp2 = 'Download geometric mean data (.csv)';
+var downloadOp1 = 'Download data (.csv)',
+    downloadOp2 = 'Open data portal (data.ca.gov)';
 
 var map = L.map('map',{ 
     center: [37.5050, -119.965], 
@@ -1302,6 +1316,7 @@ map.getPane('monthPane').style.zIndex = 670;
 var chartOpacity = 0.8;
 var currentAnalyte; 
 var currentScale = 'log';
+var dateFields = ['SampleDate', 'CalibrationDate', 'PrepPreservationDate', 'DigestExtractDate', 'AnalysisDate', 'SampleDateTime', '30DayCutoffDate', '6WeekCutoffDate'];
 var formatNum = d3.format(',');
 var gmLength = 41; // define geomean length (6 weeks = 42 - 1 days = 41 days)
 var gmLimit = 2;

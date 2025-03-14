@@ -67,7 +67,6 @@ Chart.prototype.addBrushAxis = function() {
 }
 
 Chart.prototype.addLine = function(d) {
-    console.log(d);
     var _this = this;
     if (d.type === 'stv') {
         var color = mainColor;

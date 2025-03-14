@@ -260,16 +260,16 @@ function onMarkerClick(e) {
 
             // calculate axis buffers based on analyte-specific objectives
             if (isDdpcrData) {
-                if (analyte === enterococcusDdpcr.name) {
-                    chart1.createScales(enterococcusDdpcr.stv);
+                if (analyte === enterococcusDdpcr.info.name) {
+                    chart1.createScales(enterococcusDdpcr.info.stv);
                 } else {
                     chart1.createScales(null);
                 }
             } else {
-                if (analyte === ecoli.name) {
-                    chart1.createScales(ecoli.stv);
-                } else if (analyte === enterococcus.name) {
-                    chart1.createScales(enterococcus.stv);
+                if (analyte === ecoli.info.name) {
+                    chart1.createScales(ecoli.info.stv);
+                } else if (analyte === enterococcus.info.name) {
+                    chart1.createScales(enterococcus.info.stv);
                 } else {
                     chart1.createScales(null);
                 }
@@ -316,16 +316,16 @@ function onMarkerClick(e) {
 
             // calculate axis buffers based on analyte-specific objectives
             if (isDdpcrData) {
-                if (analyte === enterococcusDdpcr.name) {
-                    chart2.createScales(enterococcusDdpcr.stv);
+                if (analyte === enterococcusDdpcr.info.name) {
+                    chart2.createScales(enterococcusDdpcr.info.stv);
                 } else {
                     chart2.createScales(null);
                 }
             } else {
-                if (analyte === ecoli.name) {
-                    chart2.createScales(ecoli.stv);
-                } else if (analyte === enterococcus.name) {
-                    chart2.createScales(enterococcus.stv);
+                if (analyte === ecoli.info.name) {
+                    chart2.createScales(ecoli.info.stv);
+                } else if (analyte === enterococcus.info.name) {
+                    chart2.createScales(enterococcus.info.stv);
                 } else {
                     chart2.createScales(null);
                 }
@@ -612,10 +612,13 @@ function addScaleMenu() {
     scaleContainer.innerHTML = content;
 }
 
-function Analyte(name, stv, geomean) {
-    this.name = name;
-    this.stv = stv;
-    this.geomean = geomean;
+function Analyte(name, stv, geomean, unit) {
+    this.info = {
+        name: name,
+        stv: stv,
+        gm: geomean,
+        unit: unit
+    }
 }
 
 function clearPanelContent() {
@@ -1259,9 +1262,9 @@ function setPickerMaxDate(date) {
     datepicker.max = date;
 }
 
-var ecoli = new Analyte('E. coli', 320, 100),
-    enterococcus = new Analyte('Enterococcus', 110, 30),
-    enterococcusDdpcr = new Analyte('Enterococcus', 1413);
+var ecoli = new Analyte('E. coli', 320, 100, 'CFU/100 mL'),
+    enterococcus = new Analyte('Enterococcus', 110, 30, 'CFU/100 mL'),
+    enterococcusDdpcr = new Analyte('Enterococcus', 1413, null, 'copies');
     coliformtotal = new Analyte('Coliform, Total'),
     coliformfecal = new Analyte('Coliform, Fecal');
 
@@ -1299,6 +1302,7 @@ map.getPane('monthPane').style.zIndex = 670;
 var chartOpacity = 0.8;
 var currentAnalyte; 
 var currentScale = 'log';
+var formatNum = d3.format(',');
 var gmLength = 41; // define geomean length (6 weeks = 42 - 1 days = 41 days)
 var gmLimit = 2;
 var lastSite = new Object();

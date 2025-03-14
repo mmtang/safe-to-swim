@@ -66,32 +66,33 @@ Chart.prototype.addBrushAxis = function() {
         .call(this.xBrushAxis);
 }
 
-Chart.prototype.addLine = function(val, type, color) {
+Chart.prototype.addLine = function(d) {
+    console.log(d);
     var _this = this;
-    if (type === 'stv') {
+    if (d.type === 'stv') {
         var color = mainColor;
-    } else if (type === 'gm') {
+    } else if (d.type === 'gm') {
         var color = secColor;
     }
 
     this.focus.append('line')
-        .datum(val)
-        .attr('class', 'line ' + type)
+        .datum(d)
+        .attr('class', 'line ' + d.type)
         .style('stroke', color)
         .style('stroke-width', 3)
         .attr('x1', 0)
         .attr('x2', _this.width + _this.elementPadding)
-        .attr('y1', _this.yScale(val))
-        .attr('y2', _this.yScale(val))
+        .attr('y1', _this.yScale(d.val))
+        .attr('y2', _this.yScale(d.val))
         .style('opacity', chartOpacity)
         .on('mousemove', function(d) {
             toggleTooltip(tooltipLine, 1);
             d3.select(tooltipLine)
                 .html(function() { 
-                    if (type === 'stv') {
-                        return tooltipThresholdSTV(val); 
-                    } else if (type === 'gm') {
-                        return tooltipThresholdGM(val);
+                    if (d.type === 'stv') {
+                        return tooltipThresholdSTV(d.val, d.unit); 
+                    } else if (d.type === 'gm') {
+                        return tooltipThresholdGM(d.val, d.unit);
                     }
                 })
                 .style('left', function() { return positionTooltipX('tooltipLine'); })
@@ -304,16 +305,16 @@ Chart.prototype.drawGPoints = function() {
 
 Chart.prototype.drawLines = function(analyte, isDdpcrData) {
     if (!isDdpcrData) {
-        if (analyte === ecoli.name) {
-            this.addLine(ecoli.stv, 'stv');
-            this.addLine(ecoli.geomean, 'gm');
-        } else if (analyte === enterococcus.name) {
-            this.addLine(enterococcus.stv, 'stv');
-            this.addLine(enterococcus.geomean, 'gm');
+        if (analyte === ecoli.info.name) {
+            this.addLine({ val: ecoli.info['stv'], type: 'stv', unit: ecoli.info['unit'] });
+            this.addLine({ val: ecoli.info['gm'], type: 'gm', unit: ecoli.info['unit'] });
+        } else if (analyte === enterococcus.info.name) {
+            this.addLine({ val: enterococcus.info['stv'], type: 'stv', unit: enterococcus.info['unit'] });
+            this.addLine({ val: enterococcus.info['gm'], type: 'gm', unit: enterococcus.info['unit']});
         }
     } else {
-        if (analyte === enterococcusDdpcr.name) {
-            this.addLine(enterococcusDdpcr.stv, 'stv');
+        if (analyte === enterococcusDdpcr.info.name) {
+            this.addLine({ val: enterococcusDdpcr.info['stv'], type: 'stv', unit: enterococcusDdpcr.info['unit']});
         }
     }
 }
@@ -470,8 +471,8 @@ Chart.prototype.updateObjectives = function() {
         .merge(lines)
         .transition()
         .duration(1000)
-        .attr('y1', function(d) { return _this.yScale(d); })
-        .attr('y2', function(d) { return _this.yScale(d); });
+        .attr('y1', function(d) { return _this.yScale(d.val); })
+        .attr('y2', function(d) { return _this.yScale(d.val); });
 }
 
 Chart.prototype.updatePoints = function() {
@@ -571,7 +572,6 @@ function toggleTooltip (id, opacity) {
 
 function tooltipResult(d) {
     var formatDate = d3.timeFormat('%b %e, %Y');
-    var formatNum = d3.format(',');
     var displayCodes = ['<', '<=', '>', '>='];
     var resultQualCode = ''
     if (d.ResultQualCode) {
@@ -595,13 +595,13 @@ function tooltipGM(d) {
     return content;
 }
 
-function tooltipThresholdSTV(val) {
-    var content = 'Statistical Threshold Value (STV):<br/>' + val + ' cfu/100 mL';
+function tooltipThresholdSTV(val, unit) {
+    var content = 'Water quality objective/standard<br/> (single sample): ' + formatNum(val) + ' ' + unit + '<br/></br/><i>Results above the objective<br/> indicate a higher risk of illness.</i>';
     return content;
 }
 
-function tooltipThresholdGM(val) {
-    var content = 'Geomean Threshold:<br/>' + val + ' cfu/100 mL';
+function tooltipThresholdGM(val, unit) {
+    var content = 'Water quality objective/standard<br/> (geometric mean): ' + formatNum(val) + ' ' + unit + '<br/></br/><i>Results above the objective<br/> indicate a higher risk of illness.</i>';
     return content;
 }
 

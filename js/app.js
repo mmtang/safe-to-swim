@@ -207,8 +207,8 @@ function onMarkerClick(e) {
 
         // calculate x-extent of all analyte data
         var xExtent = d3.extent(chartData, function(d) { return d.SampleDate; });
-        minDate = xExtent[0];
-        maxDate = today;
+        minDate = new Date(xExtent[0].setHours(0, 0, 0));
+        maxDate = new Date(today.setHours(23, 59, 59)); 
         inputStartDate = xExtent[0];
         inputEndDate = today;
         viewStartDate = xExtent[0];
@@ -216,7 +216,7 @@ function onMarkerClick(e) {
 
         // set values and min/max values of the date selectors
         var minDateString = convertDateObjToPickerDate(minDate);
-        var maxDateString = convertDateObjToPickerDate(today);
+        var maxDateString = convertDateObjToPickerDate(maxDate);
         setPickerMinDate(minDateString);
         setPickerMaxDate(maxDateString);
         setPickerStartDate(minDateString);
@@ -419,7 +419,7 @@ function onMarkerClick(e) {
             document.getElementById('picker-end-date').addEventListener('change', function() {
                 var input = this.value; // format is YYYY-MM-DD
                 // there is a bug(?) with the parsed date being off by about 8 hours (it shows up as one day earlier), append time value here
-                input = input + 'T23:59:00'; 
+                input = input + 'T23:59:59'; 
                 var newDate = new Date(input);
                 inputEndDate = newDate;
                 // check if entered date is within acceptable range
@@ -468,7 +468,7 @@ function onMarkerClick(e) {
         }
 
         function isInputEndDateValid(newDate) {
-            if (newDate < viewStartDate) {
+            if (newDate < inputStartDate) {
                 showPickerError('End date is before start date');
                 return false;
             } else if (newDate > maxDate || newDate < minDate) {
@@ -484,7 +484,7 @@ function onMarkerClick(e) {
         }
 
         function isInputStartDateValid(newDate) {
-            if (newDate > viewEndDate) {
+            if (newDate > inputEndDate) {
                 showPickerError('Start date is after end date');
                 return false;
             } else if (newDate < minDate || newDate > maxDate) {
@@ -717,24 +717,6 @@ function collapsePanel() {
     icon.classList.remove('fa-caret-up');
     icon.classList.add('fa-caret-down');
 }
-
-/* DELETE
-function convertToCSV(data) {
-    var csvString = '';
-    var fileName = 'SafeToSwim_Download_' + Date.now() + '.csv';
-    var header = Object.keys(data[0]);
-    var values = data.map(function(obj) {
-        return Object.keys(obj)
-            .map(function(e) { return obj[e]; })
-            .join(',');
-    });
-    var body = values.join('\r\n');
-    csvString += header + '\r\n' + body;
-    // use filesaver.js to export data as csv file (cross-browser support)
-    var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8' });
-    window.saveAs(blob, fileName);
-}
-        */
 
 function createURL(baseURL, site) {
     // url encoding for site code, add more as needed
@@ -1245,11 +1227,18 @@ function roundHundred(value) {
 function convertDateObjToPickerDate(date) {
     // Format dates to YYYY-MM-DD
     if (date instanceof Date) {
-        var convertedDate = date.toISOString().slice(0, 10);
+        var convertedDate = formatDate(date);
         return convertedDate;
     } else {
         return null;
     }
+
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+        const day = String(date.getDate()).padStart(2, '0');
+        return year + '-' + month + '-' + day;
+    };
 }
 
 // date as a date string YYYY-MM-DD

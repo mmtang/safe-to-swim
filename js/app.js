@@ -584,7 +584,7 @@ $('#nav-btn').click(function() {
 
 function addFilterMenu() {
     var filterContainer = document.getElementById('checkbox-container');
-    var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;&nbsp;Samples</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-bottom" data-toggle="popover" data-html="true" title="Geometric Mean" data-content="<p>The geometric mean is a type of mean or average that indicates the central tendency or typical value of a set of numbers by using the product of their values (as opposed to the arithmetic mean which uses their sum). It is defined as the nth root of the product of n numbers.</p><p>For E. coli and enterococcus only: the six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. The minimum number of samples required for the calculation is two but can be changed to five using the dropdown menu below. Position your mouse cursor over a geometric mean triangle on the chart to highlight the six-week date period used for the calculation.</p>"></i></a></label></div></div>';
+    var content = '<div id="filter-menu"><div class="form-check"><label><input id="filter-result" value="data" class="form-check-input" type="checkbox" checked>&nbsp;<i class="fa fa-circle data-dot" aria-hidden="true"></i>&nbsp;&nbsp;Samples</label></div><div id="gm-form-container" class="form-check"><label><input id="filter-geomean" value="geomean" class="form-check-input" type="checkbox" checked>&nbsp;<img src="assets/triangle.gif">&nbsp;Geometric mean&nbsp;&nbsp;<a href="#"><i class="fa fa-question-circle pop-bottom" data-toggle="popover" data-html="true" title="Geometric Mean" data-content="<p>The geometric mean is a measure of central tendency that calculates the average of a set of numbers by multiplying them together and taking the nth root (where n is the number of values). In water quality monitoring, the geometric mean is often used to assess bacterial levels because it reduces the influence of extreme values (or outliers) that could skew results. It can also provide a better indication of typical water quality over time rather than short-term fluctuations.</p><p>The six-week geometric mean is calculated weekly on a rolling basis, starting with the most recent sample date. The minimum number of samples required for the calculation is two but can be changed to five using the dropdown menu below. Position your mouse cursor over a geometric mean triangle on the graph to highlight the six-week date period used for the calculation.</p>"></i></a></label></div></div>';
     filterContainer.innerHTML = content;
     updateFilters();
 }
@@ -620,35 +620,29 @@ function clearSearch() {
 }
 
 function addMessages() {
-    // This function adds the last updated dates for the CEDEN and R5 datasets.
+    // This function adds the last updated dates for the Safe to Swim dataset.
     // It also adds a message to the top of the welcome modal. This message (if available/present) is queried from the open data portal dataset description using the keyword "__Attention__": https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results
     // This URL points to the Safe to Swim sites dataset on the portal. Any of the other datasets can be used with the same result.
-    // https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results/resource/848d2e3f-2846-449c-90e0-9aaf5c45853e
-    var cedenResourceId = '848d2e3f-2846-449c-90e0-9aaf5c45853e';
-    var r5ResourceId = 'fc450fb6-e997-4bcf-b824-1b3ed0f06045';
+    var resourceId = '15a63495-8d9f-4a49-b43a-3092ef3106b9'; // https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results/resource/15a63495-8d9f-4a49-b43a-3092ef3106b9
     var datasetId = 'surface-water-fecal-indicator-bacteria-results'; // the main dataset with metadata for all resources
     $.when(
-        getResourceInfo(cedenResourceId),
-        getResourceInfo(r5ResourceId),
+        getResourceInfo(resourceId),
         getPackageInfo(datasetId)
-    ).done(function(res1, res2, res3) {
+    ).done(function(res1, res2) {
         // Add data last updated dates to the popup that shows when the map is loaded
         // Date helper functions
         var parseDate = d3.timeParse('%Y-%m-%dT%H:%M:%S.%f');
         var formatDate = d3.timeFormat("%b %e, %Y");
-        // Process CEDEN dataset date
-        var cedenResult = res1[0].result['last_modified'];
-        var cedenDate = formatDate(parseDate(cedenResult));
-        // Process R5 dataset date
-        var r5Result = res2[0].result['last_modified'];
-        var r5Date = formatDate(parseDate(r5Result));
+        // Process dataset date
+        var dateResponse = res1[0].result['last_modified'];
+        var dateText = formatDate(parseDate(dateResponse));
         // Contruct HTML and set div content
-        var content = 'CEDEN/BeachWatch data updated: ' + cedenDate + '<br>' + 'Central Valley E. coli data updated: ' + r5Date;
+        var content = 'Data last updated: ' + dateText;
         document.getElementById('update-date-container').innerHTML = content;
 
         // Add message from portal (if present/available)
         // Locate if the keyword 'Attention' appears in the dataset description
-        var packageDescription = res3[0].result['notes'];
+        var packageDescription = res2[0].result['notes'];
         if (packageDescription.includes('Attention')) {
             // Extract text using regular expressions and add text to the update message
             var regEx = /<p>__Attention__:(.*?)<\/p>/g;

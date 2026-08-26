@@ -51,7 +51,7 @@ function onMarkerClick(e) {
                 handleSiteError(site);
                 console.log(xhr.statusText);
                 console.log(textStatus);
-                console.log(error);
+                console.log(error);  
             }
         });
     }
@@ -621,7 +621,7 @@ function clearSearch() {
 
 function addMessages() {
     // This function adds the last updated dates for the Safe to Swim dataset.
-    // It also adds a message to the top of the welcome modal. This message (if available/present) is queried from the open data portal dataset description using the keyword "__Attention__": https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results
+    // It also adds a message to the top of the welcome modal. This message (if available/present) is queried from the open data portal dataset description using the keyword "<p>__Attention__": https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results
     // This URL points to the Safe to Swim sites dataset on the portal. Any of the other datasets can be used with the same result.
     var resourceId = '15a63495-8d9f-4a49-b43a-3092ef3106b9'; // https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results/resource/15a63495-8d9f-4a49-b43a-3092ef3106b9
     var datasetId = 'surface-water-fecal-indicator-bacteria-results'; // the main dataset with metadata for all resources
@@ -1120,8 +1120,8 @@ function initializeSearch(arr) {
 }
 
 function addMapTiles() {
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community',
         subdomains: 'abcd',
         maxZoom: 19
     }).addTo(map);

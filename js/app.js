@@ -41,7 +41,7 @@ function onMarkerClick(e) {
     }
 
     function getData(resource, site) {
-        var baseURL = 'https://data.ca.gov/api/3/action/datastore_search?resource_id=';
+        var baseURL = 'https://publish.data.ca.gov/api/3/action/datastore_search?resource_id=';
         var requestURL = createURL(baseURL + resource, site);
         return $.ajax({
             type: 'GET',
@@ -75,7 +75,7 @@ function onMarkerClick(e) {
             chartData[i].ResultDisplay = checkDisplay(chartData[i].ResultSub);
             // parse date fields
             for (var d = 0; d < dateFields.length; d++) { 
-                chartData[i][dateFields[d]] = parseDate(chartData[i][dateFields[d]]);
+                chartData[i][dateFields[d]] = parseDate2(chartData[i][dateFields[d]]);
             }
         }
         return chartData;
@@ -206,7 +206,7 @@ function onMarkerClick(e) {
         });
 
         // calculate x-extent of all analyte data
-        var xExtent = d3.extent(chartData, function(d) { return d.SampleDate; });
+        var xExtent = d3.extent(chartData, function(d) { return d.SampleDateTime; });
         minDate = new Date(xExtent[0].setHours(0, 0, 0));
         maxDate = new Date(today.setHours(23, 59, 59)); 
         inputStartDate = xExtent[0];
@@ -657,7 +657,7 @@ function addMessages() {
 
 function getPackageInfo(package) {
     if (package) {
-        var baseUrl = 'https://data.ca.gov/api/3/action/package_show?id=';
+        var baseUrl = 'https://publish.data.ca.gov/api/3/action/package_show?id=';
         var packageUrl = baseUrl + package;
         return $.ajax({
             type: 'GET',
@@ -676,7 +676,7 @@ function getPackageInfo(package) {
 
 function getResourceInfo(resource) {
     if (resource) {
-        var baseUrl = 'https://data.ca.gov/api/3/action/resource_show?id=';
+        var baseUrl = 'https://publish.data.ca.gov/api/3/action/resource_show?id=';
         var resourceUrl = baseUrl + resource;
         return $.ajax({
             type: 'GET',
@@ -835,7 +835,7 @@ function initializeDatePanel() {
 
 function initializeDownloadMenu() {
     var container = document.getElementById('download-container');
-    container.innerHTML = '<div class="dropdown panel-container text-center"><div class="btn-group dropup"><button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data&nbsp;&nbsp;<span class="caret"></span></button><ul id="download-menu" class="dropdown-menu"><li><a href="#">' + downloadOp1 + '</a></li><li id="portal-dropdown-op"><a href="https://data.ca.gov/dataset/surface-water-fecal-indicator-bacteria-results" target="_blank" rel="noopener noreferrer">' + downloadOp2 + '</a></li></ul></div>';
+    container.innerHTML = '<div class="dropdown panel-container text-center"><div class="btn-group dropup"><button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Download Data&nbsp;&nbsp;<span class="caret"></span></button><ul id="download-menu" class="dropdown-menu"><li><a href="#">' + downloadOp1 + '</a></li><li id="portal-dropdown-op"><a href="https://data.ca.gov/@california-state-water-resources-control-board/surface-water-fecal-indicator-bacteria-results" target="_blank" rel="noopener noreferrer">' + downloadOp2 + '</a></li></ul></div>';
 }
 
 function resendRequest() {
@@ -1001,10 +1001,10 @@ function addSiteLayer() {
     }
 
     function getSiteList() {
-        var url = 'https://data.ca.gov/api/3/action/datastore_search_sql?sql=';
-        var queryBefore2010 = `SELECT DISTINCT ON ("StationCode") "StationCode", "StationName", "TargetLatitude", "TargetLongitude", "RegionNumber", MAX("SampleDate") OVER (PARTITION BY "StationCode") FROM "1d333989-559a-433f-b93f-bb43d21da2b9"`;
-        var query2010To2020 = `SELECT DISTINCT ON ("StationCode") "StationCode", "StationName", "TargetLatitude", "TargetLongitude", "RegionNumber", MAX("SampleDate") OVER (PARTITION BY "StationCode") FROM "04d98c22-5523-4cc1-86e7-3a6abf40bb60"`;
-        var query2020Present = `SELECT DISTINCT ON ("StationCode") "StationCode", "StationName", "TargetLatitude", "TargetLongitude", "RegionNumber", MAX("SampleDate") OVER (PARTITION BY "StationCode") FROM "15a63495-8d9f-4a49-b43a-3092ef3106b9"`
+        var url = 'https://publish.data.ca.gov/api/3/action/datastore_search_sql?sql=';
+        var queryBefore2010 = `SELECT DISTINCT ON ("StationCode") "StationCode", "StationName", "TargetLatitude", "TargetLongitude", "RegionNumber", MAX("SampleDateTime") OVER (PARTITION BY "StationCode") FROM "1d333989-559a-433f-b93f-bb43d21da2b9"`;
+        var query2010To2020 = `SELECT DISTINCT ON ("StationCode") "StationCode", "StationName", "TargetLatitude", "TargetLongitude", "RegionNumber", MAX("SampleDateTime") OVER (PARTITION BY "StationCode") FROM "04d98c22-5523-4cc1-86e7-3a6abf40bb60"`;
+        var query2020Present = `SELECT DISTINCT ON ("StationCode") "StationCode", "StationName", "TargetLatitude", "TargetLongitude", "RegionNumber", MAX("SampleDateTime") OVER (PARTITION BY "StationCode") FROM "15a63495-8d9f-4a49-b43a-3092ef3106b9"`
         var call1 = $.get(url + queryBefore2010);
         var call2 = $.get(url + query2010To2020);
         var call3 = $.get(url + query2020Present);
@@ -1014,7 +1014,7 @@ function addSiteLayer() {
             var siteData3 = res3[0]['result']['records'];
             var siteData = siteData1.concat(siteData2, siteData3);
             // convert to date objects
-            siteData.forEach(function(d) { d.LastSampleDate = parseDate(d.max); });
+            siteData.forEach(function(d) { d.LastSampleDate = parseDate(d.max) });
             // sort descending by sample date
             siteData.sort(function(a,b) { return b['LastSampleDate'] - a['LastSampleDate'] });
             // drop duplicates
@@ -1299,7 +1299,7 @@ map.getPane('monthPane').style.zIndex = 670;
 var chartOpacity = 0.8;
 var currentAnalyte; 
 var currentScale = 'log';
-var dateFields = ['SampleDate', 'CalibrationDate', 'PrepPreservationDate', 'DigestExtractDate', 'AnalysisDate', 'SampleDateTime', '30DayCutoffDate', '6WeekCutoffDate'];
+var dateFields = ['SampleDate', 'CalibrationDate', 'PrepPreservationDate', 'DigestExtractDate', 'AnalysisDate', 'SampleDateTime', 'CutoffDate_30Day', 'CutoffDate_6Week'];
 var formatNum = d3.format(',');
 var gmLength = 41; // define geomean length (6 weeks = 42 - 1 days = 41 days)
 var gmLimit = 2;
@@ -1307,7 +1307,9 @@ var lastSite = new Object();
 // var mainColor = '#1f78b4', secColor = '#ff7f0e';
 var mainColor = '#145785', secColor = '#e86348';
 var MS_PER_DAY = (24 * 60 * 60 * 1000);
+var parseDate_date = d3.timeParse('%Y-%m-%d');
 var parseDate = d3.timeParse('%Y-%m-%dT%H:%M:%S');
+var parseDate2 = d3.timeParse('%Y-%m-%dT%H:%M:%S.%L');
 var maxDate = null;
 var minDate = null;
 var inputEndDate = null;

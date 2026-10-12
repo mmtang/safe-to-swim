@@ -128,10 +128,10 @@ Chart.prototype.setDateView = function(dateObj1, dateObj2) {
         _this.xScale.domain([dateObj1, dateObj2]);
         // redraw graph elements
         _this.focus.selectAll('.circle')
-            .attr('cx', function(d) { return _this.xScale(d.SampleDate); })
+            .attr('cx', function(d) { return _this.xScale(d.SampleDateTime); })
             .attr('cy', function(d) { return _this.yScale(d.ResultDisplay); });
         _this.focus.selectAll('.triangle')
-            .attr('transform', function(d) { return 'translate(' + _this.xScale(d.SampleDate) + ',' + _this.yScale(d['6WeekGeoMean']) + ')'; })
+            .attr('transform', function(d) { return 'translate(' + _this.xScale(d.SampleDateTime) + ',' + _this.yScale(d['GeoMean_6Week']) + ')'; })
         _this.focus.select('.x-axis').call(_this.xAxis);
     }
 }
@@ -150,10 +150,10 @@ Chart.prototype.brushed = function(parent) {
     }
     // redraw graph elements
     parent.focus.selectAll('.circle')
-        .attr('cx', function(d) { return parent.xScale(d.SampleDate); })
+        .attr('cx', function(d) { return parent.xScale(d.SampleDateTime); })
         .attr('cy', function(d) { return parent.yScale(d.ResultDisplay); });
     parent.focus.selectAll('.triangle')
-        .attr('transform', function(d) { return 'translate(' + parent.xScale(d.SampleDate) + ',' + parent.yScale(d['6WeekGeoMean']) + ')'; })
+        .attr('transform', function(d) { return 'translate(' + parent.xScale(d.SampleDateTime) + ',' + parent.yScale(d['GeoMean_6Week']) + ')'; })
     parent.focus.select('.x-axis').call(parent.xAxis);
     // update date pickers
     var newXDate = this.xBrushScale.invert(selection[0]);
@@ -189,7 +189,7 @@ Chart.prototype.createBrushScales = function() {
 Chart.prototype.createScales = function(threshold) {
     // calculate min and max dates for data
     /*
-    this.xExtent = d3.extent(this.data, function(d,i) { return d.SampleDate; });
+    this.xExtent = d3.extent(this.data, function(d,i) { return d.SampleDateTime; });
     if (this.data.length === 1) {
         this.xExtent = bufferX(this.xExtent, 35);  
     }
@@ -243,7 +243,7 @@ Chart.prototype.drawBrushPoints = function() {
         .attr('class', 'bCircle brush')
         .attr('r', 3)
         .attr('fill', mainColor)
-        .attr('cx', function(d) { return _this.xBrushScale(d.SampleDate); })
+        .attr('cx', function(d) { return _this.xBrushScale(d.SampleDateTime); })
         .attr('cy', function(d) { return _this.yBrushScale(d.ResultDisplay); })
         .style('opacity', chartOpacity);
 }
@@ -255,11 +255,11 @@ Chart.prototype.drawGPoints = function() {
         .attr('clip-path', 'url(#clipBuffered)')
         .attr('id', maskId);
     gPoints.selectAll('.triangle')
-        .data(this.data.filter(function(d) { return d['6WeekCount'] >= gmLimit }), function(d) { return d.key; })
+        .data(this.data.filter(function(d) { return d['Count_6Week'] >= gmLimit }), function(d) { return d.key; })
         .enter().append('path')
         .attr('class', 'triangle')
         .attr('d', d3.symbol().type(d3.symbolTriangle))
-        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.SampleDate) + ',' + _this.yScale(d['6WeekGeoMean']) + ')'; })
+        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.SampleDateTime) + ',' + _this.yScale(d['GeoMean_6Week']) + ')'; })
         .style('fill', secColor)
         .style('opacity', chartOpacity)
         .on('mouseover', function(d) {
@@ -279,7 +279,7 @@ Chart.prototype.drawGPoints = function() {
             hideRect();
         })
         .merge(gPoints)
-        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.SampleDate) + ',' + _this.yScale(d['6WeekGeoMean']) + ')'; });
+        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.SampleDateTime) + ',' + _this.yScale(d['GeoMean_6Week']) + ')'; });
     gPoints.exit()
         .remove();
 
@@ -287,9 +287,9 @@ Chart.prototype.drawGPoints = function() {
         var _d = d;
         _this.gmRect
             .attr('visibility', 'visible')
-            .attr('x', function() { return _this.xScale(_d['6WeekCutoffDate']); })
+            .attr('x', function() { return _this.xScale(_d['CutoffDate_6Week']); })
             .attr('y', 0)
-            .attr('width', function() { return _this.xScale(_d.SampleDate) - _this.xScale(_d['6WeekCutoffDate']); })
+            .attr('width', function() { return _this.xScale(_d.SampleDateTime) - _this.xScale(_d['CutoffDate_6Week']); })
             .attr('height', _this.height)
             .attr('fill', '#d6d6d6')
             .style('opacity', 0.5);
@@ -327,7 +327,7 @@ Chart.prototype.drawPoints = function() {
         .enter().append('circle')
         .attr('class', 'circle')
         .attr('r', 6)
-        .attr('cx', function(d) { return _this.xScale(d.SampleDate); })
+        .attr('cx', function(d) { return _this.xScale(d.SampleDateTime); })
         .attr('cy', function(d) { return _this.yScale(d.ResultDisplay); })
         .attr('fill', mainColor)
         .style('opacity', chartOpacity)
@@ -346,7 +346,7 @@ Chart.prototype.drawPoints = function() {
             d3.select(this).attr('fill', mainColor);
         })
         .merge(points)
-        .attr('cx', function(d) { return _this.xScale(d.SampleDate); })
+        .attr('cx', function(d) { return _this.xScale(d.SampleDateTime); })
         .attr('cy', function(d) { return _this.yScale(d.ResultDisplay); })
     points.exit()
         .remove();
@@ -458,7 +458,7 @@ Chart.prototype.updateGPoints = function() {
         .merge(gPoints)
         .transition()
         .duration(1000)
-        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.SampleDate) + ',' + _this.yScale(d['6WeekGeoMean']) + ')'; });
+        .attr('transform', function(d) { return 'translate(' + _this.xScale(d.SampleDateTime) + ',' + _this.yScale(d['GeoMean_6Week']) + ')'; });
     gPoints.exit()
         .remove();
 }
@@ -481,7 +481,7 @@ Chart.prototype.updatePoints = function() {
         .merge(points)
         .transition()
         .duration(1000)
-        .attr('cx', function(d) { return _this.xScale(d.SampleDate); })
+        .attr('cx', function(d) { return _this.xScale(d.SampleDateTime); })
         .attr('cy', function(d) { return _this.yScale(d.ResultDisplay); });
     points.exit()
         .remove();
@@ -494,7 +494,7 @@ Chart.prototype.updateBrushPoints = function() {
         .merge(points)
         .transition()
         .duration(1000)
-        .attr('cx', function(d) { return _this.xBrushScale(d.SampleDate); })
+        .attr('cx', function(d) { return _this.xBrushScale(d.SampleDateTime); })
         .attr('cy', function(d) { return _this.yBrushScale(d.ResultDisplay); })
     points.exit()
         .remove();
@@ -581,16 +581,16 @@ function tooltipResult(d) {
         }
     }
     if (resultQualCode === 'Non-detect') {
-        return '<strong>' + formatDate(d.SampleDate) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + resultQualCode;
+        return '<strong>' + formatDate(d.SampleDateTime) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + resultQualCode;
     } else {
-        return '<strong>' + formatDate(d.SampleDate) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + resultQualCode + formatNum(d['ResultSub']).toString() + ' ' + d.Unit;
+        return '<strong>' + formatDate(d.SampleDateTime) + '</strong><br>Program: ' + d.Program + '<br>Result: ' + resultQualCode + formatNum(d['ResultSub']).toString() + ' ' + d.Unit;
     }
 }
 
 function tooltipGM(d) {
     var tooltipNumber = d3.format(",.1f");
     var tooltipDate = d3.timeFormat('%b %e, %Y');
-    var content = "<strong>" + tooltipDate(d['6WeekCutoffDate']) + ' - ' + tooltipDate(d.SampleDate) + "</strong><br>Geometric Mean: " + tooltipNumber(d['6WeekGeoMean']) + " " + d.Unit + "<br>Sample Count: " + d['6WeekCount'];
+    var content = "<strong>" + tooltipDate(d['CutoffDate_6Week']) + ' - ' + tooltipDate(d.SampleDateTime) + "</strong><br>Geometric Mean: " + tooltipNumber(d['GeoMean_6Week']) + " " + d.Unit + "<br>Sample Count: " + d['Count_6Week'];
     return content;
 }
 
